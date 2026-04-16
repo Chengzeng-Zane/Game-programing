@@ -1,0 +1,14 @@
+# Logs
+*.log
+
+# Build
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
