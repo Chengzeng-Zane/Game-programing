@@ -15,17 +15,18 @@
 ### Milestone 2: Core Prototype
 - Add player movement
 - Add a simple level layout
-- Add collectible or interactable word objects
-- Add basic score feedback
+- Add recording input and replay playback
+- Add one basic interactable object such as a switch or door
 
 ### Milestone 3: Playable Vertical Slice
 - Add start, win, and lose states
-- Add UI for score, health, or timer
+- Add UI for health, replay state, and loot
+- Add random chest spawning and reward logic
 - Add sound and visual feedback
 - Add at least one complete level objective
 
 ### Milestone 4: Testing and Polish
-- Test controls, collisions, UI, and restart flow
+- Test controls, replay timing, loot loss, UI, and restart flow
 - Record bugs and changes in the testing log
 - Improve difficulty, clarity, and pacing from feedback
 
