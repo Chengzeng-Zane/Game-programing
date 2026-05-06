@@ -12,6 +12,11 @@ The level also includes random treasure chests that can drop rare items. Those r
 
 The project is intentionally small in scope so the final result can be playable, stable, tested, and clearly explained.
 
+## Current Prototype
+The first prototype includes a tutorial-style opening sequence. It introduces movement, pressure plates, recording, echo replay, the door puzzle, random chest loot, loot loss on death, and extraction in a step-by-step order.
+
+The prototype now uses CC0 assets from the Brackeys Platformer Bundle for pixel-art character, tiles, loot visuals, hazard visuals, sound effects, and background music.
+
 ## Current Unity Project
 - Unity version: 2022.3.62f3c1
 - Template: 2D Unity project
@@ -22,15 +27,17 @@ Controls will be updated as the prototype develops.
 
 Planned controls:
 - Move: WASD or Arrow Keys
-- Record / Replay: one dedicated key
-- Interact / Open chest: one dedicated key
+- Jump: Space, W, or Up Arrow
+- Record / Stop recording: Q
+- Replay echo: E
+- Interact / Open chest: F
 - Restart: R
 
 ## How to Run
 1. Open Unity Hub.
 2. Add or open the `EchoVault` folder inside this repository.
 3. Use Unity 2022.3.62f3c1 or a compatible Unity 2022.3 LTS version.
-4. Open the main scene from `EchoVault/Assets/Scenes/`.
+4. Open `EchoVault/Assets/Scenes/PrototypeScene.unity`.
 5. Press Play in the Unity Editor.
 
 ## Project Structure
@@ -45,6 +52,9 @@ Planned controls:
 - 2026-04-16: Repository created.
 - 2026-05-05: Connected Unity project to the GitHub repository and added planning documents.
 - 2026-05-05: Moved the final Unity game into `EchoVault/` to separate it from class activity material.
+- 2026-05-05: Added a first playable prototype with player movement, echo replay, random chests, hazards, and extraction.
+- 2026-05-05: Added a guided tutorial flow for the first prototype.
+- 2026-05-06: Imported Brackeys Platformer Bundle assets and connected prototype visual skinning and audio feedback.
 
 ## Plan
 - [x] Define initial game concept and core mechanics
@@ -57,4 +67,4 @@ Planned controls:
 - Week 2: Separate class activity evidence from the final Unity project
 
 ## Credits
-External assets and references will be recorded in `EchoVault/Docs/Credits.md`.
+External assets and references are recorded in `EchoVault/Docs/Credits.md`.
