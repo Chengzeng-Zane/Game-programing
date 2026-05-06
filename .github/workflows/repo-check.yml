@@ -1,0 +1,100 @@
+name: Repository checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  repository-checks:
+    name: Unity repository hygiene
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required project structure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_paths=(
+            "README.md"
+            ".gitignore"
+            "EchoVault/Assets"
+            "EchoVault/Assets/Scenes/PrototypeScene.unity"
+            "EchoVault/Assets/Scripts"
+            "EchoVault/Docs/Credits.md"
+            "EchoVault/Docs/TestingLog.md"
+            "EchoVault/Packages/manifest.json"
+            "EchoVault/ProjectSettings/ProjectVersion.txt"
+          )
+
+          missing=0
+          for path in "${required_paths[@]}"; do
+            if [[ ! -e "$path" ]]; then
+              echo "::error title=Missing required path::$path"
+              missing=1
+            fi
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            exit 1
+          fi
+
+      - name: Confirm Unity scripts and scenes are tracked
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          scene_count="$(git ls-files 'EchoVault/Assets/Scenes/*.unity' | wc -l)"
+          script_count="$(git ls-files 'EchoVault/Assets/Scripts/**/*.cs' 'EchoVault/Assets/Scripts/*.cs' | wc -l)"
+
+          if [[ "$scene_count" -lt 1 ]]; then
+            echo "::error title=No Unity scene tracked::At least one .unity scene should be committed."
+            exit 1
+          fi
+
+          if [[ "$script_count" -lt 1 ]]; then
+            echo "::error title=No Unity C# scripts tracked::At least one C# gameplay script should be committed."
+            exit 1
+          fi
+
+      - name: Block generated and source-only folders
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          forbidden='(^|/)(Library|Temp|Obj|Build|Builds|Logs|UserSettings|ExternalAssets)(/|$)'
+          tracked_forbidden="$(git ls-files | grep -E "$forbidden" || true)"
+
+          if [[ -n "$tracked_forbidden" ]]; then
+            echo "::error title=Generated or source-only folder is tracked::Do not commit Unity generated folders or ExternalAssets."
+            echo "$tracked_forbidden"
+            exit 1
+          fi
+
+      - name: Check tracked file sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          limit=$((100 * 1024 * 1024))
+          failed=0
+
+          while IFS= read -r file; do
+            if [[ -f "$file" ]]; then
+              size="$(wc -c < "$file")"
+              if (( size > limit )); then
+                echo "::error title=Tracked file exceeds 100 MiB::$file is $size bytes"
+                failed=1
+              fi
+            fi
+          done < <(git ls-files)
+
+          exit "$failed"
