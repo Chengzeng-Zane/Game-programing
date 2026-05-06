@@ -40,6 +40,13 @@ Planned controls:
 4. Open `EchoVault/Assets/Scenes/PrototypeScene.unity`.
 5. Press Play in the Unity Editor.
 
+## Continuous Integration
+This repository uses GitHub Actions for basic repository checks on pull requests and pushes to `main`.
+
+The current CI workflow checks that the Unity project structure, prototype scene, scripts, README, credits, and testing log are present. It also blocks tracked Unity generated folders such as `Library/`, `Temp/`, `Obj/`, `Build/`, `Builds/`, `Logs/`, `UserSettings/`, and the source-only `ExternalAssets/` folder.
+
+Full Unity build and test automation is planned for later because it requires Unity license secrets to be configured in GitHub Actions.
+
 ## Project Structure
 - `EchoVault/` - the actual Unity game project.
 - `EchoVault/Assets/` - scenes, scripts, prefabs, art, audio, and UI.
@@ -55,6 +62,7 @@ Planned controls:
 - 2026-05-05: Added a first playable prototype with player movement, echo replay, random chests, hazards, and extraction.
 - 2026-05-05: Added a guided tutorial flow for the first prototype.
 - 2026-05-06: Imported Brackeys Platformer Bundle assets and connected prototype visual skinning and audio feedback.
+- 2026-05-06: Added a basic GitHub Actions workflow for repository hygiene checks.
 
 ## Plan
 - [x] Define initial game concept and core mechanics
