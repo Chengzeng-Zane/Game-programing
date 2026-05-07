@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 public static class PrototypeSceneBuilder
 {
     private const string ScenePath = "Assets/Scenes/PrototypeScene.unity";
+    private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
 
     [MenuItem("EchoVault/Build Prototype Scene")]
     public static void BuildScene()
@@ -62,7 +63,19 @@ public static class PrototypeSceneBuilder
         skinner.SkinAll();
 
         EditorSceneManager.SaveScene(scene, ScenePath);
-        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainMenuScenePath) != null)
+        {
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(MainMenuScenePath, true),
+                new EditorBuildSettingsScene(ScenePath, true)
+            };
+        }
+        else
+        {
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
     }
