@@ -66,6 +66,8 @@ Full Unity build and test automation is planned for later because it requires Un
 - 2026-05-06: Imported Brackeys Platformer Bundle assets and connected prototype visual skinning and audio feedback.
 - 2026-05-06: Added a basic GitHub Actions workflow for repository hygiene checks.
 - 2026-05-07: Added a pixel-art main menu scene with Start Game, Controls, Credits, and Quit options.
+- 2026-05-18: Created prototype level layouts for `Level1_Tutorial`, `Level2_EchoPuzzleIntro`, and `Level3_RiskReward`.
+- 2026-05-18: Added map-only placeholder scenes for tutorial movement, future Echo puzzle setup, and future risk-reward chest routing. Gameplay mechanics will be implemented later.
 
 ## Plan
 - [x] Define initial game concept and core mechanics
