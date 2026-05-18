@@ -26,13 +26,13 @@ jobs:
           required_paths=(
             "README.md"
             ".gitignore"
-            "EchoVault/Assets"
-            "EchoVault/Assets/Scenes/PrototypeScene.unity"
-            "EchoVault/Assets/Scripts"
-            "EchoVault/Docs/Credits.md"
-            "EchoVault/Docs/TestingLog.md"
-            "EchoVault/Packages/manifest.json"
-            "EchoVault/ProjectSettings/ProjectVersion.txt"
+            "EchoEscape/Assets"
+            "EchoEscape/Assets/Scenes/MainMenu.unity"
+            "EchoEscape/Assets/Scripts"
+            "EchoEscape/Docs/Credits.md"
+            "EchoEscape/Docs/TestingLog.md"
+            "EchoEscape/Packages/manifest.json"
+            "EchoEscape/ProjectSettings/ProjectVersion.txt"
           )
 
           missing=0
@@ -52,8 +52,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          scene_count="$(git ls-files 'EchoVault/Assets/Scenes/*.unity' | wc -l)"
-          script_count="$(git ls-files 'EchoVault/Assets/Scripts/**/*.cs' 'EchoVault/Assets/Scripts/*.cs' | wc -l)"
+          scene_count="$(git ls-files 'EchoEscape/Assets/Scenes/*.unity' | wc -l)"
+          script_count="$(git ls-files 'EchoEscape/Assets/Scripts/**/*.cs' 'EchoEscape/Assets/Scripts/*.cs' | wc -l)"
 
           if [[ "$scene_count" -lt 1 ]]; then
             echo "::error title=No Unity scene tracked::At least one .unity scene should be committed."
