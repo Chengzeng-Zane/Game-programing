@@ -1,15 +1,17 @@
 using System.IO;
 using System.Linq;
+using EchoEscape;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 public static class EchoEscapeLevelBuilder
 {
     private const string ScenesPath = "Assets/Scenes";
-    private const string PrefabsPath = "Assets/Prefabs";
     private const string SpritesPath = "Assets/Sprites";
 
     private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
@@ -17,26 +19,19 @@ public static class EchoEscapeLevelBuilder
     private const string Level2ScenePath = "Assets/Scenes/Level2_EchoPuzzleIntro.unity";
     private const string Level3ScenePath = "Assets/Scenes/Level3_RiskReward.unity";
 
-    private const string ForestBackgroundPath = "Assets/Art/Backgrounds/pure-pixel-forest.png";
-    private const string SourcePlatformPath = "Assets/Resources/BrackeysPlatformer/Sprites/platforms.png";
-    private const string SourceCoinPath = "Assets/Resources/BrackeysPlatformer/Sprites/coin.png";
-    private const string SourceFruitPath = "Assets/Resources/BrackeysPlatformer/Sprites/fruit.png";
-    private const string GroundTilePath = SpritesPath + "/Level1_GroundTile.png";
-    private const string PlatformTilePath = SpritesPath + "/Level1_PlatformTile.png";
     private const string PlaceholderSpritePath = SpritesPath + "/placeholder_square.png";
 
     [MenuItem("Echo Escape/Build Prototype Levels")]
     public static void BuildPrototypeLevels()
     {
         EnsureProjectFolders();
-        EnsureLevelSprites();
-        CreatePlaceholderPrefabs();
+        EnsureWhitePlaceholderSprite();
         BuildLevel1Tutorial();
         UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Echo Escape Level1_Tutorial rebuilt. Level2 and Level3 were preserved.");
+        Debug.Log("Echo Escape Level1_Tutorial rebuilt as a clean first tutorial segment. Level2 and Level3 were preserved.");
     }
 
     public static void BuildPrototypeLevelsFromCommandLine()
@@ -48,9 +43,7 @@ public static class EchoEscapeLevelBuilder
     {
         EnsureFolder("Assets", "Scenes");
         EnsureFolder("Assets", "Scripts");
-        EnsureFolder("Assets", "Prefabs");
         EnsureFolder("Assets", "Sprites");
-        EnsureFolder("Assets", "Audio");
     }
 
     private static void EnsureFolder(string parent, string folder)
@@ -60,18 +53,6 @@ public static class EchoEscapeLevelBuilder
         {
             AssetDatabase.CreateFolder(parent, folder);
         }
-    }
-
-    private static void EnsureLevelSprites()
-    {
-        EnsureWhitePlaceholderSprite();
-        EnsureCroppedSprite(SourcePlatformPath, GroundTilePath, 0);
-        EnsureCroppedSprite(SourcePlatformPath, PlatformTilePath, 1);
-
-        ConfigureSpriteImport(ForestBackgroundPath, 100f);
-        ConfigureSpriteImport(SourcePlatformPath, 16f);
-        ConfigureSpriteImport(SourceCoinPath, 16f);
-        ConfigureSpriteImport(SourceFruitPath, 16f);
     }
 
     private static void EnsureWhitePlaceholderSprite()
@@ -88,33 +69,6 @@ public static class EchoEscapeLevelBuilder
         }
 
         ConfigureSpriteImport(PlaceholderSpritePath, 16f);
-    }
-
-    private static void EnsureCroppedSprite(string sourcePath, string outputPath, int rowFromTop)
-    {
-        if (!File.Exists(ToDiskPath(sourcePath)))
-        {
-            return;
-        }
-
-        Texture2D source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        source.LoadImage(File.ReadAllBytes(ToDiskPath(sourcePath)));
-
-        int rows = 4;
-        int cropHeight = Mathf.Max(1, source.height / rows);
-        int cropY = Mathf.Clamp(source.height - cropHeight * (rowFromTop + 1), 0, source.height - cropHeight);
-        Color[] pixels = source.GetPixels(0, cropY, source.width, cropHeight);
-
-        Texture2D cropped = new Texture2D(source.width, cropHeight, TextureFormat.RGBA32, false);
-        cropped.SetPixels(pixels);
-        cropped.Apply();
-        File.WriteAllBytes(ToDiskPath(outputPath), cropped.EncodeToPNG());
-
-        Object.DestroyImmediate(source);
-        Object.DestroyImmediate(cropped);
-
-        AssetDatabase.ImportAsset(outputPath);
-        ConfigureSpriteImport(outputPath, 16f);
     }
 
     private static void ConfigureSpriteImport(string assetPath, float pixelsPerUnit)
@@ -140,86 +94,39 @@ public static class EchoEscapeLevelBuilder
         importer.SaveAndReimport();
     }
 
-    private static void CreatePlaceholderPrefabs()
-    {
-        Sprite groundSprite = LoadSprite(GroundTilePath);
-        Sprite platformSprite = LoadSprite(PlatformTilePath) ?? groundSprite;
-        Sprite coinSprite = LoadSprite(SourceCoinPath) ?? groundSprite;
-
-        SaveBlockPrefab("PlayerStart", LoadSprite(SourceFruitPath) ?? coinSprite, Color.white, true, 12);
-        SaveBlockPrefab("Exit", coinSprite, new Color(0.72f, 1f, 0.72f), true, 12);
-        SaveBlockPrefab("DoorPlaceholder", groundSprite, new Color(0.86f, 0.22f, 0.18f), false, 10);
-        SaveBlockPrefab("PressurePlatePlaceholder", platformSprite, new Color(1f, 0.86f, 0.18f), true, 11);
-        SaveBlockPrefab("ChestPlaceholder", coinSprite, new Color(1f, 0.68f, 0.18f), true, 11);
-        SaveBlockPrefab("HazardPlaceholder", groundSprite, new Color(0.9f, 0.08f, 0.12f), true, 11);
-        SaveBlockPrefab("DeathZone", LoadSprite(PlaceholderSpritePath), new Color(0.75f, 0.05f, 0.08f, 0.25f), true, -5);
-        SaveBlockPrefab("GroundBlock", groundSprite, Color.white, false, 4);
-        SaveBlockPrefab("PlatformBlock", platformSprite, Color.white, false, 5);
-    }
-
-    private static void SaveBlockPrefab(string name, Sprite sprite, Color color, bool isTrigger, int sortingOrder)
-    {
-        GameObject root = new GameObject(name);
-
-        SpriteRenderer renderer = root.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        renderer.color = color;
-        renderer.sortingOrder = sortingOrder;
-        renderer.drawMode = SpriteDrawMode.Tiled;
-        renderer.size = Vector2.one;
-
-        BoxCollider2D collider = root.AddComponent<BoxCollider2D>();
-        collider.isTrigger = isTrigger;
-        collider.size = Vector2.one;
-
-        PrefabUtility.SaveAsPrefabAsset(root, PrefabsPath + "/" + name + ".prefab");
-        Object.DestroyImmediate(root);
-    }
-
     private static void BuildLevel1Tutorial()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        CreateCamera(new Vector3(2.1f, 0.15f, -10f), 6.25f);
+
+        Transform root = CreateRoot("Level1_Tutorial_CleanStart");
         CreateLight();
+        CreateGroundAndJumpPractice(root);
 
-        Transform root = CreateRoot("Level1_Tutorial_Map");
-        CreateForestBackground(root);
-
-        Transform groundRoot = CreateRoot("Ground");
-        groundRoot.SetParent(root, false);
-        CreatePlatform("Ground_Start_Runway", new Vector2(-8.6f, -2.65f), new Vector2(7.2f, 1.05f), groundRoot, true);
-        CreatePlatform("Ground_Before_Pit", new Vector2(-2.1f, -2.65f), new Vector2(4.2f, 1.05f), groundRoot, true);
-        CreatePlatform("Ground_After_Pit", new Vector2(4.8f, -2.65f), new Vector2(5.8f, 1.05f), groundRoot, true);
-        CreatePlatform("Ground_Exit_Runway", new Vector2(10.9f, -2.65f), new Vector2(5.8f, 1.05f), groundRoot, true);
-
-        Transform platformRoot = CreateRoot("Platforms");
-        platformRoot.SetParent(root, false);
-        CreatePlatform("Platform_Jump_01", new Vector2(-4.2f, -1.25f), new Vector2(3.0f, 0.45f), platformRoot, false);
-        CreatePlatform("Platform_Jump_02", new Vector2(-0.9f, -0.2f), new Vector2(2.8f, 0.45f), platformRoot, false);
-        CreatePlatform("Platform_Jump_03_High", new Vector2(2.35f, 0.85f), new Vector2(2.8f, 0.45f), platformRoot, false);
-        CreatePlatform("Platform_After_Pit_Recovery", new Vector2(6.55f, -0.85f), new Vector2(3.4f, 0.45f), platformRoot, false);
-
-        CreateMarker("PlayerStart", LoadSprite(SourceFruitPath), new Vector2(-10.45f, -1.72f), new Vector2(0.75f, 0.9f), root, new Color(0.65f, 0.9f, 1f), true);
-        CreateDeathZone(root);
-        CreateExit(root);
-
-        CreateQuestionMark("TutorialQuestionMark_Move", new Vector2(-9.45f, -1.05f), root);
-        CreateQuestionMark("TutorialQuestionMark_Jump", new Vector2(-4.2f, -0.35f), root);
-        CreateQuestionMark("TutorialQuestionMark_Exit", new Vector2(13.15f, -0.85f), root);
+        Transform playerStart = CreatePlayerStart(root);
+        PlayerController2D player = CreatePlayer(playerStart.position);
+        CreateCamera(player.transform);
+        TutorialPopupManager popupManager = CreateTutorialPopupUi();
+        CreateQuestionMarkJump(root, popupManager);
+        CreateQuestionMarkRecord(root, popupManager);
 
         SaveScene(scene, Level1ScenePath);
     }
 
-    private static void CreateCamera(Vector3 position, float orthographicSize)
+    private static void CreateCamera(Transform target)
     {
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
-        cameraObject.transform.position = position;
+        cameraObject.transform.position = target.position + new Vector3(2f, 1.4f, -10f);
 
         Camera camera = cameraObject.AddComponent<Camera>();
         camera.orthographic = true;
-        camera.orthographicSize = orthographicSize;
-        camera.backgroundColor = new Color(0.48f, 0.68f, 0.72f);
+        camera.orthographicSize = 4.75f;
+        camera.backgroundColor = new Color(0.02f, 0.02f, 0.025f);
+
+        CameraFollow follow = cameraObject.AddComponent<CameraFollow>();
+        follow.target = target;
+        follow.offset = new Vector3(2f, 1.4f, -10f);
+        follow.followSpeed = 5f;
     }
 
     private static void CreateLight()
@@ -228,128 +135,261 @@ public static class EchoEscapeLevelBuilder
         lightObject.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
         Light light = lightObject.AddComponent<Light>();
         light.type = LightType.Directional;
-        light.intensity = 0.8f;
+        light.intensity = 0.75f;
     }
 
-    private static void CreateForestBackground(Transform parent)
+    private static void CreateGroundAndJumpPractice(Transform parent)
     {
-        Sprite backgroundSprite = LoadSprite(ForestBackgroundPath);
-        GameObject background = new GameObject("Background");
-        background.transform.SetParent(parent, false);
-        background.transform.position = new Vector3(2.1f, 0.25f, 1.25f);
+        GameObject groundRoot = new GameObject("Ground");
+        groundRoot.transform.SetParent(parent, false);
 
-        SpriteRenderer renderer = background.AddComponent<SpriteRenderer>();
-        renderer.sprite = backgroundSprite;
-        renderer.sortingOrder = -50;
-        renderer.color = Color.white;
-
-        if (backgroundSprite != null)
-        {
-            Vector2 targetSize = new Vector2(27.5f, 13.2f);
-            Vector2 spriteSize = backgroundSprite.bounds.size;
-            float scale = Mathf.Max(targetSize.x / spriteSize.x, targetSize.y / spriteSize.y);
-            background.transform.localScale = new Vector3(scale, scale, 1f);
-        }
-        else
-        {
-            renderer.sprite = LoadSprite(PlaceholderSpritePath);
-            renderer.color = new Color(0.18f, 0.28f, 0.30f);
-            background.transform.localScale = new Vector3(27.5f, 13.2f, 1f);
-        }
+        CreateGroundBlock("Ground_Main", new Vector2(-4f, -2.5f), new Vector2(6f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("Ground_Step_01", new Vector2(1f, -1.8f), new Vector2(2f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("Ground_Step_02", new Vector2(5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("Ground_Record_Safe", new Vector2(10f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
     }
 
-    private static void CreatePlatform(string name, Vector2 position, Vector2 size, Transform parent, bool ground)
+    private static void CreateGroundBlock(string name, Vector2 position, Vector2 size, Transform parent)
     {
-        GameObject block = new GameObject(name);
-        block.transform.SetParent(parent, false);
-        block.transform.position = new Vector3(position.x, position.y, 0f);
+        GameObject ground = new GameObject(name);
+        ground.transform.SetParent(parent, false);
+        ground.transform.position = new Vector3(position.x, position.y, 0f);
 
-        SpriteRenderer renderer = block.AddComponent<SpriteRenderer>();
-        renderer.sprite = LoadSprite(ground ? GroundTilePath : PlatformTilePath);
-        renderer.sortingOrder = ground ? 4 : 5;
+        SpriteRenderer renderer = ground.AddComponent<SpriteRenderer>();
+        renderer.sprite = LoadSprite(PlaceholderSpritePath);
+        renderer.color = new Color(0.32f, 0.34f, 0.38f);
+        renderer.sortingOrder = 1;
         renderer.drawMode = SpriteDrawMode.Tiled;
+        renderer.tileMode = SpriteTileMode.Continuous;
         renderer.size = size;
 
-        BoxCollider2D collider = block.AddComponent<BoxCollider2D>();
+        BoxCollider2D collider = ground.AddComponent<BoxCollider2D>();
         collider.isTrigger = false;
         collider.size = size;
     }
 
-    private static void CreateDeathZone(Transform parent)
+    private static Transform CreatePlayerStart(Transform parent)
     {
-        GameObject deathZone = new GameObject("DeathZone");
-        deathZone.transform.SetParent(parent, false);
-        deathZone.transform.position = new Vector3(1.4f, -3.95f, 0f);
+        GameObject start = new GameObject("PlayerStart");
+        start.transform.SetParent(parent, false);
+        start.transform.position = new Vector3(-6f, -1.65f, 0f);
 
-        SpriteRenderer renderer = deathZone.AddComponent<SpriteRenderer>();
+        SpriteRenderer renderer = start.AddComponent<SpriteRenderer>();
         renderer.sprite = LoadSprite(PlaceholderSpritePath);
-        renderer.color = new Color(0.85f, 0.04f, 0.08f, 0.22f);
-        renderer.sortingOrder = 2;
-        renderer.drawMode = SpriteDrawMode.Tiled;
-        renderer.size = new Vector2(3.6f, 0.55f);
-
-        BoxCollider2D collider = deathZone.AddComponent<BoxCollider2D>();
-        collider.isTrigger = true;
-        collider.size = new Vector2(3.6f, 0.55f);
-    }
-
-    private static void CreateExit(Transform parent)
-    {
-        GameObject exit = new GameObject("Exit");
-        exit.transform.SetParent(parent, false);
-        exit.transform.position = new Vector3(13.25f, -1.62f, 0f);
-
-        SpriteRenderer renderer = exit.AddComponent<SpriteRenderer>();
-        renderer.sprite = LoadSprite(SourceCoinPath) ?? LoadSprite(PlaceholderSpritePath);
-        renderer.color = new Color(0.65f, 1f, 0.68f);
-        renderer.sortingOrder = 12;
+        renderer.color = new Color(0.2f, 0.72f, 1f, 0.75f);
+        renderer.sortingOrder = 3;
         renderer.drawMode = SpriteDrawMode.Simple;
-        exit.transform.localScale = new Vector3(1.15f, 1.15f, 1f);
+        start.transform.localScale = new Vector3(0.28f, 1.0f, 1f);
 
-        BoxCollider2D collider = exit.AddComponent<BoxCollider2D>();
-        collider.isTrigger = true;
-        collider.size = new Vector2(1f, 1.45f);
+        return start.transform;
     }
 
-    private static void CreateMarker(string name, Sprite sprite, Vector2 position, Vector2 size, Transform parent, Color color, bool trigger)
+    private static PlayerController2D CreatePlayer(Vector3 startPosition)
     {
-        GameObject marker = new GameObject(name);
-        marker.transform.SetParent(parent, false);
-        marker.transform.position = new Vector3(position.x, position.y, 0f);
-        marker.transform.localScale = new Vector3(size.x, size.y, 1f);
+        GameObject playerObject = new GameObject("Player");
+        playerObject.transform.position = new Vector3(startPosition.x, startPosition.y + 0.35f, 0f);
 
-        SpriteRenderer renderer = marker.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite ?? LoadSprite(PlaceholderSpritePath);
-        renderer.color = color;
-        renderer.sortingOrder = 12;
+        Rigidbody2D body = playerObject.AddComponent<Rigidbody2D>();
+        body.gravityScale = 2.4f;
+        body.freezeRotation = true;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        body.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        BoxCollider2D collider = marker.AddComponent<BoxCollider2D>();
-        collider.isTrigger = trigger;
+        CapsuleCollider2D capsule = playerObject.AddComponent<CapsuleCollider2D>();
+        capsule.size = new Vector2(0.65f, 1.5f);
+        capsule.offset = new Vector2(0f, -0.05f);
+
+        PlayerController2D controller = playerObject.AddComponent<PlayerController2D>();
+        controller.moveSpeed = 5.5f;
+        controller.jumpForce = 9f;
+
+        SpriteRenderer renderer = playerObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = LoadSprite(PlaceholderSpritePath);
+        renderer.color = new Color(0.88f, 0.94f, 1f);
+        renderer.sortingOrder = 5;
+        playerObject.transform.localScale = new Vector3(0.65f, 1.35f, 1f);
+
+        return controller;
     }
 
-    private static void CreateQuestionMark(string name, Vector2 position, Transform parent)
+    private static void CreateQuestionMarkJump(Transform parent, TutorialPopupManager popupManager)
+    {
+        CreateQuestionMark(
+            "QuestionMark_Jump",
+            new Vector2(-2.3f, -1.55f),
+            "Jump",
+            "Press Space to jump.\nUse A/D or Left/Right Arrow to move.\nJump onto the next platform to continue.",
+            popupManager,
+            parent);
+    }
+
+    private static void CreateQuestionMarkRecord(Transform parent, TutorialPopupManager popupManager)
+    {
+        CreateQuestionMark(
+            "QuestionMark_Record",
+            new Vector2(9.4f, -0.3f),
+            "Record Yourself",
+            "Press Q to start recording.\nMove to a target position and press Q again to stop.\nPress E to replay your Echo.",
+            popupManager,
+            parent);
+    }
+
+    private static void CreateQuestionMark(string name, Vector2 position, string title, string message, TutorialPopupManager popupManager, Transform parent)
     {
         GameObject marker = new GameObject(name);
         marker.transform.SetParent(parent, false);
         marker.transform.position = new Vector3(position.x, position.y, -0.05f);
 
-        SpriteRenderer coin = marker.AddComponent<SpriteRenderer>();
-        coin.sprite = LoadSprite(SourceCoinPath) ?? LoadSprite(PlaceholderSpritePath);
-        coin.color = new Color(1f, 0.9f, 0.25f);
-        coin.sortingOrder = 13;
-        marker.transform.localScale = new Vector3(0.85f, 0.85f, 1f);
+        BoxCollider2D trigger = marker.AddComponent<BoxCollider2D>();
+        trigger.isTrigger = true;
+        trigger.size = new Vector2(0.9f, 1.25f);
 
-        GameObject question = new GameObject("QuestionMarkIcon");
-        question.transform.SetParent(marker.transform, false);
-        question.transform.localPosition = new Vector3(0f, 0.03f, -0.05f);
+        TutorialPopupTrigger popupTrigger = marker.AddComponent<TutorialPopupTrigger>();
+        popupTrigger.popupManager = popupManager;
+        popupTrigger.tutorialTitle = title;
+        popupTrigger.tutorialMessage = message;
+        popupTrigger.showOnlyOnce = false;
+        popupTrigger.hideAfterUse = false;
 
-        TextMesh text = question.AddComponent<TextMesh>();
+        GameObject icon = new GameObject("QuestionMarkIcon");
+        icon.transform.SetParent(marker.transform, false);
+        icon.transform.localPosition = Vector3.zero;
+
+        SpriteRenderer bubble = icon.AddComponent<SpriteRenderer>();
+        bubble.sprite = LoadSprite(PlaceholderSpritePath);
+        bubble.color = new Color(1f, 0.86f, 0.16f);
+        bubble.sortingOrder = 6;
+        icon.transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+
+        GameObject textObject = new GameObject("QuestionMarkText");
+        textObject.transform.SetParent(marker.transform, false);
+        textObject.transform.localPosition = new Vector3(0f, 0.03f, -0.05f);
+
+        TextMesh text = textObject.AddComponent<TextMesh>();
         text.text = "?";
         text.anchor = TextAnchor.MiddleCenter;
         text.alignment = TextAlignment.Center;
         text.fontSize = 32;
-        text.characterSize = 0.12f;
-        text.color = new Color(0.09f, 0.07f, 0.03f);
+        text.characterSize = 0.1f;
+        text.color = Color.black;
+
+        MeshRenderer textRenderer = textObject.GetComponent<MeshRenderer>();
+        textRenderer.sortingOrder = 7;
+    }
+
+    private static TutorialPopupManager CreateTutorialPopupUi()
+    {
+        EnsureEventSystem();
+
+        GameObject canvasObject = new GameObject("TutorialPopupUI");
+        Canvas canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 100;
+        canvasObject.AddComponent<GraphicRaycaster>();
+
+        CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1280f, 720f);
+        scaler.matchWidthOrHeight = 0.5f;
+
+        TutorialPopupManager manager = canvasObject.AddComponent<TutorialPopupManager>();
+        manager.pauseGameWhenOpen = true;
+
+        GameObject panelObject = CreateUiObject("TutorialPopupPanel", canvasObject.transform);
+        Image panelImage = panelObject.AddComponent<Image>();
+        panelImage.color = new Color(0f, 0f, 0f, 0.88f);
+
+        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 1f);
+        panelRect.anchorMax = new Vector2(0.5f, 1f);
+        panelRect.pivot = new Vector2(0.5f, 1f);
+        panelRect.anchoredPosition = new Vector2(0f, -36f);
+        panelRect.sizeDelta = new Vector2(620f, 170f);
+
+        Text titleText = CreateUiText(
+            "TitleText",
+            panelObject.transform,
+            "Jump",
+            30,
+            FontStyle.Bold,
+            new Vector2(0f, -28f),
+            new Vector2(560f, 42f),
+            new Color(1f, 0.88f, 0.28f));
+
+        Text bodyText = CreateUiText(
+            "BodyText",
+            panelObject.transform,
+            "Press Space to jump.\nUse A/D or Left/Right Arrow to move.\nJump onto the next platform to continue.",
+            20,
+            FontStyle.Normal,
+            new Vector2(0f, -76f),
+            new Vector2(560f, 76f),
+            Color.white);
+
+        Text closeText = CreateUiText(
+            "CloseHintText",
+            panelObject.transform,
+            "Press Esc to close.",
+            16,
+            FontStyle.Normal,
+            new Vector2(0f, -138f),
+            new Vector2(560f, 24f),
+            new Color(0.72f, 0.78f, 0.88f));
+
+        titleText.alignment = TextAnchor.MiddleLeft;
+        bodyText.alignment = TextAnchor.UpperLeft;
+        closeText.alignment = TextAnchor.MiddleRight;
+
+        manager.popupPanel = panelObject;
+        manager.titleText = titleText;
+        manager.bodyText = bodyText;
+        panelObject.SetActive(false);
+
+        return manager;
+    }
+
+    private static void EnsureEventSystem()
+    {
+        GameObject eventSystemObject = new GameObject("EventSystem");
+        eventSystemObject.AddComponent<EventSystem>();
+        eventSystemObject.AddComponent<StandaloneInputModule>();
+    }
+
+    private static GameObject CreateUiObject(string name, Transform parent)
+    {
+        GameObject uiObject = new GameObject(name);
+        uiObject.transform.SetParent(parent, false);
+        uiObject.AddComponent<RectTransform>();
+        return uiObject;
+    }
+
+    private static Text CreateUiText(string name, Transform parent, string text, int fontSize, FontStyle fontStyle, Vector2 position, Vector2 size, Color color)
+    {
+        GameObject textObject = CreateUiObject(name, parent);
+        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 1f);
+        rectTransform.anchorMax = new Vector2(0.5f, 1f);
+        rectTransform.pivot = new Vector2(0.5f, 1f);
+        rectTransform.anchoredPosition = position;
+        rectTransform.sizeDelta = size;
+
+        Text uiText = textObject.AddComponent<Text>();
+        uiText.text = text;
+        uiText.font = LoadUiFont();
+        uiText.fontSize = fontSize;
+        uiText.fontStyle = fontStyle;
+        uiText.color = color;
+        uiText.raycastTarget = false;
+        uiText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        uiText.verticalOverflow = VerticalWrapMode.Truncate;
+
+        return uiText;
+    }
+
+    private static Font LoadUiFont()
+    {
+        Font pixelFont = Resources.Load<Font>("BrackeysPlatformer/Fonts/PixelOperator8-Bold");
+        return pixelFont != null ? pixelFont : Resources.GetBuiltinResource<Font>("Arial.ttf");
     }
 
     private static Transform CreateRoot(string name)
