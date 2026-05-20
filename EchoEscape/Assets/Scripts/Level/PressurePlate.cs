@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace EchoEscape
@@ -5,9 +6,17 @@ namespace EchoEscape
     public class PressurePlate : MonoBehaviour
     {
         public Door linkedDoor;
-        public bool IsPressed => occupants > 0;
+        public bool enableDebugLogs = true;
+        public bool IsPressed => occupants.Count > 0;
 
-        private int occupants;
+        private readonly HashSet<Collider2D> occupants = new HashSet<Collider2D>();
+        private Vector3 restingLocalPosition;
+
+        private void Awake()
+        {
+            restingLocalPosition = transform.localPosition;
+            Refresh();
+        }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
@@ -16,7 +25,8 @@ namespace EchoEscape
                 return;
             }
 
-            occupants++;
+            occupants.Add(other);
+            LogOccupant(other);
             Refresh();
         }
 
@@ -27,23 +37,68 @@ namespace EchoEscape
                 return;
             }
 
-            occupants = Mathf.Max(0, occupants - 1);
+            occupants.Remove(other);
             Refresh();
         }
 
         private bool CanPress(Collider2D other)
         {
-            return other.GetComponent<PlayerController2D>() != null || other.GetComponent<EchoReplayController>() != null;
+            return HasTag(other, "Player") ||
+                HasTag(other, "Echo") ||
+                other.GetComponent<PlayerController2D>() != null ||
+                other.GetComponentInParent<PlayerController2D>() != null ||
+                other.GetComponent<EchoReplayController>() != null ||
+                other.GetComponentInParent<EchoReplayController>() != null;
         }
 
         private void Refresh()
         {
-            bool pressed = occupants > 0;
+            occupants.RemoveWhere(occupant => occupant == null);
+
+            bool pressed = occupants.Count > 0;
+            transform.localPosition = restingLocalPosition + (pressed ? new Vector3(0f, -0.05f, 0f) : Vector3.zero);
             PrototypeFactory.Tint(gameObject, pressed ? new Color(0.15f, 0.9f, 0.45f) : new Color(1f, 0.85f, 0.15f));
 
             if (linkedDoor != null)
             {
-                linkedDoor.SetOpen(pressed);
+                if (pressed)
+                {
+                    linkedDoor.OpenDoor();
+                }
+                else
+                {
+                    linkedDoor.CloseDoor();
+                }
+            }
+        }
+
+        private void LogOccupant(Collider2D other)
+        {
+            if (!enableDebugLogs)
+            {
+                return;
+            }
+
+            string occupantName = IsEcho(other) ? "Echo" : "Player";
+            Debug.Log($"PressurePlate pressed by {occupantName}");
+        }
+
+        private bool IsEcho(Collider2D other)
+        {
+            return HasTag(other, "Echo") ||
+                other.GetComponent<EchoReplayController>() != null ||
+                other.GetComponentInParent<EchoReplayController>() != null;
+        }
+
+        private bool HasTag(Collider2D other, string tagName)
+        {
+            try
+            {
+                return other.CompareTag(tagName) || other.transform.root.CompareTag(tagName);
+            }
+            catch (UnityException)
+            {
+                return false;
             }
         }
     }

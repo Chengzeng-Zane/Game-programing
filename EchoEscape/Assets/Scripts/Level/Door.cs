@@ -17,8 +17,19 @@ namespace EchoEscape
             SetOpen(false);
         }
 
+        public void OpenDoor()
+        {
+            SetOpen(true);
+        }
+
+        public void CloseDoor()
+        {
+            SetOpen(false);
+        }
+
         public void SetOpen(bool open)
         {
+            bool changed = isOpen != open;
             isOpen = open;
 
             if (doorCollider != null)
@@ -27,6 +38,13 @@ namespace EchoEscape
             }
 
             PrototypeFactory.Tint(gameObject, isOpen ? openColor : closedColor);
+
+            if (changed)
+            {
+                string message = isOpen ? "Door opened" : "Door closed";
+                EchoEscapeGameManager.Instance?.UpdateStatus(message);
+                Debug.Log(message);
+            }
         }
     }
 }

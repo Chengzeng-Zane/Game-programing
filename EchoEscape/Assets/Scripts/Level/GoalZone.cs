@@ -8,7 +8,14 @@ namespace EchoEscape
         {
             if (other.GetComponent<PlayerController2D>() != null)
             {
-                EchoEscapeGameManager.Instance?.Win();
+                if (EchoEscapeGameManager.Instance != null)
+                {
+                    EchoEscapeGameManager.Instance.Win();
+                }
+                else
+                {
+                    Debug.Log("Level complete. Player reached the exit.");
+                }
             }
         }
     }

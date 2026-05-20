@@ -9,6 +9,7 @@ namespace EchoEscape
         public float moveSpeed = 6f;
         public float jumpForce = 10f;
         public float interactRadius = 1.1f;
+        public bool FacingRight { get; private set; } = true;
 
         private Rigidbody2D body;
         private ActionRecorder recorder;
@@ -51,6 +52,15 @@ namespace EchoEscape
         private void FixedUpdate()
         {
             body.velocity = new Vector2(moveInput * moveSpeed, body.velocity.y);
+
+            if (moveInput > 0.05f)
+            {
+                FacingRight = true;
+            }
+            else if (moveInput < -0.05f)
+            {
+                FacingRight = false;
+            }
         }
 
         private void OnCollisionStay2D(Collision2D collision)

@@ -25,6 +25,7 @@ public static class EchoEscapeLevelBuilder
     public static void BuildPrototypeLevels()
     {
         EnsureProjectFolders();
+        EnsureTag("Echo");
         EnsureWhitePlaceholderSprite();
         BuildLevel1Tutorial();
         UpdateBuildSettings();
@@ -53,6 +54,29 @@ public static class EchoEscapeLevelBuilder
         {
             AssetDatabase.CreateFolder(parent, folder);
         }
+    }
+
+    private static void EnsureTag(string tag)
+    {
+        Object[] tagManagerAssets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
+        if (tagManagerAssets == null || tagManagerAssets.Length == 0)
+        {
+            return;
+        }
+
+        SerializedObject tagManager = new SerializedObject(tagManagerAssets[0]);
+        SerializedProperty tags = tagManager.FindProperty("tags");
+        for (int i = 0; i < tags.arraySize; i++)
+        {
+            if (tags.GetArrayElementAtIndex(i).stringValue == tag)
+            {
+                return;
+            }
+        }
+
+        tags.InsertArrayElementAtIndex(tags.arraySize);
+        tags.GetArrayElementAtIndex(tags.arraySize - 1).stringValue = tag;
+        tagManager.ApplyModifiedProperties();
     }
 
     private static void EnsureWhitePlaceholderSprite()
@@ -101,6 +125,7 @@ public static class EchoEscapeLevelBuilder
         Transform root = CreateRoot("Level1_Tutorial_CleanStart");
         CreateLight();
         CreateGroundAndJumpPractice(root);
+        CreateRecordPuzzleArea(root);
 
         Transform playerStart = CreatePlayerStart(root);
         PlayerController2D player = CreatePlayer(playerStart.position);
@@ -147,6 +172,8 @@ public static class EchoEscapeLevelBuilder
         CreateGroundBlock("Ground_Step_01", new Vector2(1f, -1.8f), new Vector2(2f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_Step_02", new Vector2(5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_Record_Safe", new Vector2(10f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("Ground_Record_Puzzle", new Vector2(14f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("Ground_After_Door", new Vector2(18.5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
     }
 
     private static void CreateGroundBlock(string name, Vector2 position, Vector2 size, Transform parent)
@@ -187,6 +214,7 @@ public static class EchoEscapeLevelBuilder
     private static PlayerController2D CreatePlayer(Vector3 startPosition)
     {
         GameObject playerObject = new GameObject("Player");
+        playerObject.tag = "Player";
         playerObject.transform.position = new Vector3(startPosition.x, startPosition.y + 0.35f, 0f);
 
         Rigidbody2D body = playerObject.AddComponent<Rigidbody2D>();
@@ -202,6 +230,8 @@ public static class EchoEscapeLevelBuilder
         PlayerController2D controller = playerObject.AddComponent<PlayerController2D>();
         controller.moveSpeed = 5.5f;
         controller.jumpForce = 9f;
+
+        playerObject.AddComponent<ActionRecorder>();
 
         SpriteRenderer renderer = playerObject.AddComponent<SpriteRenderer>();
         renderer.sprite = LoadSprite(PlaceholderSpritePath);
@@ -229,9 +259,70 @@ public static class EchoEscapeLevelBuilder
             "QuestionMark_Record",
             new Vector2(9.4f, -0.3f),
             "Record Yourself",
-            "Press Q to start recording.\nMove to a target position and press Q again to stop.\nPress E to replay your Echo.",
+            "Press Q to start recording.\nPress Q again to stop recording.\nPress E to replay your Echo.\n\nUse your Echo to press buttons and solve puzzles.",
             popupManager,
             parent);
+    }
+
+    private static void CreateRecordPuzzleArea(Transform parent)
+    {
+        GameObject puzzleRoot = new GameObject("RecordPuzzle");
+        puzzleRoot.transform.SetParent(parent, false);
+
+        Door door = CreateDoor("Door_RecordPuzzle", new Vector2(15.8f, 0.15f), new Vector2(0.55f, 2.6f), puzzleRoot.transform);
+        PressurePlate pressurePlate = CreatePressurePlate("PressurePlate_RecordPuzzle", new Vector2(13.1f, -0.78f), puzzleRoot.transform);
+        pressurePlate.linkedDoor = door;
+
+        CreateExit("Exit", new Vector2(19.6f, -0.12f), puzzleRoot.transform);
+    }
+
+    private static Door CreateDoor(string name, Vector2 position, Vector2 size, Transform parent)
+    {
+        GameObject doorObject = CreateSpriteBlock(name, position, size, new Color(0.85f, 0.18f, 0.14f), false, 4, parent);
+        Door door = doorObject.AddComponent<Door>();
+        door.closedColor = new Color(0.85f, 0.18f, 0.14f);
+        door.openColor = new Color(0.12f, 0.75f, 0.32f, 0.45f);
+        return door;
+    }
+
+    private static PressurePlate CreatePressurePlate(string name, Vector2 position, Transform parent)
+    {
+        GameObject plateObject = CreateSpriteBlock(name, position, new Vector2(1.25f, 0.18f), new Color(1f, 0.85f, 0.15f), true, 5, parent);
+        BoxCollider2D trigger = plateObject.GetComponent<BoxCollider2D>();
+        if (trigger != null)
+        {
+            trigger.size = new Vector2(1.5f, 0.75f);
+            trigger.offset = new Vector2(0f, 0.25f);
+        }
+
+        return plateObject.AddComponent<PressurePlate>();
+    }
+
+    private static void CreateExit(string name, Vector2 position, Transform parent)
+    {
+        GameObject exitObject = CreateSpriteBlock(name, position, new Vector2(0.8f, 1.45f), new Color(0.1f, 0.9f, 0.55f, 0.85f), true, 4, parent);
+        exitObject.AddComponent<GoalZone>();
+    }
+
+    private static GameObject CreateSpriteBlock(string name, Vector2 position, Vector2 size, Color color, bool trigger, int sortingOrder, Transform parent)
+    {
+        GameObject block = new GameObject(name);
+        block.transform.SetParent(parent, false);
+        block.transform.position = new Vector3(position.x, position.y, 0f);
+
+        SpriteRenderer renderer = block.AddComponent<SpriteRenderer>();
+        renderer.sprite = LoadSprite(PlaceholderSpritePath);
+        renderer.color = color;
+        renderer.sortingOrder = sortingOrder;
+        renderer.drawMode = SpriteDrawMode.Tiled;
+        renderer.tileMode = SpriteTileMode.Continuous;
+        renderer.size = size;
+
+        BoxCollider2D collider = block.AddComponent<BoxCollider2D>();
+        collider.isTrigger = trigger;
+        collider.size = size;
+
+        return block;
     }
 
     private static void CreateQuestionMark(string name, Vector2 position, string title, string message, TutorialPopupManager popupManager, Transform parent)
@@ -304,7 +395,7 @@ public static class EchoEscapeLevelBuilder
         panelRect.anchorMax = new Vector2(0.5f, 1f);
         panelRect.pivot = new Vector2(0.5f, 1f);
         panelRect.anchoredPosition = new Vector2(0f, -36f);
-        panelRect.sizeDelta = new Vector2(620f, 170f);
+        panelRect.sizeDelta = new Vector2(700f, 250f);
 
         Text titleText = CreateUiText(
             "TitleText",
@@ -313,17 +404,17 @@ public static class EchoEscapeLevelBuilder
             30,
             FontStyle.Bold,
             new Vector2(0f, -28f),
-            new Vector2(560f, 42f),
+            new Vector2(640f, 42f),
             new Color(1f, 0.88f, 0.28f));
 
         Text bodyText = CreateUiText(
             "BodyText",
             panelObject.transform,
             "Press Space to jump.\nUse A/D or Left/Right Arrow to move.\nJump onto the next platform to continue.",
-            20,
+            18,
             FontStyle.Normal,
-            new Vector2(0f, -76f),
-            new Vector2(560f, 76f),
+            new Vector2(0f, -84f),
+            new Vector2(640f, 138f),
             Color.white);
 
         Text closeText = CreateUiText(
@@ -332,8 +423,8 @@ public static class EchoEscapeLevelBuilder
             "Press Esc to close.",
             16,
             FontStyle.Normal,
-            new Vector2(0f, -138f),
-            new Vector2(560f, 24f),
+            new Vector2(0f, -216f),
+            new Vector2(640f, 24f),
             new Color(0.72f, 0.78f, 0.88f));
 
         titleText.alignment = TextAnchor.MiddleLeft;
@@ -381,7 +472,7 @@ public static class EchoEscapeLevelBuilder
         uiText.color = color;
         uiText.raycastTarget = false;
         uiText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        uiText.verticalOverflow = VerticalWrapMode.Truncate;
+        uiText.verticalOverflow = VerticalWrapMode.Overflow;
 
         return uiText;
     }
