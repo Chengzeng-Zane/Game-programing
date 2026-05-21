@@ -46,6 +46,22 @@ namespace EchoEscape
         /// </summary>
         public LootDefinition[] lootTable;
 
+        [Header("Tutorial / HUD")]
+        /// <summary>
+        /// If true, the older objective tracker is used by PrototypeHud.
+        /// </summary>
+        public bool useTutorialDirector = true;
+
+        /// <summary>
+        /// If true, prototype blocks are automatically replaced with pixel-art sprites at runtime.
+        /// </summary>
+        public bool usePrototypeVisualSkinner = true;
+
+        /// <summary>
+        /// First status message shown by the HUD when the scene starts.
+        /// </summary>
+        public string startingStatusMessage = "Tutorial started. Learn record, replay, loot risk, and extraction.";
+
         /// <summary>
         /// Current short message shown by prototype HUD or status systems.
         /// </summary>
@@ -114,10 +130,9 @@ namespace EchoEscape
             {
                 lootTable = new[]
                 {
-                    new LootDefinition("Scrap Token", "Common", 55),
-                    new LootDefinition("Repair Kit", "Uncommon", 25),
-                    new LootDefinition("Echo Shard", "Rare", 15),
-                    new LootDefinition("Vault Core", "Legendary", 5)
+                    new LootDefinition("Old Coin", "Common", 60),
+                    new LootDefinition("Blue Gem", "Rare", 30),
+                    new LootDefinition("Golden Relic", "Epic", 10)
                 };
             }
         }
@@ -140,15 +155,32 @@ namespace EchoEscape
                 recorder = player.GetComponent<ActionRecorder>();
             }
 
-            Tutorial = GetComponent<TutorialDirector>();
-            if (Tutorial == null)
+            if (useTutorialDirector)
             {
-                Tutorial = gameObject.AddComponent<TutorialDirector>();
+                Tutorial = GetComponent<TutorialDirector>();
+                if (Tutorial == null)
+                {
+                    Tutorial = gameObject.AddComponent<TutorialDirector>();
+                }
+            }
+            else
+            {
+                TutorialDirector existingTutorial = GetComponent<TutorialDirector>();
+                if (existingTutorial != null)
+                {
+                    existingTutorial.enabled = false;
+                }
+
+                Tutorial = null;
             }
 
             SpawnRandomChests();
-            VisualSkinner?.SkinAll();
-            UpdateStatus("Tutorial started. Learn record, replay, loot risk, and extraction.");
+            if (usePrototypeVisualSkinner)
+            {
+                VisualSkinner?.SkinAll();
+            }
+
+            UpdateStatus(startingStatusMessage);
         }
 
         /// <summary>
@@ -182,6 +214,7 @@ namespace EchoEscape
         {
             pendingLoot.Add(loot);
             UpdateStatus($"Found {loot.rarity} loot: {loot.itemName}. Escape safely or lose it on death.");
+            Debug.Log($"Pending loot: {loot.itemName}.");
         }
 
         /// <summary>
@@ -237,6 +270,11 @@ namespace EchoEscape
 
             string lossText = lostCount > 0 ? $" Lost {lostCount} unbanked loot item(s)." : string.Empty;
             UpdateStatus($"You died: {reason}.{lossText}");
+
+            if (lostCount > 0)
+            {
+                Debug.Log("Player died. Pending loot lost.");
+            }
         }
 
         /// <summary>
@@ -258,6 +296,7 @@ namespace EchoEscape
             pendingLoot.Clear();
             AudioService?.PlaySuccess();
             UpdateStatus($"Extraction complete. Secured {securedThisRun} loot item(s). Press R to replay.");
+            Debug.Log("Extraction successful. Loot secured.");
         }
 
         /// <summary>
@@ -272,9 +311,14 @@ namespace EchoEscape
             }
 
             VisualSkinner = GetComponent<PrototypeVisualSkinner>();
-            if (VisualSkinner == null)
+            if (usePrototypeVisualSkinner && VisualSkinner == null)
             {
                 VisualSkinner = gameObject.AddComponent<PrototypeVisualSkinner>();
+            }
+            else if (!usePrototypeVisualSkinner && VisualSkinner != null)
+            {
+                VisualSkinner.enabled = false;
+                VisualSkinner = null;
             }
         }
 
@@ -307,7 +351,7 @@ namespace EchoEscape
                 ChestSpawnPoint point = available[index];
                 available.RemoveAt(index);
 
-                GameObject chestObject = PrototypeFactory.CreateBlock("Random Loot Chest", point.transform.position, new Vector2(0.75f, 0.55f), new Color(1f, 0.74f, 0.22f), false);
+                GameObject chestObject = PrototypeFactory.CreateBlock("RandomLootChest", point.transform.position, new Vector2(0.85f, 0.55f), new Color(1f, 0.74f, 0.22f), false);
                 Chest chest = chestObject.AddComponent<Chest>();
                 chest.spawnPoint = point;
             }

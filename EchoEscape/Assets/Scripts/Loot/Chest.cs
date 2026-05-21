@@ -35,13 +35,21 @@ namespace EchoEscape
                 return;
             }
 
+            EchoEscapeGameManager manager = EchoEscapeGameManager.Instance;
+            if (manager == null)
+            {
+                Debug.LogWarning("Chest cannot open because no EchoEscapeGameManager exists in the scene.");
+                return;
+            }
+
             IsOpened = true;
-            LootDefinition loot = EchoEscapeGameManager.Instance.RollLoot();
-            EchoEscapeGameManager.Instance.AddPendingLoot(loot);
-            EchoEscapeGameManager.Instance.AudioService?.PlayChest();
+            LootDefinition loot = manager.RollLoot();
+            manager.AddPendingLoot(loot);
+            manager.AudioService?.PlayChest();
+            Debug.Log($"Chest opened: {loot.itemName}.");
             PrototypeFactory.Tint(gameObject, new Color(0.42f, 0.42f, 0.42f));
 
-            TutorialDirector tutorial = EchoEscapeGameManager.Instance.Tutorial;
+            TutorialDirector tutorial = manager.Tutorial;
             if (tutorial != null)
             {
                 tutorial.NotifyChestOpened();

@@ -414,7 +414,7 @@ namespace EchoEscape
 
             Text text = textObject.AddComponent<Text>();
             text.text = value;
-            text.font = menuFont != null ? menuFont : Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = menuFont != null ? menuFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
             text.color = color;
             text.alignment = alignment;

@@ -2972,7 +2972,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82f27b1dff7fd5246bbdd822827c8b48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextSceneName: Level2_EchoPuzzleIntro
+  nextSceneName: Level2_LootTutorial
   useNextBuildIndex: 0
   debugLogs: 1
 --- !u!1660057539 &9223372036854775807

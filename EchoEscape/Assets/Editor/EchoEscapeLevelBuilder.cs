@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using EchoEscape;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -15,7 +16,7 @@ using Object = UnityEngine.Object;
 /// <remarks>
 /// This is an Editor-only utility script.
 /// Use the Unity menu item Echo Escape/Build Prototype Levels to rebuild Level1_Tutorial,
-/// update Build Settings, create placeholder sprites, and keep the Level1 Echo puzzle setup repeatable.
+/// update Build Settings, create placeholder sprites, and keep the Level1/Level2 tutorial setup repeatable.
 /// </remarks>
 public static class EchoEscapeLevelBuilder
 {
@@ -24,9 +25,9 @@ public static class EchoEscapeLevelBuilder
 
     private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
     private const string Level1ScenePath = "Assets/Scenes/Level1_Tutorial.unity";
-    private const string Level2ScenePath = "Assets/Scenes/Level2_EchoPuzzleIntro.unity";
+    private const string Level2ScenePath = "Assets/Scenes/Level2_LootTutorial.unity";
     private const string Level3ScenePath = "Assets/Scenes/Level3_RiskReward.unity";
-    private const string Level2SceneName = "Level2_EchoPuzzleIntro";
+    private const string Level2SceneName = "Level2_LootTutorial";
 
     private const string PlaceholderSpritePath = SpritesPath + "/placeholder_square.png";
 
@@ -43,11 +44,12 @@ public static class EchoEscapeLevelBuilder
         EnsureTag("Echo");
         EnsureWhitePlaceholderSprite();
         BuildLevel1Tutorial();
+        BuildLevel2LootTutorial();
         UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Echo Escape Level1_Tutorial rebuilt as a clean first tutorial segment. Level2 and Level3 were preserved.");
+        Debug.Log("Echo Escape prototype levels rebuilt. Level1 teaches Echo recording, and Level2 teaches attack, loot risk, and extraction.");
     }
 
     /// <summary>
@@ -182,6 +184,36 @@ public static class EchoEscapeLevelBuilder
         CreateQuestionMarkRecord(root, popupManager);
 
         SaveScene(scene, Level1ScenePath);
+    }
+
+    /// <summary>
+    /// Creates the Level2_LootTutorial scene with attack, slime, chest, hazard, and exit objects.
+    /// </summary>
+    private static void BuildLevel2LootTutorial()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        InvokeLevel2LootBuilder();
+        SaveScene(scene, Level2ScenePath);
+    }
+
+    /// <summary>
+    /// Calls the runtime Level2 builder without creating a hard editor assembly dependency on newly generated project files.
+    /// </summary>
+    /// <remarks>
+    /// Unity regenerates .csproj files automatically, but command-line dotnet builds can lag behind newly created runtime scripts.
+    /// Reflection keeps the editor utility compilable until Unity refreshes those generated project files.
+    /// </remarks>
+    private static void InvokeLevel2LootBuilder()
+    {
+        System.Type setupType = System.Type.GetType("EchoEscape.Level2LootTutorialSetup, Assembly-CSharp");
+        MethodInfo buildMethod = setupType?.GetMethod("BuildLayout", BindingFlags.Public | BindingFlags.Static);
+        if (buildMethod == null)
+        {
+            Debug.LogWarning("Level2LootTutorialSetup.BuildLayout was not found. Open Unity and let it recompile scripts, then run Echo Escape/Build Prototype Levels again.");
+            return;
+        }
+
+        buildMethod.Invoke(null, null);
     }
 
     /// <summary>
@@ -643,7 +675,7 @@ public static class EchoEscapeLevelBuilder
     private static Font LoadUiFont()
     {
         Font pixelFont = Resources.Load<Font>("BrackeysPlatformer/Fonts/PixelOperator8-Bold");
-        return pixelFont != null ? pixelFont : Resources.GetBuiltinResource<Font>("Arial.ttf");
+        return pixelFont != null ? pixelFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
     }
 
     /// <summary>
