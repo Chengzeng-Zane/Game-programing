@@ -2842,7 +2842,7 @@ GameObject:
   - component: {fileID: 300100404}
   - component: {fileID: 300100405}
   m_Layer: 0
-  m_Name: Exit
+  m_Name: Exit_Level1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2972,6 +2972,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82f27b1dff7fd5246bbdd822827c8b48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nextSceneName: Level2_EchoPuzzleIntro
+  useNextBuildIndex: 0
+  debugLogs: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

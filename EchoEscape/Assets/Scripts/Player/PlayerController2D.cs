@@ -2,13 +2,35 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Handles player movement, jumping, and gameplay input for the 2D prototype.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to the Player object with Rigidbody2D, CapsuleCollider2D, and ActionRecorder.
+    /// It reads movement input, calls ActionRecorder for Q/E Echo controls, and interacts with nearby chests.
+    /// </remarks>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CapsuleCollider2D))]
     public class PlayerController2D : MonoBehaviour
     {
+        /// <summary>
+        /// Horizontal movement speed applied to the player's Rigidbody2D.
+        /// </summary>
         public float moveSpeed = 6f;
+
+        /// <summary>
+        /// Upward velocity applied when the player jumps.
+        /// </summary>
         public float jumpForce = 10f;
+
+        /// <summary>
+        /// Radius used when searching for nearby unopened chests.
+        /// </summary>
         public float interactRadius = 1.1f;
+
+        /// <summary>
+        /// True when the latest horizontal input indicates the player is facing right.
+        /// </summary>
         public bool FacingRight { get; private set; } = true;
 
         private Rigidbody2D body;
@@ -16,6 +38,12 @@ namespace EchoEscape
         private float moveInput;
         private float groundedUntil;
 
+        /// <summary>
+        /// Unity event method called when the player object is created.
+        /// </summary>
+        /// <remarks>
+        /// Caches Rigidbody2D and ActionRecorder references before input is processed.
+        /// </remarks>
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
@@ -23,6 +51,12 @@ namespace EchoEscape
             recorder = GetComponent<ActionRecorder>();
         }
 
+        /// <summary>
+        /// Unity event method called once per frame.
+        /// </summary>
+        /// <remarks>
+        /// Reads keyboard input for movement, jumping, recording, replaying Echo, and opening chests.
+        /// </remarks>
         private void Update()
         {
             moveInput = Input.GetAxisRaw("Horizontal");
@@ -49,6 +83,12 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Unity physics event method called at a fixed timestep.
+        /// </summary>
+        /// <remarks>
+        /// Applies horizontal velocity and updates the facing direction used by RecordingFrame.
+        /// </remarks>
         private void FixedUpdate()
         {
             body.velocity = new Vector2(moveInput * moveSpeed, body.velocity.y);
@@ -63,6 +103,10 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Unity physics event called while the player is colliding with another 2D collider.
+        /// </summary>
+        /// <param name="collision">Collision information used to decide whether the player is grounded.</param>
         private void OnCollisionStay2D(Collision2D collision)
         {
             for (int i = 0; i < collision.contactCount; i++)
@@ -75,17 +119,31 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Moves the player back to a spawn position and clears current velocity.
+        /// </summary>
+        /// <param name="position">The world position where the player should respawn.</param>
         public void Respawn(Vector3 position)
         {
             transform.position = position;
             body.velocity = Vector2.zero;
         }
 
+        /// <summary>
+        /// Checks whether the player was recently standing on a floor-like collision normal.
+        /// </summary>
+        /// <returns>True if the player can currently jump; otherwise false.</returns>
         private bool IsGrounded()
         {
             return Time.time <= groundedUntil;
         }
 
+        /// <summary>
+        /// Searches nearby colliders for the closest unopened chest and opens it.
+        /// </summary>
+        /// <remarks>
+        /// Called when the player presses F.
+        /// </remarks>
         private void TryOpenChest()
         {
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, interactRadius);

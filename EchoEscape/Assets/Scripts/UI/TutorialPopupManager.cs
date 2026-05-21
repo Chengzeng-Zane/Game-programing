@@ -6,46 +6,59 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// A class to show and hide tutorial popup messages
+    /// Shows and hides the dark tutorial popup UI used by question mark triggers.
     /// </summary>
+    /// <remarks>
+    /// Attach this script to the tutorial popup Canvas object.
+    /// TutorialPopupTrigger calls ShowPopup when the player enters a question mark trigger.
+    /// The manager updates the title/body Text components, pauses the game if configured, and closes on Escape or Return.
+    /// </remarks>
     public class TutorialPopupManager : MonoBehaviour
     {
         [Tooltip("The panel that contains the tutorial popup UI.")]
+        /// <summary>
+        /// Root panel GameObject that is enabled while a tutorial popup is visible.
+        /// </summary>
         public GameObject popupPanel;
 
         [Tooltip("The title text shown at the top of the popup.")]
+        /// <summary>
+        /// UI Text component used for the popup title.
+        /// </summary>
         public Text titleText;
 
         [Tooltip("The body text shown inside the popup.")]
+        /// <summary>
+        /// UI Text component used for the popup message body.
+        /// </summary>
         public Text bodyText;
 
         [Tooltip("If true, the game pauses while the popup is open.")]
+        /// <summary>
+        /// If true, Time.timeScale is set to zero while the popup is open.
+        /// </summary>
         public bool pauseGameWhenOpen = true;
 
         private bool popupOpen = false;
         private float previousTimeScale = 1.0f;
 
         /// <summary>
-        /// Description:
-        /// Standard Unity function called when this object first becomes active
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// Unity event method called when this object first becomes active.
         /// </summary>
+        /// <remarks>
+        /// Ensures the popup starts hidden before the player reaches any question mark trigger.
+        /// </remarks>
         private void Awake()
         {
             ClosePopupWithoutTimeChange();
         }
 
         /// <summary>
-        /// Description:
-        /// Standard Unity function called once per frame
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// Unity event method called once per frame.
         /// </summary>
+        /// <remarks>
+        /// Listens for Return or Escape while a popup is open.
+        /// </remarks>
         private void Update()
         {
             if (popupOpen && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Escape)))
@@ -55,13 +68,10 @@ namespace EchoEscape
         }
 
         /// <summary>
-        /// Description:
-        /// Show a tutorial popup with a title and message
-        /// Inputs:
-        /// string popupTitle, string popupMessage
-        /// Returns:
-        /// void (no return)
+        /// Shows a tutorial popup with the supplied title and message text.
         /// </summary>
+        /// <param name="popupTitle">Title displayed at the top of the popup.</param>
+        /// <param name="popupMessage">Body message displayed inside the popup.</param>
         public void ShowPopup(string popupTitle, string popupMessage)
         {
             if (popupPanel == null)
@@ -91,12 +101,7 @@ namespace EchoEscape
         }
 
         /// <summary>
-        /// Description:
-        /// Close the current tutorial popup
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// Closes the current tutorial popup and restores gameplay time if it was paused.
         /// </summary>
         public void ClosePopup()
         {
@@ -109,13 +114,11 @@ namespace EchoEscape
         }
 
         /// <summary>
-        /// Description:
-        /// Hide the popup without changing the game time scale
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// Hides the popup panel without changing Time.timeScale.
         /// </summary>
+        /// <remarks>
+        /// Used during Awake and by ClosePopup before time scale is restored.
+        /// </remarks>
         private void ClosePopupWithoutTimeChange()
         {
             if (popupPanel != null)

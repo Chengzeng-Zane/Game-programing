@@ -2,15 +2,37 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Displays and animates the pixel-art character sprite for a player or Echo.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to a character object with Rigidbody2D.
+    /// It creates a child SpriteRenderer, hides older stick-figure lines, and switches between idle and run frames.
+    /// </remarks>
     [RequireComponent(typeof(Rigidbody2D))]
     public class PixelCharacterVisual : MonoBehaviour
     {
         private const string PlayerSpriteName = "Player Pixel Sprite";
         private const string EchoSpriteName = "Echo Pixel Sprite";
 
+        /// <summary>
+        /// If true, names and sorts the child sprite as an Echo visual.
+        /// </summary>
         public bool isEcho;
+
+        /// <summary>
+        /// Color tint applied to the character sprite.
+        /// </summary>
         public Color tint = Color.white;
+
+        /// <summary>
+        /// Animation speed used while the character is idle.
+        /// </summary>
         public float idleFramesPerSecond = 5f;
+
+        /// <summary>
+        /// Animation speed used while the character is moving horizontally.
+        /// </summary>
         public float runFramesPerSecond = 12f;
 
         private Rigidbody2D body;
@@ -20,6 +42,12 @@ namespace EchoEscape
         private float animationTimer;
         private int frameIndex;
 
+        /// <summary>
+        /// Unity event method called when the visual component is created.
+        /// </summary>
+        /// <remarks>
+        /// Builds the child sprite object and applies the initial visual style.
+        /// </remarks>
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
@@ -29,6 +57,11 @@ namespace EchoEscape
             lastPosition = transform.position;
         }
 
+        /// <summary>
+        /// Sets whether this visual is for the player or Echo and applies a tint.
+        /// </summary>
+        /// <param name="echoVisual">True for Echo styling; false for player styling.</param>
+        /// <param name="visualTint">Color tint applied to the sprite.</param>
         public void SetStyle(bool echoVisual, Color visualTint)
         {
             isEcho = echoVisual;
@@ -38,6 +71,12 @@ namespace EchoEscape
             ApplyStyle();
         }
 
+        /// <summary>
+        /// Unity event method called after Update each frame.
+        /// </summary>
+        /// <remarks>
+        /// Chooses idle or run animation frames based on movement and flips the sprite when moving left.
+        /// </remarks>
         private void LateUpdate()
         {
             if (spriteRenderer == null)
@@ -67,6 +106,9 @@ namespace EchoEscape
             lastPosition = position;
         }
 
+        /// <summary>
+        /// Creates or finds the child SpriteRenderer used for the pixel character.
+        /// </summary>
         private void BuildSprite()
         {
             if (spriteRenderer != null)
@@ -101,6 +143,9 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Applies sprite, tint, name, and sorting order for the current player or Echo style.
+        /// </summary>
         private void ApplyStyle()
         {
             if (spriteRenderer == null)
@@ -114,6 +159,13 @@ namespace EchoEscape
             spriteRenderer.sortingOrder = isEcho ? 7 : 8;
         }
 
+        /// <summary>
+        /// Advances and displays a looping sprite animation.
+        /// </summary>
+        /// <param name="key">Name of the animation state, such as idle or run.</param>
+        /// <param name="frames">Frames to loop through.</param>
+        /// <param name="framesPerSecond">Playback speed of the animation.</param>
+        /// <param name="deltaTime">Frame time used for animation timing.</param>
         private void PlayAnimation(string key, Sprite[] frames, float framesPerSecond, float deltaTime)
         {
             if (frames == null || frames.Length == 0)
@@ -141,6 +193,9 @@ namespace EchoEscape
             spriteRenderer.sprite = frames[frameIndex];
         }
 
+        /// <summary>
+        /// Disables any older LineRenderer stick-figure visuals under this character.
+        /// </summary>
         private void HideStickFigureLines()
         {
             LineRenderer[] lineRenderers = GetComponentsInChildren<LineRenderer>(true);

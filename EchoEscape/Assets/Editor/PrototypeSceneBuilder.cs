@@ -4,11 +4,24 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Builds the older single-room playable prototype scene from a Unity editor menu command.
+/// </summary>
+/// <remarks>
+/// This is an Editor-only utility script for historical prototype work.
+/// It creates the player, Game Manager, Echo door puzzle, hazards, chest spawn points, labels, and Build Settings entries.
+/// </remarks>
 public static class PrototypeSceneBuilder
 {
     private const string ScenePath = "Assets/Scenes/PrototypeScene.unity";
     private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
 
+    /// <summary>
+    /// Creates or replaces PrototypeScene.unity with the older playable prototype layout.
+    /// </summary>
+    /// <remarks>
+    /// Called from the Unity menu item Echo Escape/Build Prototype Scene.
+    /// </remarks>
     [MenuItem("Echo Escape/Build Prototype Scene")]
     public static void BuildScene()
     {
@@ -80,11 +93,19 @@ public static class PrototypeSceneBuilder
         AssetDatabase.Refresh();
     }
 
+    /// <summary>
+    /// Command-line entry point for rebuilding the prototype scene.
+    /// </summary>
     public static void BuildFromCommandLine()
     {
         BuildScene();
     }
 
+    /// <summary>
+    /// Creates the prototype player with movement, recording, and pixel visual components.
+    /// </summary>
+    /// <param name="position">World position where the player should start.</param>
+    /// <returns>The generated player GameObject.</returns>
     private static GameObject CreatePlayer(Vector3 position)
     {
         GameObject player = new GameObject("Player Knight");
@@ -109,6 +130,10 @@ public static class PrototypeSceneBuilder
         return player;
     }
 
+    /// <summary>
+    /// Creates the main camera and attaches CameraFollow to the player.
+    /// </summary>
+    /// <param name="target">Transform the camera should follow.</param>
     private static void CreateCamera(Transform target)
     {
         GameObject cameraObject = new GameObject("Main Camera");
@@ -123,17 +148,39 @@ public static class PrototypeSceneBuilder
         follow.target = target;
     }
 
+    /// <summary>
+    /// Creates one solid platform block.
+    /// </summary>
+    /// <param name="name">Name of the platform object.</param>
+    /// <param name="position">World position of the platform.</param>
+    /// <param name="size">Width and height of the platform.</param>
+    /// <param name="color">Color used by the prototype material.</param>
+    /// <param name="parent">Parent transform for scene hierarchy organization.</param>
+    /// <returns>The generated platform GameObject.</returns>
     private static GameObject CreatePlatform(string name, Vector2 position, Vector2 size, Color color, Transform parent)
     {
         return PrototypeFactory.CreateBlock(name, position, size, color, true, parent);
     }
 
+    /// <summary>
+    /// Creates a marker object that can be used by EchoEscapeGameManager to spawn a random chest.
+    /// </summary>
+    /// <param name="name">Name of the chest spawn marker.</param>
+    /// <param name="position">World position of the marker.</param>
+    /// <param name="parent">Parent transform for the marker.</param>
     private static void CreateChestSpawn(string name, Vector2 position, Transform parent)
     {
         GameObject marker = CreateMarker(name, position, parent);
         marker.AddComponent<ChestSpawnPoint>();
     }
 
+    /// <summary>
+    /// Creates a plain marker GameObject at a world position.
+    /// </summary>
+    /// <param name="name">Name of the marker object.</param>
+    /// <param name="position">World position of the marker.</param>
+    /// <param name="parent">Parent transform for the marker.</param>
+    /// <returns>The generated marker GameObject.</returns>
     private static GameObject CreateMarker(string name, Vector2 position, Transform parent)
     {
         GameObject marker = new GameObject(name);
@@ -142,6 +189,12 @@ public static class PrototypeSceneBuilder
         return marker;
     }
 
+    /// <summary>
+    /// Creates a simple world-space TextMesh label for explaining prototype areas.
+    /// </summary>
+    /// <param name="text">Text shown in the label.</param>
+    /// <param name="position">World position of the label.</param>
+    /// <param name="parent">Parent transform for the label.</param>
     private static void CreateLabel(string text, Vector2 position, Transform parent)
     {
         GameObject labelObject = new GameObject("Label - " + text);

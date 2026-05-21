@@ -9,6 +9,14 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
+/// <summary>
+/// Builds the current Echo Escape prototype level scenes from editor menu commands.
+/// </summary>
+/// <remarks>
+/// This is an Editor-only utility script.
+/// Use the Unity menu item Echo Escape/Build Prototype Levels to rebuild Level1_Tutorial,
+/// update Build Settings, create placeholder sprites, and keep the Level1 Echo puzzle setup repeatable.
+/// </remarks>
 public static class EchoEscapeLevelBuilder
 {
     private const string ScenesPath = "Assets/Scenes";
@@ -18,9 +26,16 @@ public static class EchoEscapeLevelBuilder
     private const string Level1ScenePath = "Assets/Scenes/Level1_Tutorial.unity";
     private const string Level2ScenePath = "Assets/Scenes/Level2_EchoPuzzleIntro.unity";
     private const string Level3ScenePath = "Assets/Scenes/Level3_RiskReward.unity";
+    private const string Level2SceneName = "Level2_EchoPuzzleIntro";
 
     private const string PlaceholderSpritePath = SpritesPath + "/placeholder_square.png";
 
+    /// <summary>
+    /// Rebuilds the prototype level setup used by the current project.
+    /// </summary>
+    /// <remarks>
+    /// Called from the Unity editor menu. It currently rebuilds Level1_Tutorial and preserves Level2/Level3 files.
+    /// </remarks>
     [MenuItem("Echo Escape/Build Prototype Levels")]
     public static void BuildPrototypeLevels()
     {
@@ -35,11 +50,20 @@ public static class EchoEscapeLevelBuilder
         Debug.Log("Echo Escape Level1_Tutorial rebuilt as a clean first tutorial segment. Level2 and Level3 were preserved.");
     }
 
+    /// <summary>
+    /// Command-line entry point for automated scene generation.
+    /// </summary>
+    /// <remarks>
+    /// This wrapper lets Unity batch mode call the same builder used by the editor menu.
+    /// </remarks>
     public static void BuildPrototypeLevelsFromCommandLine()
     {
         BuildPrototypeLevels();
     }
 
+    /// <summary>
+    /// Ensures the project folders needed by the generated level exist.
+    /// </summary>
     private static void EnsureProjectFolders()
     {
         EnsureFolder("Assets", "Scenes");
@@ -47,6 +71,11 @@ public static class EchoEscapeLevelBuilder
         EnsureFolder("Assets", "Sprites");
     }
 
+    /// <summary>
+    /// Creates a Unity asset folder if it does not already exist.
+    /// </summary>
+    /// <param name="parent">Parent folder path inside Assets.</param>
+    /// <param name="folder">Folder name to create under the parent.</param>
     private static void EnsureFolder(string parent, string folder)
     {
         string path = parent + "/" + folder;
@@ -56,6 +85,13 @@ public static class EchoEscapeLevelBuilder
         }
     }
 
+    /// <summary>
+    /// Ensures a Unity tag exists in ProjectSettings/TagManager.asset.
+    /// </summary>
+    /// <param name="tag">Tag name that should exist, such as Echo.</param>
+    /// <remarks>
+    /// The Echo tag lets PressurePlate recognize spawned Echo objects by tag in addition to component checks.
+    /// </remarks>
     private static void EnsureTag(string tag)
     {
         Object[] tagManagerAssets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
@@ -79,6 +115,9 @@ public static class EchoEscapeLevelBuilder
         tagManager.ApplyModifiedProperties();
     }
 
+    /// <summary>
+    /// Creates and imports the white placeholder square sprite used by generated prototype objects.
+    /// </summary>
     private static void EnsureWhitePlaceholderSprite()
     {
         string diskPath = ToDiskPath(PlaceholderSpritePath);
@@ -95,6 +134,11 @@ public static class EchoEscapeLevelBuilder
         ConfigureSpriteImport(PlaceholderSpritePath, 16f);
     }
 
+    /// <summary>
+    /// Configures a texture asset so Unity imports it as a crisp pixel-art sprite.
+    /// </summary>
+    /// <param name="assetPath">Unity asset path to the texture.</param>
+    /// <param name="pixelsPerUnit">Pixels-per-unit value assigned to the sprite importer.</param>
     private static void ConfigureSpriteImport(string assetPath, float pixelsPerUnit)
     {
         if (!File.Exists(ToDiskPath(assetPath)))
@@ -118,6 +162,9 @@ public static class EchoEscapeLevelBuilder
         importer.SaveAndReimport();
     }
 
+    /// <summary>
+    /// Creates the Level1_Tutorial scene with movement, jump, record, Echo, pressure plate, door, and exit objects.
+    /// </summary>
     private static void BuildLevel1Tutorial()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -137,6 +184,10 @@ public static class EchoEscapeLevelBuilder
         SaveScene(scene, Level1ScenePath);
     }
 
+    /// <summary>
+    /// Creates the main camera and attaches CameraFollow to track the player.
+    /// </summary>
+    /// <param name="target">Transform the camera should follow.</param>
     private static void CreateCamera(Transform target)
     {
         GameObject cameraObject = new GameObject("Main Camera");
@@ -154,6 +205,9 @@ public static class EchoEscapeLevelBuilder
         follow.followSpeed = 5f;
     }
 
+    /// <summary>
+    /// Adds a basic directional light to the generated scene.
+    /// </summary>
     private static void CreateLight()
     {
         GameObject lightObject = new GameObject("Directional Light");
@@ -163,6 +217,10 @@ public static class EchoEscapeLevelBuilder
         light.intensity = 0.75f;
     }
 
+    /// <summary>
+    /// Builds the simple block-based ground and jump practice route.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the ground objects.</param>
     private static void CreateGroundAndJumpPractice(Transform parent)
     {
         GameObject groundRoot = new GameObject("Ground");
@@ -176,6 +234,13 @@ public static class EchoEscapeLevelBuilder
         CreateGroundBlock("Ground_After_Door", new Vector2(18.5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
     }
 
+    /// <summary>
+    /// Creates one solid ground or platform block.
+    /// </summary>
+    /// <param name="name">Name of the platform GameObject.</param>
+    /// <param name="position">World position of the platform center.</param>
+    /// <param name="size">Width and height of the platform.</param>
+    /// <param name="parent">Parent transform for scene hierarchy organization.</param>
     private static void CreateGroundBlock(string name, Vector2 position, Vector2 size, Transform parent)
     {
         GameObject ground = new GameObject(name);
@@ -195,6 +260,11 @@ public static class EchoEscapeLevelBuilder
         collider.size = size;
     }
 
+    /// <summary>
+    /// Creates the PlayerStart marker used to position the generated player.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the marker.</param>
+    /// <returns>The Transform of the created PlayerStart marker.</returns>
     private static Transform CreatePlayerStart(Transform parent)
     {
         GameObject start = new GameObject("PlayerStart");
@@ -211,6 +281,11 @@ public static class EchoEscapeLevelBuilder
         return start.transform;
     }
 
+    /// <summary>
+    /// Creates the controllable player object and attaches movement and recording scripts.
+    /// </summary>
+    /// <param name="startPosition">Position of the PlayerStart marker.</param>
+    /// <returns>The PlayerController2D attached to the generated player.</returns>
     private static PlayerController2D CreatePlayer(Vector3 startPosition)
     {
         GameObject playerObject = new GameObject("Player");
@@ -242,6 +317,11 @@ public static class EchoEscapeLevelBuilder
         return controller;
     }
 
+    /// <summary>
+    /// Creates the first question mark prompt for jump controls.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the prompt.</param>
+    /// <param name="popupManager">Popup manager that displays the prompt content.</param>
     private static void CreateQuestionMarkJump(Transform parent, TutorialPopupManager popupManager)
     {
         CreateQuestionMark(
@@ -253,6 +333,14 @@ public static class EchoEscapeLevelBuilder
             parent);
     }
 
+    /// <summary>
+    /// Creates the Record Yourself question mark prompt.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the prompt.</param>
+    /// <param name="popupManager">Popup manager that displays the prompt content.</param>
+    /// <remarks>
+    /// This prompt explains the Q/Q/E recording flow without giving every puzzle answer directly.
+    /// </remarks>
     private static void CreateQuestionMarkRecord(Transform parent, TutorialPopupManager popupManager)
     {
         CreateQuestionMark(
@@ -264,6 +352,10 @@ public static class EchoEscapeLevelBuilder
             parent);
     }
 
+    /// <summary>
+    /// Creates the Level1 pressure plate, door, and exit puzzle section.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the puzzle section.</param>
     private static void CreateRecordPuzzleArea(Transform parent)
     {
         GameObject puzzleRoot = new GameObject("RecordPuzzle");
@@ -273,9 +365,17 @@ public static class EchoEscapeLevelBuilder
         PressurePlate pressurePlate = CreatePressurePlate("PressurePlate_RecordPuzzle", new Vector2(13.1f, -0.78f), puzzleRoot.transform);
         pressurePlate.linkedDoor = door;
 
-        CreateExit("Exit", new Vector2(19.6f, -0.12f), puzzleRoot.transform);
+        CreateExit("Exit_Level1", new Vector2(19.6f, -0.12f), puzzleRoot.transform);
     }
 
+    /// <summary>
+    /// Creates a generated door object and attaches the Door script.
+    /// </summary>
+    /// <param name="name">Name of the door object.</param>
+    /// <param name="position">World position of the door.</param>
+    /// <param name="size">Width and height of the door block.</param>
+    /// <param name="parent">Parent transform for the door.</param>
+    /// <returns>The Door component on the generated object.</returns>
     private static Door CreateDoor(string name, Vector2 position, Vector2 size, Transform parent)
     {
         GameObject doorObject = CreateSpriteBlock(name, position, size, new Color(0.85f, 0.18f, 0.14f), false, 4, parent);
@@ -285,6 +385,13 @@ public static class EchoEscapeLevelBuilder
         return door;
     }
 
+    /// <summary>
+    /// Creates a generated pressure plate trigger and attaches PressurePlate.
+    /// </summary>
+    /// <param name="name">Name of the pressure plate object.</param>
+    /// <param name="position">World position of the plate.</param>
+    /// <param name="parent">Parent transform for the pressure plate.</param>
+    /// <returns>The PressurePlate component on the generated object.</returns>
     private static PressurePlate CreatePressurePlate(string name, Vector2 position, Transform parent)
     {
         GameObject plateObject = CreateSpriteBlock(name, position, new Vector2(1.25f, 0.18f), new Color(1f, 0.85f, 0.15f), true, 5, parent);
@@ -298,12 +405,30 @@ public static class EchoEscapeLevelBuilder
         return plateObject.AddComponent<PressurePlate>();
     }
 
+    /// <summary>
+    /// Creates the exit trigger used to complete the level.
+    /// </summary>
+    /// <param name="name">Name of the exit object.</param>
+    /// <param name="position">World position of the exit.</param>
+    /// <param name="parent">Parent transform for the exit.</param>
     private static void CreateExit(string name, Vector2 position, Transform parent)
     {
         GameObject exitObject = CreateSpriteBlock(name, position, new Vector2(0.8f, 1.45f), new Color(0.1f, 0.9f, 0.55f, 0.85f), true, 4, parent);
-        exitObject.AddComponent<GoalZone>();
+        GoalZone goalZone = exitObject.AddComponent<GoalZone>();
+        goalZone.ConfigureNextScene(Level2SceneName);
     }
 
+    /// <summary>
+    /// Creates a sprite block with SpriteRenderer and BoxCollider2D.
+    /// </summary>
+    /// <param name="name">Name of the created block.</param>
+    /// <param name="position">World position of the block.</param>
+    /// <param name="size">Sprite and collider size.</param>
+    /// <param name="color">Sprite color tint.</param>
+    /// <param name="trigger">True to make the collider a trigger.</param>
+    /// <param name="sortingOrder">SpriteRenderer sorting order.</param>
+    /// <param name="parent">Parent transform for the block.</param>
+    /// <returns>The created GameObject.</returns>
     private static GameObject CreateSpriteBlock(string name, Vector2 position, Vector2 size, Color color, bool trigger, int sortingOrder, Transform parent)
     {
         GameObject block = new GameObject(name);
@@ -325,6 +450,15 @@ public static class EchoEscapeLevelBuilder
         return block;
     }
 
+    /// <summary>
+    /// Creates a question mark trigger and its visible icon.
+    /// </summary>
+    /// <param name="name">Name of the question mark object.</param>
+    /// <param name="position">World position of the trigger.</param>
+    /// <param name="title">Popup title displayed when triggered.</param>
+    /// <param name="message">Popup body displayed when triggered.</param>
+    /// <param name="popupManager">Popup manager used to display the message.</param>
+    /// <param name="parent">Parent transform for the prompt.</param>
     private static void CreateQuestionMark(string name, Vector2 position, string title, string message, TutorialPopupManager popupManager, Transform parent)
     {
         GameObject marker = new GameObject(name);
@@ -368,6 +502,10 @@ public static class EchoEscapeLevelBuilder
         textRenderer.sortingOrder = 7;
     }
 
+    /// <summary>
+    /// Creates the Canvas, popup panel, and Text components used by question mark prompts.
+    /// </summary>
+    /// <returns>The TutorialPopupManager configured with generated UI references.</returns>
     private static TutorialPopupManager CreateTutorialPopupUi()
     {
         EnsureEventSystem();
@@ -439,6 +577,9 @@ public static class EchoEscapeLevelBuilder
         return manager;
     }
 
+    /// <summary>
+    /// Creates a basic EventSystem for generated UI input.
+    /// </summary>
     private static void EnsureEventSystem()
     {
         GameObject eventSystemObject = new GameObject("EventSystem");
@@ -446,6 +587,12 @@ public static class EchoEscapeLevelBuilder
         eventSystemObject.AddComponent<StandaloneInputModule>();
     }
 
+    /// <summary>
+    /// Creates a UI GameObject with RectTransform.
+    /// </summary>
+    /// <param name="name">Name of the UI object.</param>
+    /// <param name="parent">Parent transform for the UI object.</param>
+    /// <returns>The created GameObject.</returns>
     private static GameObject CreateUiObject(string name, Transform parent)
     {
         GameObject uiObject = new GameObject(name);
@@ -454,6 +601,18 @@ public static class EchoEscapeLevelBuilder
         return uiObject;
     }
 
+    /// <summary>
+    /// Creates a UI Text element for the tutorial popup.
+    /// </summary>
+    /// <param name="name">Name of the text object.</param>
+    /// <param name="parent">Parent transform for the text object.</param>
+    /// <param name="text">Initial text value.</param>
+    /// <param name="fontSize">Font size.</param>
+    /// <param name="fontStyle">Font style.</param>
+    /// <param name="position">Anchored UI position.</param>
+    /// <param name="size">RectTransform size.</param>
+    /// <param name="color">Text color.</param>
+    /// <returns>The created Text component.</returns>
     private static Text CreateUiText(string name, Transform parent, string text, int fontSize, FontStyle fontStyle, Vector2 position, Vector2 size, Color color)
     {
         GameObject textObject = CreateUiObject(name, parent);
@@ -477,23 +636,40 @@ public static class EchoEscapeLevelBuilder
         return uiText;
     }
 
+    /// <summary>
+    /// Loads the preferred pixel UI font or falls back to Arial.
+    /// </summary>
+    /// <returns>The font used by generated UI text.</returns>
     private static Font LoadUiFont()
     {
         Font pixelFont = Resources.Load<Font>("BrackeysPlatformer/Fonts/PixelOperator8-Bold");
         return pixelFont != null ? pixelFont : Resources.GetBuiltinResource<Font>("Arial.ttf");
     }
 
+    /// <summary>
+    /// Creates a named root object for the generated scene hierarchy.
+    /// </summary>
+    /// <param name="name">Name of the root GameObject.</param>
+    /// <returns>The root transform.</returns>
     private static Transform CreateRoot(string name)
     {
         GameObject root = new GameObject(name);
         return root.transform;
     }
 
+    /// <summary>
+    /// Saves the active generated scene to the requested asset path.
+    /// </summary>
+    /// <param name="scene">Scene instance to save.</param>
+    /// <param name="scenePath">Unity asset path where the scene should be saved.</param>
     private static void SaveScene(Scene scene, string scenePath)
     {
         EditorSceneManager.SaveScene(scene, scenePath);
     }
 
+    /// <summary>
+    /// Updates Unity Build Settings to include MainMenu and available prototype level scenes.
+    /// </summary>
     private static void UpdateBuildSettings()
     {
         string[] scenePaths =
@@ -510,6 +686,11 @@ public static class EchoEscapeLevelBuilder
             .ToArray();
     }
 
+    /// <summary>
+    /// Loads a sprite asset from a Unity asset path.
+    /// </summary>
+    /// <param name="assetPath">Asset path to a texture or sprite.</param>
+    /// <returns>The loaded Sprite, or the first sprite sub-asset if needed.</returns>
     private static Sprite LoadSprite(string assetPath)
     {
         Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
@@ -521,6 +702,11 @@ public static class EchoEscapeLevelBuilder
         return AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().FirstOrDefault();
     }
 
+    /// <summary>
+    /// Converts a Unity asset path into an absolute disk path.
+    /// </summary>
+    /// <param name="assetPath">Unity asset path using forward slashes.</param>
+    /// <returns>Absolute path on disk.</returns>
     private static string ToDiskPath(string assetPath)
     {
         return Path.Combine(Directory.GetCurrentDirectory(), assetPath.Replace("/", Path.DirectorySeparatorChar.ToString()));

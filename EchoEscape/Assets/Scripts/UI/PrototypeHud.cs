@@ -3,6 +3,14 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Draws a simple immediate-mode HUD for prototype testing.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to any scene object in prototype scenes.
+    /// It reads EchoEscapeGameManager, TutorialDirector, ActionRecorder, and loot state,
+    /// then displays controls, objectives, recording status, deaths, and loot information.
+    /// </remarks>
     public class PrototypeHud : MonoBehaviour
     {
         private GUIStyle panelStyle;
@@ -11,6 +19,12 @@ namespace EchoEscape
         private GUIStyle objectiveStyle;
         private GUIStyle hintStyle;
 
+        /// <summary>
+        /// Unity IMGUI event method called for rendering and handling GUI events.
+        /// </summary>
+        /// <remarks>
+        /// Draws the prototype status panels while Play Mode is running.
+        /// </remarks>
         private void OnGUI()
         {
             EnsureStyles();
@@ -66,6 +80,9 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Creates GUIStyle instances the first time the HUD is drawn.
+        /// </summary>
         private void EnsureStyles()
         {
             if (panelStyle != null)
@@ -109,6 +126,11 @@ namespace EchoEscape
             };
         }
 
+        /// <summary>
+        /// Converts a loot list into a comma-separated label for the HUD.
+        /// </summary>
+        /// <param name="loot">Loot list to display.</param>
+        /// <returns>A readable loot summary, or "none" when the list is empty.</returns>
         private string FormatLoot(System.Collections.Generic.IReadOnlyList<LootDefinition> loot)
         {
             if (loot == null || loot.Count == 0)

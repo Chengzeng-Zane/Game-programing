@@ -3,6 +3,14 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Replays saved player movement frames on a spawned Echo object.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to the runtime Echo object created by ActionRecorder.
+    /// It moves a kinematic Rigidbody2D through recorded positions and holds the final position
+    /// so the Echo can keep a PressurePlate pressed after playback finishes.
+    /// </remarks>
     [RequireComponent(typeof(Rigidbody2D))]
     public class EchoReplayController : MonoBehaviour
     {
@@ -12,6 +20,12 @@ namespace EchoEscape
         private int index;
         private bool finished;
 
+        /// <summary>
+        /// Unity event method called when the Echo object is created.
+        /// </summary>
+        /// <remarks>
+        /// Caches the Rigidbody2D used for MovePosition playback.
+        /// </remarks>
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
@@ -19,6 +33,13 @@ namespace EchoEscape
             visual = GetComponent<PixelCharacterVisual>();
         }
 
+        /// <summary>
+        /// Unity physics event method called at a fixed timestep.
+        /// </summary>
+        /// <remarks>
+        /// Moves the Echo through one recorded frame per physics tick.
+        /// After the final frame, the Echo remains at that final position instead of disappearing.
+        /// </remarks>
         private void FixedUpdate()
         {
             if (frames.Count == 0)
@@ -47,6 +68,10 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Loads the recorded player frames that this Echo should replay.
+        /// </summary>
+        /// <param name="sourceFrames">The saved movement frames from ActionRecorder.</param>
         public void Load(IEnumerable<RecordingFrame> sourceFrames)
         {
             frames.Clear();
@@ -61,6 +86,13 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Applies recorded facing direction to an optional pixel character visual.
+        /// </summary>
+        /// <param name="frame">The frame containing the facing direction to display.</param>
+        /// <remarks>
+        /// The current Echo is a square, so this safely does nothing unless a character visual exists.
+        /// </remarks>
         private void ApplyFacing(RecordingFrame frame)
         {
             if (visual == null)

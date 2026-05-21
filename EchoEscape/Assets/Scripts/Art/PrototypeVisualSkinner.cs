@@ -2,21 +2,44 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Applies pixel-art visuals to prototype objects that were built from simple blocks.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to the Game Manager or a scene service object.
+    /// It finds player and level objects, then adds SpriteRenderer visuals from PixelArtLibrary
+    /// without changing the underlying gameplay colliders.
+    /// </remarks>
     public class PrototypeVisualSkinner : MonoBehaviour
     {
         private const string PixelVisualName = "Pixel Art Visual";
 
+        /// <summary>
+        /// Unity event method called before the first frame update.
+        /// </summary>
+        /// <remarks>
+        /// Applies pixel-art skinning once the scene has created its prototype objects.
+        /// </remarks>
         private void Start()
         {
             SkinAll();
         }
 
+        /// <summary>
+        /// Applies character and level-block visual skinning.
+        /// </summary>
+        /// <remarks>
+        /// Can be called by EchoEscapeGameManager or editor-built scenes after objects are created.
+        /// </remarks>
         public void SkinAll()
         {
             SkinCharacters();
             SkinLevelBlocks();
         }
 
+        /// <summary>
+        /// Adds PixelCharacterVisual to the player when it is missing.
+        /// </summary>
         private void SkinCharacters()
         {
             PlayerController2D player = FindObjectOfType<PlayerController2D>();
@@ -27,6 +50,9 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Finds simple block objects and replaces their visible mesh with matching sprites.
+        /// </summary>
         private void SkinLevelBlocks()
         {
             MeshRenderer[] renderers = FindObjectsOfType<MeshRenderer>();
@@ -66,6 +92,13 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Adds or updates a child SpriteRenderer to visually replace a prototype block.
+        /// </summary>
+        /// <param name="target">Prototype object being skinned.</param>
+        /// <param name="sprite">Sprite used for the new visual.</param>
+        /// <param name="tiled">True when the sprite should tile to match the collider size.</param>
+        /// <param name="color">Color tint applied to the sprite.</param>
         private void ReplaceWithSprite(GameObject target, Sprite sprite, bool tiled, Color color)
         {
             if (sprite == null)
@@ -125,6 +158,11 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Chooses sprite sorting order from the object's name.
+        /// </summary>
+        /// <param name="objectName">Name of the object being skinned.</param>
+        /// <returns>Sorting order used by the replacement SpriteRenderer.</returns>
         private int SortingOrderFor(string objectName)
         {
             string lowerName = objectName.ToLowerInvariant();
@@ -141,6 +179,12 @@ namespace EchoEscape
             return 0;
         }
 
+        /// <summary>
+        /// Scales a non-tiled sprite to match a BoxCollider2D.
+        /// </summary>
+        /// <param name="target">Object that owns the collider.</param>
+        /// <param name="visualTransform">Child transform used for the sprite visual.</param>
+        /// <param name="spriteRenderer">SpriteRenderer being fitted to the collider.</param>
         private void FitSpriteToCollider(GameObject target, Transform visualTransform, SpriteRenderer spriteRenderer)
         {
             BoxCollider2D box = target.GetComponent<BoxCollider2D>();

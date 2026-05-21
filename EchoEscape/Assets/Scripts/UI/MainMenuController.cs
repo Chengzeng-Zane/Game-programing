@@ -5,13 +5,31 @@ using UnityEngine.UI;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Builds and controls the Echo Escape main menu at runtime.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to the Main Menu Controller object in the MainMenu scene.
+    /// It creates menu world art, UI buttons, controls/credits modals, background music,
+    /// and safely starts the gameplay scene when one is assigned in Build Settings.
+    /// </remarks>
     public class MainMenuController : MonoBehaviour
     {
         [Header("Scenes")]
+        /// <summary>
+        /// Name of the gameplay scene loaded by Start Game.
+        /// </summary>
         public string gameSceneName = string.Empty;
 
         [Header("Menu Motion")]
+        /// <summary>
+        /// Speed used by decorative menu coin bobbing animation.
+        /// </summary>
         public float coinBobSpeed = 2.2f;
+
+        /// <summary>
+        /// Vertical distance used by decorative menu coin bobbing animation.
+        /// </summary>
         public float coinBobHeight = 0.12f;
 
         private readonly Color buttonNormal = new Color(0.075f, 0.1f, 0.15f, 0.96f);
@@ -27,6 +45,12 @@ namespace EchoEscape
         private Text modalTitle;
         private Text modalBody;
 
+        /// <summary>
+        /// Unity event method called when the menu controller is created.
+        /// </summary>
+        /// <remarks>
+        /// Builds the runtime camera, world decoration, UI canvas, and menu music.
+        /// </remarks>
         private void Awake()
         {
             menuFont = Resources.Load<Font>("BrackeysPlatformer/Fonts/PixelOperator8-Bold");
@@ -37,6 +61,12 @@ namespace EchoEscape
             StartMusic();
         }
 
+        /// <summary>
+        /// Unity event method called once per frame.
+        /// </summary>
+        /// <remarks>
+        /// Animates menu coins and lets Escape close an open modal.
+        /// </remarks>
         private void Update()
         {
             AnimateCoins();
@@ -47,6 +77,12 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Attempts to load the configured gameplay scene.
+        /// </summary>
+        /// <remarks>
+        /// Called by the Start Game button. If no valid gameplay scene is assigned, a safe modal is shown instead.
+        /// </remarks>
         public void StartGame()
         {
             if (string.IsNullOrWhiteSpace(gameSceneName) || !SceneExistsInBuild(gameSceneName))
@@ -58,6 +94,12 @@ namespace EchoEscape
             SceneManager.LoadScene(gameSceneName);
         }
 
+        /// <summary>
+        /// Opens the controls modal.
+        /// </summary>
+        /// <remarks>
+        /// Called by the Controls button.
+        /// </remarks>
         public void ShowControls()
         {
             ShowModal(
@@ -71,6 +113,12 @@ namespace EchoEscape
                 "Record a short route, replay your echo, hold switches, open random chests, and extract before death removes unbanked loot.");
         }
 
+        /// <summary>
+        /// Opens the credits modal.
+        /// </summary>
+        /// <remarks>
+        /// Called by the Credits button.
+        /// </remarks>
         public void ShowCredits()
         {
             ShowModal(
@@ -81,11 +129,23 @@ namespace EchoEscape
                 "Bundle credits include Brackeys, analogStudios_, RottingPixels, Asbjorn Thirslund, Jayvee Enaguas, and HarvettFox96.");
         }
 
+        /// <summary>
+        /// Closes the currently open menu modal.
+        /// </summary>
+        /// <remarks>
+        /// Called by the Back button and by Escape in Update.
+        /// </remarks>
         public void CloseModal()
         {
             modalRoot.SetActive(false);
         }
 
+        /// <summary>
+        /// Quits the application or stops Play Mode in the Unity Editor.
+        /// </summary>
+        /// <remarks>
+        /// Called by the Quit button.
+        /// </remarks>
         public void QuitGame()
         {
 #if UNITY_EDITOR
@@ -95,6 +155,9 @@ namespace EchoEscape
 #endif
         }
 
+        /// <summary>
+        /// Ensures a Main Camera exists and configures it for the menu scene.
+        /// </summary>
         private void EnsureCamera()
         {
             Camera camera = Camera.main;
@@ -111,6 +174,11 @@ namespace EchoEscape
             camera.transform.position = new Vector3(0f, 0f, -10f);
         }
 
+        /// <summary>
+        /// Checks whether a scene name exists in Unity Build Settings.
+        /// </summary>
+        /// <param name="sceneName">Scene name without file extension.</param>
+        /// <returns>True if the scene appears in Build Settings; otherwise false.</returns>
         private bool SceneExistsInBuild(string sceneName)
         {
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
@@ -126,6 +194,9 @@ namespace EchoEscape
             return false;
         }
 
+        /// <summary>
+        /// Creates pixel-art world decoration behind the menu UI.
+        /// </summary>
         private void BuildWorld()
         {
             GameObject worldRoot = new GameObject("Pixel Menu World");
@@ -151,6 +222,9 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Creates the menu UI canvas, title, buttons, build note, and modal.
+        /// </summary>
         private void BuildCanvas()
         {
             EnsureEventSystem();
@@ -174,6 +248,10 @@ namespace EchoEscape
             BuildModal(canvasTransform);
         }
 
+        /// <summary>
+        /// Creates the root screen-space Canvas used by the main menu.
+        /// </summary>
+        /// <returns>The configured Canvas component.</returns>
         private Canvas CreateCanvas()
         {
             GameObject canvasObject = new GameObject("Main Menu Canvas");
@@ -189,6 +267,10 @@ namespace EchoEscape
             return canvas;
         }
 
+        /// <summary>
+        /// Builds the modal overlay used for controls, credits, and safe gameplay messages.
+        /// </summary>
+        /// <param name="parent">Canvas transform that owns the modal.</param>
         private void BuildModal(Transform parent)
         {
             modalRoot = new GameObject("Menu Modal");
@@ -218,6 +300,11 @@ namespace EchoEscape
             modalRoot.SetActive(false);
         }
 
+        /// <summary>
+        /// Shows the menu modal with a title and body message.
+        /// </summary>
+        /// <param name="title">Modal title text.</param>
+        /// <param name="body">Modal body text.</param>
         private void ShowModal(string title, string body)
         {
             modalTitle.text = title;
@@ -225,11 +312,32 @@ namespace EchoEscape
             modalRoot.SetActive(true);
         }
 
+        /// <summary>
+        /// Creates a standard menu button with default size.
+        /// </summary>
+        /// <param name="name">GameObject name for the button.</param>
+        /// <param name="parent">Parent transform for the button.</param>
+        /// <param name="label">Text shown inside the button.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        /// <param name="action">Action called when the button is clicked.</param>
+        /// <returns>The created Button component.</returns>
         private Button CreateButton(string name, Transform parent, string label, Vector2 anchor, Vector2 anchoredPosition, UnityEngine.Events.UnityAction action)
         {
             return CreateButton(name, parent, label, anchor, anchoredPosition, action, new Vector2(300f, 58f));
         }
 
+        /// <summary>
+        /// Creates a menu button with a custom size.
+        /// </summary>
+        /// <param name="name">GameObject name for the button.</param>
+        /// <param name="parent">Parent transform for the button.</param>
+        /// <param name="label">Text shown inside the button.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        /// <param name="action">Action called when the button is clicked.</param>
+        /// <param name="size">Width and height of the button RectTransform.</param>
+        /// <returns>The created Button component.</returns>
         private Button CreateButton(string name, Transform parent, string label, Vector2 anchor, Vector2 anchoredPosition, UnityEngine.Events.UnityAction action, Vector2 size)
         {
             GameObject buttonObject = CreatePanel(name, parent, buttonNormal, anchor, anchoredPosition, size);
@@ -258,6 +366,16 @@ namespace EchoEscape
             return button;
         }
 
+        /// <summary>
+        /// Creates a colored UI panel with an Image and RectTransform.
+        /// </summary>
+        /// <param name="name">GameObject name for the panel.</param>
+        /// <param name="parent">Parent transform for the panel.</param>
+        /// <param name="color">Image color.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        /// <param name="size">Width and height of the panel.</param>
+        /// <returns>The created panel GameObject.</returns>
         private GameObject CreatePanel(string name, Transform parent, Color color, Vector2 anchor, Vector2 anchoredPosition, Vector2 size)
         {
             GameObject panel = new GameObject(name);
@@ -276,6 +394,19 @@ namespace EchoEscape
             return panel;
         }
 
+        /// <summary>
+        /// Creates a UI Text element using the menu font.
+        /// </summary>
+        /// <param name="name">GameObject name for the text.</param>
+        /// <param name="parent">Parent transform for the text.</param>
+        /// <param name="value">Initial text value.</param>
+        /// <param name="fontSize">Font size in UI points.</param>
+        /// <param name="color">Text color.</param>
+        /// <param name="alignment">Text alignment.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        /// <param name="size">Width and height of the text RectTransform.</param>
+        /// <returns>The created Text component.</returns>
         private Text CreateText(string name, Transform parent, string value, int fontSize, Color color, TextAnchor alignment, Vector2 anchor, Vector2 anchoredPosition, Vector2 size)
         {
             GameObject textObject = new GameObject(name);
@@ -300,6 +431,17 @@ namespace EchoEscape
             return text;
         }
 
+        /// <summary>
+        /// Creates a tiled SpriteRenderer for menu platforms.
+        /// </summary>
+        /// <param name="name">GameObject name for the sprite.</param>
+        /// <param name="sprite">Sprite asset to render.</param>
+        /// <param name="position">World position.</param>
+        /// <param name="size">Tiled sprite size.</param>
+        /// <param name="sortingOrder">Sprite sorting order.</param>
+        /// <param name="parent">Parent transform.</param>
+        /// <param name="color">Sprite color tint.</param>
+        /// <returns>The created SpriteRenderer.</returns>
         private SpriteRenderer CreateTiledSprite(string name, Sprite sprite, Vector2 position, Vector2 size, int sortingOrder, Transform parent, Color color)
         {
             SpriteRenderer renderer = CreateSprite(name, sprite, position, Vector3.one, sortingOrder, parent, color);
@@ -309,6 +451,17 @@ namespace EchoEscape
             return renderer;
         }
 
+        /// <summary>
+        /// Creates a simple SpriteRenderer object for menu decoration.
+        /// </summary>
+        /// <param name="name">GameObject name for the sprite.</param>
+        /// <param name="sprite">Sprite asset to render.</param>
+        /// <param name="position">World position.</param>
+        /// <param name="scale">World scale applied to the sprite object.</param>
+        /// <param name="sortingOrder">Sprite sorting order.</param>
+        /// <param name="parent">Parent transform.</param>
+        /// <param name="color">Sprite color tint.</param>
+        /// <returns>The created SpriteRenderer.</returns>
         private SpriteRenderer CreateSprite(string name, Sprite sprite, Vector2 position, Vector3 scale, int sortingOrder, Transform parent, Color color)
         {
             GameObject spriteObject = new GameObject(name);
@@ -323,6 +476,9 @@ namespace EchoEscape
             return renderer;
         }
 
+        /// <summary>
+        /// Animates decorative menu coins with a simple vertical sine wave.
+        /// </summary>
         private void AnimateCoins()
         {
             if (bobbingCoins == null || coinBasePositions == null)
@@ -337,6 +493,9 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Starts menu background music if the clip exists in Resources.
+        /// </summary>
         private void StartMusic()
         {
             AudioClip music = PixelArtLibrary.LoadMusic("time_for_adventure");
@@ -353,6 +512,9 @@ namespace EchoEscape
             source.Play();
         }
 
+        /// <summary>
+        /// Ensures the scene has an EventSystem so UI buttons can receive input.
+        /// </summary>
         private void EnsureEventSystem()
         {
             if (FindObjectOfType<EventSystem>() != null)

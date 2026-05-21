@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dad73c1e2b5aa9c48a88ddccd612adc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: 
+  gameSceneName: Level1_Tutorial
   knightFramesPerSecond: 5
   coinBobSpeed: 2.2
   coinBobHeight: 0.12

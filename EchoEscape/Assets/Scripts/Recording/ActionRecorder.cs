@@ -3,14 +3,44 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Records the player's movement and creates an Echo object that can replay it.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to the Player object together with PlayerController2D.
+    /// PlayerController2D calls ToggleRecording when Q is pressed and PlayEcho when E is pressed.
+    /// The spawned Echo works with PressurePlate and Door so the player can solve replay puzzles.
+    /// </remarks>
     public class ActionRecorder : MonoBehaviour
     {
+        /// <summary>
+        /// Maximum number of seconds the player can record before recording stops automatically.
+        /// </summary>
         public float maxRecordSeconds = 5f;
+
+        /// <summary>
+        /// Color used by the simple square Echo visual created during playback.
+        /// </summary>
         public Color echoColor = new Color(0.8f, 0.95f, 1f, 0.8f);
 
+        /// <summary>
+        /// True while player positions are being captured.
+        /// </summary>
         public bool IsRecording { get; private set; }
+
+        /// <summary>
+        /// True when enough frames exist to replay an Echo.
+        /// </summary>
         public bool HasRecording => frames.Count > 1;
+
+        /// <summary>
+        /// Normalized progress through the current recording duration.
+        /// </summary>
         public float RecordingProgress => IsRecording ? Mathf.Clamp01(recordTimer / maxRecordSeconds) : 0f;
+
+        /// <summary>
+        /// The Echo replay object currently active in the scene, if one exists.
+        /// </summary>
         public EchoReplayController ActiveEcho => activeEcho;
 
         private readonly List<RecordingFrame> frames = new List<RecordingFrame>();
@@ -19,11 +49,24 @@ namespace EchoEscape
         private PlayerController2D player;
         private static Sprite echoSquareSprite;
 
+        /// <summary>
+        /// Unity event method called when the component is created.
+        /// </summary>
+        /// <remarks>
+        /// Caches the PlayerController2D reference so recorded frames can also store facing direction.
+        /// </remarks>
         private void Awake()
         {
             player = GetComponent<PlayerController2D>();
         }
 
+        /// <summary>
+        /// Unity physics event method called at a fixed timestep.
+        /// </summary>
+        /// <remarks>
+        /// While recording, this samples the player's position into RecordingFrame data.
+        /// Recording stops automatically when maxRecordSeconds is reached.
+        /// </remarks>
         private void FixedUpdate()
         {
             if (!IsRecording)
@@ -40,6 +83,12 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Starts recording if idle, or stops recording if recording is already active.
+        /// </summary>
+        /// <remarks>
+        /// Called by PlayerController2D when the player presses Q.
+        /// </remarks>
         public void ToggleRecording()
         {
             if (IsRecording)
@@ -52,6 +101,13 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Spawns an EchoReplay object and gives it the saved movement frames to replay.
+        /// </summary>
+        /// <remarks>
+        /// Called by PlayerController2D when the player presses E.
+        /// If no recording exists, the method only reports that playback is unavailable.
+        /// </remarks>
         public void PlayEcho()
         {
             if (!HasRecording)
@@ -93,6 +149,12 @@ namespace EchoEscape
             Debug.Log("Echo replaying.");
         }
 
+        /// <summary>
+        /// Removes the currently active Echo replay object from the scene.
+        /// </summary>
+        /// <remarks>
+        /// Used before spawning a new Echo and when the player dies, preventing old Echoes from stacking up.
+        /// </remarks>
         public void DestroyActiveEcho()
         {
             if (activeEcho == null)
@@ -104,6 +166,12 @@ namespace EchoEscape
             activeEcho = null;
         }
 
+        /// <summary>
+        /// Clears old frames and begins capturing the player's movement.
+        /// </summary>
+        /// <remarks>
+        /// This is the first half of the Q key toggle flow.
+        /// </remarks>
         private void StartRecording()
         {
             frames.Clear();
@@ -114,6 +182,12 @@ namespace EchoEscape
             Debug.Log("Recording...");
         }
 
+        /// <summary>
+        /// Finishes the current recording and keeps the saved frames ready for playback.
+        /// </summary>
+        /// <remarks>
+        /// This is called when Q is pressed during recording or when the maximum recording time is reached.
+        /// </remarks>
         private void StopRecording()
         {
             IsRecording = false;
@@ -122,6 +196,13 @@ namespace EchoEscape
             Debug.Log("Recording stopped. Press E to replay Echo.");
         }
 
+        /// <summary>
+        /// Attempts to label the spawned Echo object with the Echo tag.
+        /// </summary>
+        /// <param name="echoObject">The runtime Echo object created for playback.</param>
+        /// <remarks>
+        /// PressurePlate can also detect EchoReplayController, so the mechanic still works if the tag is missing.
+        /// </remarks>
         private void TrySetEchoTag(GameObject echoObject)
         {
             try
@@ -134,6 +215,10 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Creates or reuses a simple white square sprite for the Echo visual.
+        /// </summary>
+        /// <returns>A point-filtered square sprite used by the Echo SpriteRenderer.</returns>
         private static Sprite GetEchoSquareSprite()
         {
             if (echoSquareSprite != null)

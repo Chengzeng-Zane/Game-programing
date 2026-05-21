@@ -2,8 +2,19 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    /// <summary>
+    /// Tracks the tutorial objective state for the older prototype HUD flow.
+    /// </summary>
+    /// <remarks>
+    /// Attach this script to the Game Manager when using the full prototype tutorial flow.
+    /// It watches Player, ActionRecorder, PressurePlate, Door, Chest, and Goal state,
+    /// then exposes readable objective text for PrototypeHud.
+    /// </remarks>
     public class TutorialDirector : MonoBehaviour
     {
+        /// <summary>
+        /// Ordered tutorial steps used by the prototype objective tracker.
+        /// </summary>
         private enum TutorialStep
         {
             LearnMovement,
@@ -16,9 +27,24 @@ namespace EchoEscape
             Extract
         }
 
+        /// <summary>
+        /// Text showing the current tutorial step number.
+        /// </summary>
         public string ProgressLabel => $"Step {(int)step + 1}/{totalSteps}";
+
+        /// <summary>
+        /// Current tutorial title displayed by PrototypeHud.
+        /// </summary>
         public string Title { get; private set; } = "Tutorial loading";
+
+        /// <summary>
+        /// Current objective text displayed by PrototypeHud.
+        /// </summary>
         public string Objective { get; private set; } = "Preparing the first room.";
+
+        /// <summary>
+        /// Short hint text displayed by PrototypeHud.
+        /// </summary>
         public string Hint { get; private set; } = "Press Play again if Unity is still compiling scripts.";
 
         private const int totalSteps = 8;
@@ -32,6 +58,12 @@ namespace EchoEscape
         private bool chestOpened;
         private float stepStartedAt;
 
+        /// <summary>
+        /// Unity event method called before the first frame update.
+        /// </summary>
+        /// <remarks>
+        /// Finds gameplay objects and starts the tutorial state machine at the movement step.
+        /// </remarks>
         private void Start()
         {
             manager = EchoEscapeGameManager.Instance;
@@ -48,6 +80,12 @@ namespace EchoEscape
             SetStep(TutorialStep.LearnMovement);
         }
 
+        /// <summary>
+        /// Unity event method called once per frame.
+        /// </summary>
+        /// <remarks>
+        /// Checks current player and mechanic state to advance tutorial objectives.
+        /// </remarks>
         private void Update()
         {
             if (manager == null || player == null || recorder == null)
@@ -117,11 +155,21 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Notifies the tutorial that a chest has been opened.
+        /// </summary>
+        /// <remarks>
+        /// Called by Chest.Open so the tutorial can advance to extraction.
+        /// </remarks>
         public void NotifyChestOpened()
         {
             chestOpened = true;
         }
 
+        /// <summary>
+        /// Changes the active tutorial step and updates title, objective, and hint text.
+        /// </summary>
+        /// <param name="nextStep">The tutorial step to activate.</param>
         private void SetStep(TutorialStep nextStep)
         {
             step = nextStep;
@@ -183,11 +231,19 @@ namespace EchoEscape
             manager?.UpdateStatus($"{Title}: {Objective}");
         }
 
+        /// <summary>
+        /// Checks whether the player has moved far enough away from the starting position.
+        /// </summary>
+        /// <returns>True if the player has moved from the start; otherwise false.</returns>
         private bool MovedFromStart()
         {
             return Vector2.Distance(player.transform.position, startPosition) > 0.6f;
         }
 
+        /// <summary>
+        /// Checks whether the player has pressed movement or jump input after a short delay.
+        /// </summary>
+        /// <returns>True if movement or jump input was detected; otherwise false.</returns>
         private bool PressedMovementInput()
         {
             return Time.time - stepStartedAt > 0.2f &&

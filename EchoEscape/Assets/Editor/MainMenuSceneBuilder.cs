@@ -4,10 +4,23 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Builds the MainMenu scene from a Unity editor menu command.
+/// </summary>
+/// <remarks>
+/// This is an Editor-only utility script.
+/// It creates a MainMenuController and a basic camera, then saves MainMenu.unity and updates Build Settings.
+/// </remarks>
 public static class MainMenuSceneBuilder
 {
     private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
 
+    /// <summary>
+    /// Creates or replaces MainMenu.unity with the runtime menu controller setup.
+    /// </summary>
+    /// <remarks>
+    /// Called from the Unity menu item Echo Escape/Build Main Menu Scene.
+    /// </remarks>
     [MenuItem("Echo Escape/Build Main Menu Scene")]
     public static void BuildScene()
     {
@@ -15,7 +28,7 @@ public static class MainMenuSceneBuilder
 
         GameObject controllerObject = new GameObject("Main Menu Controller");
         MainMenuController controller = controllerObject.AddComponent<MainMenuController>();
-        controller.gameSceneName = string.Empty;
+        controller.gameSceneName = "Level1_Tutorial";
 
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";
@@ -35,6 +48,9 @@ public static class MainMenuSceneBuilder
         AssetDatabase.Refresh();
     }
 
+    /// <summary>
+    /// Command-line entry point for rebuilding the main menu scene.
+    /// </summary>
     public static void BuildFromCommandLine()
     {
         BuildScene();
