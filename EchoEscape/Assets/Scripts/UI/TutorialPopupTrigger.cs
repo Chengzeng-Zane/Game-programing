@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace EchoEscape
@@ -57,10 +55,37 @@ namespace EchoEscape
                 return;
             }
 
-            if (other.GetComponent<PlayerController2D>() != null)
+            if (IsPlayer(other))
             {
+                Debug.Log("Tutorial triggered: " + tutorialTitle);
                 ShowTutorial();
             }
+        }
+
+        /// <summary>
+        /// Checks whether the collider belongs to the real player.
+        /// </summary>
+        /// <param name="other">The collider that entered the tutorial trigger.</param>
+        /// <returns>True when the collider is on the Player or one of its child objects.</returns>
+        private static bool IsPlayer(Collider2D other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            if (other.CompareTag("Player"))
+            {
+                return true;
+            }
+
+            Transform root = other.transform.root;
+            if (root != null && root.CompareTag("Player"))
+            {
+                return true;
+            }
+
+            return other.GetComponentInParent<PlayerController2D>() != null;
         }
 
         /// <summary>

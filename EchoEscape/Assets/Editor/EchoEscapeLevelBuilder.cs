@@ -261,8 +261,7 @@ public static class EchoEscapeLevelBuilder
         CreateGroundBlock("Ground_Main", new Vector2(-4f, -2.5f), new Vector2(6f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_Step_01", new Vector2(1f, -1.8f), new Vector2(2f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_Step_02", new Vector2(5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
-        CreateGroundBlock("Ground_Record_Safe", new Vector2(10f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
-        CreateGroundBlock("Ground_Record_Puzzle", new Vector2(14f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("Ground_RecordArea", new Vector2(11.5f, -1.35f), new Vector2(9f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_After_Door", new Vector2(18.5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
     }
 
@@ -305,6 +304,7 @@ public static class EchoEscapeLevelBuilder
 
         SpriteRenderer renderer = start.AddComponent<SpriteRenderer>();
         renderer.sprite = LoadSprite(PlaceholderSpritePath);
+        renderer.enabled = false;
         renderer.color = new Color(0.2f, 0.72f, 1f, 0.75f);
         renderer.sortingOrder = 3;
         renderer.drawMode = SpriteDrawMode.Simple;
@@ -358,7 +358,7 @@ public static class EchoEscapeLevelBuilder
     {
         CreateQuestionMark(
             "QuestionMark_Jump",
-            new Vector2(-2.3f, -1.55f),
+            new Vector2(-3.4f, -2.45f),
             "Jump",
             "Press Space to jump.\nUse A/D or Left/Right Arrow to move.\nJump onto the next platform to continue.",
             popupManager,
@@ -499,7 +499,8 @@ public static class EchoEscapeLevelBuilder
 
         BoxCollider2D trigger = marker.AddComponent<BoxCollider2D>();
         trigger.isTrigger = true;
-        trigger.size = new Vector2(0.9f, 1.25f);
+        trigger.offset = Vector2.zero;
+        trigger.size = new Vector2(0.6f, 0.8f);
 
         TutorialPopupTrigger popupTrigger = marker.AddComponent<TutorialPopupTrigger>();
         popupTrigger.popupManager = popupManager;
@@ -520,7 +521,7 @@ public static class EchoEscapeLevelBuilder
 
         GameObject textObject = new GameObject("QuestionMarkText");
         textObject.transform.SetParent(marker.transform, false);
-        textObject.transform.localPosition = new Vector3(0f, 0.03f, -0.05f);
+        textObject.transform.localPosition = Vector3.zero;
 
         TextMesh text = textObject.AddComponent<TextMesh>();
         text.text = "?";
