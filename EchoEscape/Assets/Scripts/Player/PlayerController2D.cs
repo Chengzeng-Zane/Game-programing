@@ -19,7 +19,7 @@ namespace EchoEscape
         public float moveSpeed = 6f;
 
         /// <summary>
-        /// Upward velocity applied when the player jumps.
+        /// Velocity applied opposite the current gravity direction when the player jumps.
         /// </summary>
         public float jumpForce = 10f;
 
@@ -61,9 +61,10 @@ namespace EchoEscape
         {
             moveInput = Input.GetAxisRaw("Horizontal");
 
-            if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) && IsGrounded())
+            if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
             {
-                body.velocity = new Vector2(body.velocity.x, jumpForce);
+                Vector2 jumpVelocity = -GravityDirection * jumpForce;
+                body.velocity = new Vector2(body.velocity.x, jumpVelocity.y);
                 EchoEscapeGameManager.Instance?.AudioService?.PlayJump();
             }
 
@@ -111,7 +112,7 @@ namespace EchoEscape
         {
             for (int i = 0; i < collision.contactCount; i++)
             {
-                if (collision.GetContact(i).normal.y > 0.45f)
+                if (Vector2.Dot(collision.GetContact(i).normal, -GravityDirection) > 0.45f)
                 {
                     groundedUntil = Time.time + 0.12f;
                     return;
@@ -127,13 +128,28 @@ namespace EchoEscape
         {
             transform.position = position;
             body.velocity = Vector2.zero;
+            GravityFlipController gravityFlip = GetComponent<GravityFlipController>();
+            if (gravityFlip != null)
+            {
+                gravityFlip.ResetGravityState();
+            }
+            else
+            {
+                body.gravityScale = Mathf.Abs(body.gravityScale);
+                transform.rotation = Quaternion.identity;
+            }
         }
+
+        /// <summary>
+        /// Direction gravity currently pulls the player.
+        /// </summary>
+        public Vector2 GravityDirection => body != null && body.gravityScale < 0f ? Vector2.up : Vector2.down;
 
         /// <summary>
         /// Checks whether the player was recently standing on a floor-like collision normal.
         /// </summary>
         /// <returns>True if the player can currently jump; otherwise false.</returns>
-        private bool IsGrounded()
+        public bool IsGrounded()
         {
             return Time.time <= groundedUntil;
         }

@@ -64,6 +64,24 @@ public static class EchoEscapeLevelBuilder
     }
 
     /// <summary>
+    /// Command-line entry point for rebuilding only Level1_Tutorial.
+    /// </summary>
+    /// <remarks>
+    /// This is useful when testing Level1 changes without regenerating the Level2 loot tutorial scene.
+    /// </remarks>
+    public static void BuildLevel1TutorialFromCommandLine()
+    {
+        EnsureProjectFolders();
+        EnsureTag("Echo");
+        EnsureWhitePlaceholderSprite();
+        BuildLevel1Tutorial();
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("Level1_Tutorial rebuilt with the gravity flip tutorial area.");
+    }
+
+    /// <summary>
     /// Ensures the project folders needed by the generated level exist.
     /// </summary>
     private static void EnsureProjectFolders()
@@ -175,6 +193,7 @@ public static class EchoEscapeLevelBuilder
         CreateLight();
         CreateGroundAndJumpPractice(root);
         CreateRecordPuzzleArea(root);
+        CreateGravityTutorialArea(root);
 
         Transform playerStart = CreatePlayerStart(root);
         PlayerController2D player = CreatePlayer(playerStart.position);
@@ -182,6 +201,7 @@ public static class EchoEscapeLevelBuilder
         TutorialPopupManager popupManager = CreateTutorialPopupUi();
         CreateQuestionMarkJump(root, popupManager);
         CreateQuestionMarkRecord(root, popupManager);
+        CreateQuestionMarkGravity(root, popupManager);
 
         SaveScene(scene, Level1ScenePath);
     }
@@ -262,7 +282,7 @@ public static class EchoEscapeLevelBuilder
         CreateGroundBlock("Ground_Step_01", new Vector2(1f, -1.8f), new Vector2(2f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_Step_02", new Vector2(5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_RecordArea", new Vector2(11.5f, -1.35f), new Vector2(9f, 0.8f), groundRoot.transform);
-        CreateGroundBlock("Ground_After_Door", new Vector2(18.5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("SafeGround_AfterDoor", new Vector2(20.2f, -1.35f), new Vector2(8.4f, 0.8f), groundRoot.transform);
     }
 
     /// <summary>
@@ -338,6 +358,7 @@ public static class EchoEscapeLevelBuilder
         controller.moveSpeed = 5.5f;
         controller.jumpForce = 9f;
 
+        playerObject.AddComponent<GravityFlipController>();
         playerObject.AddComponent<ActionRecorder>();
 
         SpriteRenderer renderer = playerObject.AddComponent<SpriteRenderer>();
@@ -385,6 +406,22 @@ public static class EchoEscapeLevelBuilder
     }
 
     /// <summary>
+    /// Creates the Gravity Flip question mark prompt.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the prompt.</param>
+    /// <param name="popupManager">Popup manager that displays the prompt content.</param>
+    private static void CreateQuestionMarkGravity(Transform parent, TutorialPopupManager popupManager)
+    {
+        CreateQuestionMark(
+            "QuestionMark_Gravity",
+            new Vector2(20.4f, -0.28f),
+            "Gravity Flip",
+            "Press Up Arrow to flip gravity when there is a platform above.\nPress Down Arrow to return when there is ground below.\nPress Space to jump.\n\nUse gravity flip to reach paths on the ceiling.",
+            popupManager,
+            parent);
+    }
+
+    /// <summary>
     /// Creates the Level1 pressure plate, door, and exit puzzle section.
     /// </summary>
     /// <param name="parent">Root transform that owns the puzzle section.</param>
@@ -396,8 +433,20 @@ public static class EchoEscapeLevelBuilder
         Door door = CreateDoor("Door_RecordPuzzle", new Vector2(15.8f, 0.15f), new Vector2(0.55f, 2.6f), puzzleRoot.transform);
         PressurePlate pressurePlate = CreatePressurePlate("PressurePlate_RecordPuzzle", new Vector2(13.1f, -0.78f), puzzleRoot.transform);
         pressurePlate.linkedDoor = door;
+    }
 
-        CreateExit("Exit_Level1", new Vector2(19.6f, -0.12f), puzzleRoot.transform);
+    /// <summary>
+    /// Creates the Level1 ceiling platform and upper exit for the gravity flip lesson.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the gravity tutorial objects.</param>
+    private static void CreateGravityTutorialArea(Transform parent)
+    {
+        GameObject gravityRoot = new GameObject("GravityFlipTutorial");
+        gravityRoot.transform.SetParent(parent, false);
+
+        CreateGroundBlock("Ground_UpperGravityPlatform", new Vector2(22.9f, 2.55f), new Vector2(5.4f, 0.45f), gravityRoot.transform);
+
+        CreateExit("UpperExit_Level1", new Vector2(24.6f, 2.1f), gravityRoot.transform);
     }
 
     /// <summary>
@@ -566,7 +615,7 @@ public static class EchoEscapeLevelBuilder
         panelRect.anchorMax = new Vector2(0.5f, 1f);
         panelRect.pivot = new Vector2(0.5f, 1f);
         panelRect.anchoredPosition = new Vector2(0f, -36f);
-        panelRect.sizeDelta = new Vector2(700f, 250f);
+        panelRect.sizeDelta = new Vector2(720f, 280f);
 
         Text titleText = CreateUiText(
             "TitleText",
@@ -585,7 +634,7 @@ public static class EchoEscapeLevelBuilder
             18,
             FontStyle.Normal,
             new Vector2(0f, -84f),
-            new Vector2(640f, 138f),
+            new Vector2(660f, 154f),
             Color.white);
 
         Text closeText = CreateUiText(
@@ -594,8 +643,8 @@ public static class EchoEscapeLevelBuilder
             "Press Esc to close.",
             16,
             FontStyle.Normal,
-            new Vector2(0f, -216f),
-            new Vector2(640f, 24f),
+            new Vector2(0f, -248f),
+            new Vector2(660f, 24f),
             new Color(0.72f, 0.78f, 0.88f));
 
         titleText.alignment = TextAnchor.MiddleLeft;
