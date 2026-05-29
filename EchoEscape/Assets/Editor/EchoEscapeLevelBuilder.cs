@@ -15,8 +15,8 @@ using Object = UnityEngine.Object;
 /// </summary>
 /// <remarks>
 /// This is an Editor-only utility script.
-/// Use the Unity menu item Echo Escape/Build Prototype Levels to rebuild Level1_Tutorial,
-/// update Build Settings, create placeholder sprites, and keep the Level1/Level2 tutorial setup repeatable.
+/// Use the Unity menu item Echo Escape/Build Prototype Levels to keep the art-authored
+/// Level1_Tutorial scene in the build, rebuild Level2, and update Build Settings.
 /// </remarks>
 public static class EchoEscapeLevelBuilder
 {
@@ -35,7 +35,7 @@ public static class EchoEscapeLevelBuilder
     /// Rebuilds the prototype level setup used by the current project.
     /// </summary>
     /// <remarks>
-    /// Called from the Unity editor menu. It currently rebuilds Level1_Tutorial and preserves Level2/Level3 files.
+    /// Called from the Unity editor menu. It preserves the official art-authored Level1_Tutorial scene and rebuilds Level2.
     /// </remarks>
     [MenuItem("Echo Escape/Build Prototype Levels")]
     public static void BuildPrototypeLevels()
@@ -43,13 +43,13 @@ public static class EchoEscapeLevelBuilder
         EnsureProjectFolders();
         EnsureTag("Echo");
         EnsureWhitePlaceholderSprite();
-        BuildLevel1Tutorial();
+        EnsureOfficialLevel1SceneExists();
         BuildLevel2LootTutorial();
         UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Echo Escape prototype levels rebuilt. Level1 teaches Echo recording, and Level2 teaches attack, loot risk, and extraction.");
+        Debug.Log("Echo Escape prototype levels rebuilt. Official Level1_Tutorial was preserved, and Level2 teaches attack, loot risk, and extraction.");
     }
 
     /// <summary>
@@ -61,6 +61,39 @@ public static class EchoEscapeLevelBuilder
     public static void BuildPrototypeLevelsFromCommandLine()
     {
         BuildPrototypeLevels();
+    }
+
+    /// <summary>
+    /// Command-line entry point for validating the official Level1_Tutorial scene.
+    /// </summary>
+    /// <remarks>
+    /// Level1_Tutorial is now an art-authored scene, so this command does not overwrite it.
+    /// </remarks>
+    public static void BuildLevel1TutorialFromCommandLine()
+    {
+        EnsureProjectFolders();
+        EnsureTag("Echo");
+        EnsureOfficialLevel1SceneExists();
+        UpdateBuildSettings();
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("Official Level1_Tutorial scene checked and preserved.");
+    }
+
+    /// <summary>
+    /// Confirms the official art-authored Level1_Tutorial scene exists before build settings are updated.
+    /// </summary>
+    /// <remarks>
+    /// The old procedural Level1 builder is intentionally no longer invoked for the official first level,
+    /// because it would overwrite the dark forest Ruby character version stored in Level1_Tutorial.unity.
+    /// </remarks>
+    private static void EnsureOfficialLevel1SceneExists()
+    {
+        if (!File.Exists(ToDiskPath(Level1ScenePath)))
+        {
+            Debug.LogError("Official Level1_Tutorial scene is missing. Restore Assets/Scenes/Level1_Tutorial.unity before building prototype levels.");
+        }
     }
 
     /// <summary>
@@ -175,6 +208,7 @@ public static class EchoEscapeLevelBuilder
         CreateLight();
         CreateGroundAndJumpPractice(root);
         CreateRecordPuzzleArea(root);
+        CreateGravityTutorialArea(root);
 
         Transform playerStart = CreatePlayerStart(root);
         PlayerController2D player = CreatePlayer(playerStart.position);
@@ -182,6 +216,7 @@ public static class EchoEscapeLevelBuilder
         TutorialPopupManager popupManager = CreateTutorialPopupUi();
         CreateQuestionMarkJump(root, popupManager);
         CreateQuestionMarkRecord(root, popupManager);
+        CreateQuestionMarkGravity(root, popupManager);
 
         SaveScene(scene, Level1ScenePath);
     }
@@ -262,7 +297,7 @@ public static class EchoEscapeLevelBuilder
         CreateGroundBlock("Ground_Step_01", new Vector2(1f, -1.8f), new Vector2(2f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_Step_02", new Vector2(5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
         CreateGroundBlock("Ground_RecordArea", new Vector2(11.5f, -1.35f), new Vector2(9f, 0.8f), groundRoot.transform);
-        CreateGroundBlock("Ground_After_Door", new Vector2(18.5f, -1.35f), new Vector2(4f, 0.8f), groundRoot.transform);
+        CreateGroundBlock("SafeGround_AfterDoor", new Vector2(20.2f, -1.35f), new Vector2(8.4f, 0.8f), groundRoot.transform);
     }
 
     /// <summary>
@@ -338,6 +373,7 @@ public static class EchoEscapeLevelBuilder
         controller.moveSpeed = 5.5f;
         controller.jumpForce = 9f;
 
+        playerObject.AddComponent<GravityFlipController>();
         playerObject.AddComponent<ActionRecorder>();
 
         SpriteRenderer renderer = playerObject.AddComponent<SpriteRenderer>();
@@ -385,6 +421,22 @@ public static class EchoEscapeLevelBuilder
     }
 
     /// <summary>
+    /// Creates the Gravity Flip question mark prompt.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the prompt.</param>
+    /// <param name="popupManager">Popup manager that displays the prompt content.</param>
+    private static void CreateQuestionMarkGravity(Transform parent, TutorialPopupManager popupManager)
+    {
+        CreateQuestionMark(
+            "QuestionMark_Gravity",
+            new Vector2(20.4f, -0.28f),
+            "Gravity Flip",
+            "Press Up Arrow to flip gravity when there is a platform above.\nPress Down Arrow to return when there is ground below.\nPress Space to jump.\n\nUse gravity flip to reach paths on the ceiling.",
+            popupManager,
+            parent);
+    }
+
+    /// <summary>
     /// Creates the Level1 pressure plate, door, and exit puzzle section.
     /// </summary>
     /// <param name="parent">Root transform that owns the puzzle section.</param>
@@ -396,8 +448,20 @@ public static class EchoEscapeLevelBuilder
         Door door = CreateDoor("Door_RecordPuzzle", new Vector2(15.8f, 0.15f), new Vector2(0.55f, 2.6f), puzzleRoot.transform);
         PressurePlate pressurePlate = CreatePressurePlate("PressurePlate_RecordPuzzle", new Vector2(13.1f, -0.78f), puzzleRoot.transform);
         pressurePlate.linkedDoor = door;
+    }
 
-        CreateExit("Exit_Level1", new Vector2(19.6f, -0.12f), puzzleRoot.transform);
+    /// <summary>
+    /// Creates the Level1 ceiling platform and upper exit for the gravity flip lesson.
+    /// </summary>
+    /// <param name="parent">Root transform that owns the gravity tutorial objects.</param>
+    private static void CreateGravityTutorialArea(Transform parent)
+    {
+        GameObject gravityRoot = new GameObject("GravityFlipTutorial");
+        gravityRoot.transform.SetParent(parent, false);
+
+        CreateGroundBlock("Ground_UpperGravityPlatform", new Vector2(22.9f, 2.55f), new Vector2(5.4f, 0.45f), gravityRoot.transform);
+
+        CreateExit("UpperExit_Level1", new Vector2(24.6f, 2.1f), gravityRoot.transform);
     }
 
     /// <summary>
@@ -566,7 +630,7 @@ public static class EchoEscapeLevelBuilder
         panelRect.anchorMax = new Vector2(0.5f, 1f);
         panelRect.pivot = new Vector2(0.5f, 1f);
         panelRect.anchoredPosition = new Vector2(0f, -36f);
-        panelRect.sizeDelta = new Vector2(700f, 250f);
+        panelRect.sizeDelta = new Vector2(720f, 280f);
 
         Text titleText = CreateUiText(
             "TitleText",
@@ -585,7 +649,7 @@ public static class EchoEscapeLevelBuilder
             18,
             FontStyle.Normal,
             new Vector2(0f, -84f),
-            new Vector2(640f, 138f),
+            new Vector2(660f, 154f),
             Color.white);
 
         Text closeText = CreateUiText(
@@ -594,8 +658,8 @@ public static class EchoEscapeLevelBuilder
             "Press Esc to close.",
             16,
             FontStyle.Normal,
-            new Vector2(0f, -216f),
-            new Vector2(640f, 24f),
+            new Vector2(0f, -248f),
+            new Vector2(660f, 24f),
             new Color(0.72f, 0.78f, 0.88f));
 
         titleText.alignment = TextAnchor.MiddleLeft;

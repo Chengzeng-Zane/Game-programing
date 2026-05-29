@@ -41,6 +41,7 @@ namespace EchoEscape
 
         private bool popupOpen = false;
         private float previousTimeScale = 1.0f;
+        private bool hasPausedTime = false;
 
         /// <summary>
         /// Unity event method called when this object first becomes active.
@@ -90,14 +91,19 @@ namespace EchoEscape
                 bodyText.text = popupMessage;
             }
 
-            popupPanel.SetActive(true);
-            popupOpen = true;
-
-            if (pauseGameWhenOpen)
+            if (!popupOpen)
             {
-                previousTimeScale = Time.timeScale;
-                Time.timeScale = 0.0f;
+                popupOpen = true;
+
+                if (pauseGameWhenOpen && !hasPausedTime)
+                {
+                    previousTimeScale = Time.timeScale > 0f ? Time.timeScale : 1.0f;
+                    Time.timeScale = 0.0f;
+                    hasPausedTime = true;
+                }
             }
+
+            popupPanel.SetActive(true);
         }
 
         /// <summary>
@@ -106,11 +112,7 @@ namespace EchoEscape
         public void ClosePopup()
         {
             ClosePopupWithoutTimeChange();
-
-            if (pauseGameWhenOpen)
-            {
-                Time.timeScale = previousTimeScale;
-            }
+            RestoreTimeScaleIfNeeded();
         }
 
         /// <summary>
@@ -127,6 +129,28 @@ namespace EchoEscape
             }
 
             popupOpen = false;
+        }
+
+        private void OnDisable()
+        {
+            RestoreTimeScaleIfNeeded();
+        }
+
+        private void OnDestroy()
+        {
+            RestoreTimeScaleIfNeeded();
+        }
+
+        private void RestoreTimeScaleIfNeeded()
+        {
+            if (!pauseGameWhenOpen || !hasPausedTime)
+            {
+                return;
+            }
+
+            Time.timeScale = previousTimeScale > 0f ? previousTimeScale : 1.0f;
+            previousTimeScale = 1.0f;
+            hasPausedTime = false;
         }
     }
 }

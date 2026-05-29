@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace EchoEscape
 {
+    // 这个脚本让生成出来的回声对象按保存的玩家移动帧进行回放。
     /// <summary>
     /// Replays saved player movement frames on a spawned Echo object.
     /// </summary>
@@ -16,10 +17,11 @@ namespace EchoEscape
     {
         private readonly List<RecordingFrame> frames = new List<RecordingFrame>();
         private Rigidbody2D body;
-        private PixelCharacterVisual visual;
+        private EchoAnimationController visual;
         private int index;
         private bool finished;
 
+        // 这个函数在回声对象创建时运行，用来准备 Rigidbody2D 和碰撞设置。
         /// <summary>
         /// Unity event method called when the Echo object is created.
         /// </summary>
@@ -30,9 +32,10 @@ namespace EchoEscape
         {
             body = GetComponent<Rigidbody2D>();
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
-            visual = GetComponent<PixelCharacterVisual>();
+            visual = GetComponentInChildren<EchoAnimationController>();
         }
 
+        // 这个函数按固定物理帧运行，用来更新 Rigidbody2D 移动速度。
         /// <summary>
         /// Unity physics event method called at a fixed timestep.
         /// </summary>
@@ -49,25 +52,29 @@ namespace EchoEscape
 
             if (!finished)
             {
-                ApplyFacing(frames[index]);
-                body.MovePosition(frames[index].position);
+                RecordingFrame currentFrame = frames[index];
+                RecordingFrame previousFrame = index > 0 ? frames[index - 1] : currentFrame;
+                ApplyVisualFrame(currentFrame, previousFrame, false);
+                body.MovePosition((Vector2)currentFrame.position);
                 index++;
 
                 if (index >= frames.Count)
                 {
                     index = frames.Count - 1;
                     finished = true;
+                    ApplyVisualFrame(frames[index], frames[index], true);
                     EchoEscapeGameManager.Instance?.UpdateStatus("Echo finished and is holding its final position.");
                     Debug.Log("Echo finished and is holding its final position.");
                 }
             }
             else
             {
-                ApplyFacing(frames[index]);
-                body.MovePosition(frames[index].position);
+                ApplyVisualFrame(frames[index], frames[index], true);
+                body.MovePosition((Vector2)frames[index].position);
             }
         }
 
+        // 这个函数把玩家录制好的帧数据加载到当前回声对象里。
         /// <summary>
         /// Loads the recorded player frames that this Echo should replay.
         /// </summary>
@@ -82,10 +89,11 @@ namespace EchoEscape
             if (frames.Count > 0)
             {
                 transform.position = frames[0].position;
-                ApplyFacing(frames[0]);
+                ApplyVisualFrame(frames[0], frames[0], false);
             }
         }
 
+        // 这个函数把录制时的朝向应用到回声的像素角色外观上。
         /// <summary>
         /// Applies recorded facing direction to an optional pixel character visual.
         /// </summary>
@@ -93,22 +101,19 @@ namespace EchoEscape
         /// <remarks>
         /// The current Echo is a square, so this safely does nothing unless a character visual exists.
         /// </remarks>
-        private void ApplyFacing(RecordingFrame frame)
+        private void ApplyVisualFrame(RecordingFrame frame, RecordingFrame previousFrame, bool isFinished)
         {
+            if (visual == null)
+            {
+                visual = GetComponentInChildren<EchoAnimationController>();
+            }
+
             if (visual == null)
             {
                 return;
             }
 
-            Transform sprite = transform.Find("Echo Pixel Sprite");
-            if (sprite != null)
-            {
-                SpriteRenderer renderer = sprite.GetComponent<SpriteRenderer>();
-                if (renderer != null)
-                {
-                    renderer.flipX = !frame.facingRight;
-                }
-            }
+            visual.ApplyFrame(frame, previousFrame, isFinished);
         }
     }
 }

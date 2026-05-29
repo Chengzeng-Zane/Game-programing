@@ -2,8 +2,13 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace EchoEscape
 {
+    // 这个脚本负责生成简单的 Level2_LootTutorial 原型地图布局。
     /// <summary>
     /// Builds the simple Level2_LootTutorial prototype layout.
     /// </summary>
@@ -24,6 +29,12 @@ namespace EchoEscape
 
         private static bool isBuilding;
 
+#if UNITY_EDITOR
+        private const int MaxEditorBuildAttempts = 5;
+        private int editorBuildAttempts;
+#endif
+
+        // 这个函数在引导对象创建时运行，用来初始化或安排场景生成。
         /// <summary>
         /// Unity event method called when the bootstrap object is created.
         /// </summary>
@@ -38,6 +49,16 @@ namespace EchoEscape
             }
         }
 
+        // 这个函数在游戏开始时运行一次。
+        private void Start()
+        {
+            if (buildOnAwake && Application.isPlaying)
+            {
+                BuildIfMissing();
+            }
+        }
+
+        // 这个函数在引导对象启用时运行，用来在编辑器中排队生成场景内容。
         /// <summary>
         /// Unity event method called when the bootstrap object becomes enabled.
         /// </summary>
@@ -46,17 +67,69 @@ namespace EchoEscape
         /// </remarks>
         private void OnEnable()
         {
-            if (buildOnAwake && !Application.isPlaying)
+            if (!buildOnAwake || Application.isPlaying)
             {
-                BuildIfMissing();
+                return;
             }
+
+#if UNITY_EDITOR
+            QueueEditorBuildAfterSceneLoad();
+#else
+            BuildIfMissing();
+#endif
         }
 
+#if UNITY_EDITOR
+        // 这个函数在脚本停用时运行。
+        private void OnDisable()
+        {
+            EditorApplication.delayCall -= BuildIfSceneLoadedInEditor;
+        }
+
+        // 这个函数处理 QueueEditorBuildAfterSceneLoad 相关逻辑。
+        private void QueueEditorBuildAfterSceneLoad()
+        {
+            editorBuildAttempts = 0;
+            EditorApplication.delayCall -= BuildIfSceneLoadedInEditor;
+            EditorApplication.delayCall += BuildIfSceneLoadedInEditor;
+        }
+
+        // 这个函数处理 BuildIfSceneLoadedInEditor 相关逻辑。
+        private void BuildIfSceneLoadedInEditor()
+        {
+            EditorApplication.delayCall -= BuildIfSceneLoadedInEditor;
+
+            if (this == null || Application.isPlaying || !buildOnAwake)
+            {
+                return;
+            }
+
+            if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded)
+            {
+                editorBuildAttempts++;
+                if (editorBuildAttempts < MaxEditorBuildAttempts)
+                {
+                    EditorApplication.delayCall += BuildIfSceneLoadedInEditor;
+                }
+
+                return;
+            }
+
+            BuildIfMissing();
+        }
+#endif
+
+        // 这个函数在当前场景还没有新版方块布局时，生成 Level2 地图。
         /// <summary>
         /// Builds the Level2 layout unless the current block-style layout already exists.
         /// </summary>
         public void BuildIfMissing()
         {
+            if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded)
+            {
+                return;
+            }
+
             if (isBuilding || SceneHasCurrentGeneratedLayout())
             {
                 return;
@@ -74,6 +147,7 @@ namespace EchoEscape
             }
         }
 
+        // 这个函数创建完整的 Level2_LootTutorial 地图和原型玩法对象。
         /// <summary>
         /// Creates the full Level2_LootTutorial map and prototype gameplay objects.
         /// </summary>
@@ -114,6 +188,7 @@ namespace EchoEscape
             CreateGameManager(player, player.GetComponent<ActionRecorder>(), playerStart);
         }
 
+        // 这个函数创建命名根节点，用来整理生成出来的 Level2 对象层级。
         /// <summary>
         /// Creates a named root transform for the generated Level2 hierarchy.
         /// </summary>
@@ -125,6 +200,7 @@ namespace EchoEscape
             return root.transform;
         }
 
+        // 这个函数创建基础方向光，让场景里的物体能被照亮。
         /// <summary>
         /// Creates a basic directional light for visibility.
         /// </summary>
@@ -137,6 +213,7 @@ namespace EchoEscape
             light.intensity = 0.8f;
         }
 
+        // 这个函数创建从左到右的地面方块，以及宝箱后的小危险坑。
         /// <summary>
         /// Creates the simple left-to-right ground pieces and the small hazard gap.
         /// </summary>
@@ -153,6 +230,7 @@ namespace EchoEscape
             CreateBlock("Ground_Exit", new Vector2(13f, -2.5f), new Vector2(3.2f, 0.8f), new Color(0.32f, 0.34f, 0.38f), true, groundRoot.transform);
         }
 
+        // 这个函数创建 PlayerStart 标记，供 EchoEscapeGameManager 复活玩家时使用。
         /// <summary>
         /// Creates the PlayerStart marker used by EchoEscapeGameManager for respawning.
         /// </summary>
@@ -164,6 +242,7 @@ namespace EchoEscape
             return start.transform;
         }
 
+        // 这个函数创建可操控玩家，并挂上移动、录制和攻击脚本。
         /// <summary>
         /// Creates the controllable player with movement, recording, and attack scripts.
         /// </summary>
@@ -200,6 +279,7 @@ namespace EchoEscape
             return controller;
         }
 
+        // 这个函数创建摄像机，让它跟随玩家通过第二个教程房间。
         /// <summary>
         /// Creates a camera that follows the player through the second tutorial room.
         /// </summary>
@@ -221,6 +301,11 @@ namespace EchoEscape
             camera.orthographicSize = 4.75f;
             camera.backgroundColor = new Color(0.02f, 0.02f, 0.025f);
 
+            if (cameraObject.GetComponent<AudioListener>() == null)
+            {
+                cameraObject.AddComponent<AudioListener>();
+            }
+
             CameraFollow follow = cameraObject.GetComponent<CameraFollow>();
             if (follow == null)
             {
@@ -232,6 +317,7 @@ namespace EchoEscape
             follow.followSpeed = 5f;
         }
 
+        // 这个函数检查当前场景里是否已经有新版方块风格生成布局。
         /// <summary>
         /// Checks whether this scene already contains the current block-style generated layout.
         /// </summary>
@@ -250,6 +336,7 @@ namespace EchoEscape
             return false;
         }
 
+        // 这个函数在重新生成干净的方块布局前，先删除旧版生成的 Level2 对象。
         /// <summary>
         /// Removes older generated Level2 objects before rebuilding the clean block-style layout.
         /// </summary>
@@ -263,6 +350,7 @@ namespace EchoEscape
             RemoveSceneObject("Prototype HUD");
         }
 
+        // 这个函数从当前引导对象所在场景里删除指定名字的根对象。
         /// <summary>
         /// Removes a named root object from the same scene as this bootstrap object.
         /// </summary>
@@ -280,6 +368,7 @@ namespace EchoEscape
             }
         }
 
+        // 这个函数创建样式标记，用来识别当前 Level2 是否已经是新版方块原型布局。
         /// <summary>
         /// Creates the marker used to recognize the current Level2 block prototype style.
         /// </summary>
@@ -290,6 +379,7 @@ namespace EchoEscape
             marker.transform.SetParent(parent, false);
         }
 
+        // 这个函数创建攻击教学用的简单方块敌人。
         /// <summary>
         /// Creates the simple block enemy used by the attack tutorial.
         /// </summary>
@@ -300,16 +390,20 @@ namespace EchoEscape
             enemy.AddComponent<SimpleEnemy>();
         }
 
+        // 这个函数创建宝箱生成点，供 GameManager 生成教学宝箱。
         /// <summary>
         /// Creates the marker used by the Game Manager to spawn the tutorial chest.
         /// </summary>
         /// <param name="parent">Root object used to organize the chest marker.</param>
         private static void CreateChestSpawn(Transform parent)
         {
-            GameObject marker = CreateBlock("Chest_Block_Spawn", new Vector2(4.65f, -1.72f), new Vector2(0.85f, 0.55f), new Color(1f, 0.74f, 0.22f), false, parent);
+            GameObject marker = new GameObject("Chest_Block_Spawn");
+            marker.transform.SetParent(parent, false);
+            marker.transform.position = new Vector3(4.65f, -1.72f, 0f);
             marker.AddComponent<ChestSpawnPoint>();
         }
 
+        // 这个函数在宝箱后小坑下方创建红色危险触发区。
         /// <summary>
         /// Creates the red hazard trigger below the small post-chest gap.
         /// </summary>
@@ -321,6 +415,7 @@ namespace EchoEscape
             hazardZone.deathReason = "fell into the loot risk pit";
         }
 
+        // 这个函数创建 Level2 出口触发区，玩家进入后结束演示而不是加载不存在的下一关。
         /// <summary>
         /// Creates the Level2 exit trigger. It completes the demo instead of loading a missing next scene.
         /// </summary>
@@ -331,6 +426,7 @@ namespace EchoEscape
             exit.AddComponent<GoalZone>();
         }
 
+        // 这个函数创建 Level2 的 GameManager、奖励表和 HUD。
         /// <summary>
         /// Creates the Level2 Game Manager, loot table, and HUD.
         /// </summary>
@@ -347,6 +443,7 @@ namespace EchoEscape
             manager.chestsPerRun = 1;
             manager.useTutorialDirector = false;
             manager.usePrototypeVisualSkinner = false;
+            manager.useLootFeedbackUi = true;
             manager.startingStatusMessage = "Defeat the enemy, open the chest, and escape alive to secure the loot.";
             manager.lootTable = new[]
             {
@@ -363,6 +460,7 @@ namespace EchoEscape
             }
         }
 
+        // 这个函数创建一个教学问号触发区和它的可见图标。
         /// <summary>
         /// Creates one tutorial question mark trigger and visible icon.
         /// </summary>
@@ -411,6 +509,7 @@ namespace EchoEscape
             }
         }
 
+        // 这个函数创建 Level2 问号提示使用的深色教学弹窗 UI。
         /// <summary>
         /// Creates the dark popup UI used by Level2 question mark triggers.
         /// </summary>
@@ -460,6 +559,7 @@ namespace EchoEscape
             return manager;
         }
 
+        // 这个函数确保场景里有 EventSystem，让 UI 能接收输入。
         /// <summary>
         /// Ensures the scene has an EventSystem for UI input.
         /// </summary>
@@ -475,6 +575,7 @@ namespace EchoEscape
             eventSystemObject.AddComponent<StandaloneInputModule>();
         }
 
+        // 这个函数创建一个带 RectTransform 的 UI 对象。
         /// <summary>
         /// Creates a UI object with a RectTransform.
         /// </summary>
@@ -489,6 +590,7 @@ namespace EchoEscape
             return uiObject;
         }
 
+        // 这个函数为教学弹窗创建一个 UI Text 文字对象。
         /// <summary>
         /// Creates one UI Text object for the tutorial popup.
         /// </summary>
@@ -523,6 +625,7 @@ namespace EchoEscape
             return uiText;
         }
 
+        // 这个函数创建一个简单有颜色、带 2D 碰撞器的方块。
         /// <summary>
         /// Creates a simple colored block with a 2D collider.
         /// </summary>
@@ -538,6 +641,7 @@ namespace EchoEscape
             return PrototypeFactory.CreateBlock(name, position, size, color, solid, parent);
         }
 
+        // 这个函数根据当前是在编辑器还是运行时，使用正确的 Unity 删除方法销毁对象。
         /// <summary>
         /// Destroys editor/runtime objects with the correct Unity destroy call.
         /// </summary>
