@@ -15,8 +15,8 @@ using Object = UnityEngine.Object;
 /// </summary>
 /// <remarks>
 /// This is an Editor-only utility script.
-/// Use the Unity menu item Echo Escape/Build Prototype Levels to rebuild Level1_Tutorial,
-/// update Build Settings, create placeholder sprites, and keep the Level1/Level2 tutorial setup repeatable.
+/// Use the Unity menu item Echo Escape/Build Prototype Levels to keep the art-authored
+/// Level1_Tutorial scene in the build, rebuild Level2, and update Build Settings.
 /// </remarks>
 public static class EchoEscapeLevelBuilder
 {
@@ -35,7 +35,7 @@ public static class EchoEscapeLevelBuilder
     /// Rebuilds the prototype level setup used by the current project.
     /// </summary>
     /// <remarks>
-    /// Called from the Unity editor menu. It currently rebuilds Level1_Tutorial and preserves Level2/Level3 files.
+    /// Called from the Unity editor menu. It preserves the official art-authored Level1_Tutorial scene and rebuilds Level2.
     /// </remarks>
     [MenuItem("Echo Escape/Build Prototype Levels")]
     public static void BuildPrototypeLevels()
@@ -43,13 +43,13 @@ public static class EchoEscapeLevelBuilder
         EnsureProjectFolders();
         EnsureTag("Echo");
         EnsureWhitePlaceholderSprite();
-        BuildLevel1Tutorial();
+        EnsureOfficialLevel1SceneExists();
         BuildLevel2LootTutorial();
         UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Echo Escape prototype levels rebuilt. Level1 teaches Echo recording, and Level2 teaches attack, loot risk, and extraction.");
+        Debug.Log("Echo Escape prototype levels rebuilt. Official Level1_Tutorial was preserved, and Level2 teaches attack, loot risk, and extraction.");
     }
 
     /// <summary>
@@ -64,21 +64,36 @@ public static class EchoEscapeLevelBuilder
     }
 
     /// <summary>
-    /// Command-line entry point for rebuilding only Level1_Tutorial.
+    /// Command-line entry point for validating the official Level1_Tutorial scene.
     /// </summary>
     /// <remarks>
-    /// This is useful when testing Level1 changes without regenerating the Level2 loot tutorial scene.
+    /// Level1_Tutorial is now an art-authored scene, so this command does not overwrite it.
     /// </remarks>
     public static void BuildLevel1TutorialFromCommandLine()
     {
         EnsureProjectFolders();
         EnsureTag("Echo");
-        EnsureWhitePlaceholderSprite();
-        BuildLevel1Tutorial();
+        EnsureOfficialLevel1SceneExists();
+        UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Level1_Tutorial rebuilt with the gravity flip tutorial area.");
+        Debug.Log("Official Level1_Tutorial scene checked and preserved.");
+    }
+
+    /// <summary>
+    /// Confirms the official art-authored Level1_Tutorial scene exists before build settings are updated.
+    /// </summary>
+    /// <remarks>
+    /// The old procedural Level1 builder is intentionally no longer invoked for the official first level,
+    /// because it would overwrite the dark forest Ruby character version stored in Level1_Tutorial.unity.
+    /// </remarks>
+    private static void EnsureOfficialLevel1SceneExists()
+    {
+        if (!File.Exists(ToDiskPath(Level1ScenePath)))
+        {
+            Debug.LogError("Official Level1_Tutorial scene is missing. Restore Assets/Scenes/Level1_Tutorial.unity before building prototype levels.");
+        }
     }
 
     /// <summary>
