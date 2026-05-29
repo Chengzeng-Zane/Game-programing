@@ -147,6 +147,9 @@ namespace EchoEscape
                 }
 
                 builder.Append(loot[i].itemName);
+                builder.Append(" [");
+                builder.Append(loot[i].rarity);
+                builder.Append("]");
             }
 
             return builder.ToString();
