@@ -28,6 +28,7 @@ namespace EchoEscape
         private bool debugLogs = true; // Prints simple combat messages for playtesting.
 
         private PlayerController2D playerController;
+        private PlayerAnimationController animationController;
         private float nextAttackTime;
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace EchoEscape
         private void Awake()
         {
             playerController = GetComponent<PlayerController2D>();
+            animationController = GetComponentInChildren<PlayerAnimationController>();
         }
 
         /// <summary>
@@ -64,6 +66,8 @@ namespace EchoEscape
         /// </remarks>
         public void Attack()
         {
+            animationController?.PlayAttack();
+
             Vector2 center = AttackCenter();
             Collider2D[] hits = Physics2D.OverlapBoxAll(center, attackBoxSize, 0f);
             bool defeatedEnemy = false;

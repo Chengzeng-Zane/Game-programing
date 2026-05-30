@@ -15,26 +15,32 @@ namespace EchoEscape
         [SerializeField] private float idleFramesPerSecond = 10f;
         [SerializeField] private float runFramesPerSecond = 12f;
         [SerializeField] private float jumpFramesPerSecond = 10f;
+        [SerializeField] private float attackFramesPerSecond = 14f;
+        [SerializeField] private float attackDuration = 0.28f;
         [SerializeField] private float horizontalRunThreshold = 0.12f;
         [SerializeField] private float airborneVelocityThreshold = 0.25f;
 
         private const string IdlePath = "Ancient Forest 1.6/Ruby V4 - Demo/Idle/ruby_idle-Sheet";
         private const string RunPath = "Ancient Forest 1.6/Ruby V4 - Demo/Run/run-Sheet";
         private const string JumpPath = "Ancient Forest 1.6/Ruby V4 - Demo/Jump/Sheet/jump_up-Sheet";
+        private const string AttackPath = "Ancient Forest 1.6/Ruby V4 - Demo/Attack/attack_1-Sheet";
 
         private Sprite[] idleFrames;
         private Sprite[] runFrames;
         private Sprite[] jumpFrames;
+        private Sprite[] attackFrames;
         private Sprite[] currentFrames;
         private int currentFrameIndex;
         private float frameTimer;
+        private float attackTimer;
         private VisualState currentState = VisualState.Idle;
 
         private enum VisualState
         {
             Idle,
             Run,
-            Jump
+            Jump,
+            Attack
         }
 
         private void Awake()
@@ -62,6 +68,7 @@ namespace EchoEscape
             idleFrames = LoadFrames(IdlePath);
             runFrames = LoadFrames(RunPath);
             jumpFrames = LoadFrames(JumpPath);
+            attackFrames = LoadFrames(AttackPath);
             SetState(VisualState.Idle);
         }
 
@@ -73,11 +80,22 @@ namespace EchoEscape
             }
 
             Vector2 velocity = body.velocity;
+            float horizontalSpeed = Mathf.Abs(velocity.x);
+
+            if (attackTimer > 0f && attackFrames.Length > 0)
+            {
+                attackTimer -= Time.deltaTime;
+                SetState(VisualState.Attack);
+                UpdateFacing(velocity, horizontalSpeed);
+                AdvanceFrame(false);
+                UpdateAnimatorParameters(horizontalSpeed, IsGrounded(velocity), velocity.y);
+                return;
+            }
+
             bool isGrounded = playerController != null
                 ? playerController.IsGrounded()
                 : Mathf.Abs(velocity.y) <= airborneVelocityThreshold;
             bool isJumping = !isGrounded;
-            float horizontalSpeed = Mathf.Abs(velocity.x);
 
             if (isJumping)
             {
@@ -92,13 +110,22 @@ namespace EchoEscape
                 SetState(VisualState.Idle);
             }
 
-            if (horizontalSpeed > horizontalRunThreshold)
-            {
-                spriteRenderer.flipX = velocity.x < 0f;
-            }
+            UpdateFacing(velocity, horizontalSpeed);
 
             AdvanceFrame();
             UpdateAnimatorParameters(horizontalSpeed, isGrounded, velocity.y);
+        }
+
+        public void PlayAttack()
+        {
+            if (attackFrames == null || attackFrames.Length == 0)
+            {
+                return;
+            }
+
+            float fullClipDuration = attackFrames.Length / Mathf.Max(1f, attackFramesPerSecond);
+            attackTimer = Mathf.Max(attackDuration, fullClipDuration);
+            SetState(VisualState.Attack);
         }
 
         private void SetState(VisualState nextState)
@@ -113,6 +140,7 @@ namespace EchoEscape
             {
                 VisualState.Run => runFrames,
                 VisualState.Jump => jumpFrames,
+                VisualState.Attack => attackFrames,
                 _ => idleFrames
             };
 
@@ -121,7 +149,7 @@ namespace EchoEscape
             ApplyCurrentFrame();
         }
 
-        private void AdvanceFrame()
+        private void AdvanceFrame(bool loop = true)
         {
             if (currentFrames == null || currentFrames.Length <= 1)
             {
@@ -132,6 +160,7 @@ namespace EchoEscape
             {
                 VisualState.Run => runFramesPerSecond,
                 VisualState.Jump => jumpFramesPerSecond,
+                VisualState.Attack => attackFramesPerSecond,
                 _ => idleFramesPerSecond
             };
 
@@ -140,8 +169,29 @@ namespace EchoEscape
             while (frameTimer >= frameDuration)
             {
                 frameTimer -= frameDuration;
-                currentFrameIndex = (currentFrameIndex + 1) % currentFrames.Length;
+                currentFrameIndex = loop
+                    ? (currentFrameIndex + 1) % currentFrames.Length
+                    : Mathf.Min(currentFrameIndex + 1, currentFrames.Length - 1);
                 ApplyCurrentFrame();
+            }
+        }
+
+        private bool IsGrounded(Vector2 velocity)
+        {
+            return playerController != null
+                ? playerController.IsGrounded()
+                : Mathf.Abs(velocity.y) <= airborneVelocityThreshold;
+        }
+
+        private void UpdateFacing(Vector2 velocity, float horizontalSpeed)
+        {
+            if (horizontalSpeed > horizontalRunThreshold)
+            {
+                spriteRenderer.flipX = velocity.x < 0f;
+            }
+            else if (playerController != null)
+            {
+                spriteRenderer.flipX = !playerController.FacingRight;
             }
         }
 
@@ -203,5 +253,6 @@ namespace EchoEscape
             Array.Sort(frames, (left, right) => string.Compare(left.name, right.name, StringComparison.Ordinal));
             return frames;
         }
+
     }
 }
