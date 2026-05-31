@@ -85,7 +85,7 @@ namespace EchoEscape
                     continue;
                 }
 
-                enemy.Die();
+                enemy.TakeDamage(1);
                 defeatedEnemy = true;
             }
 
