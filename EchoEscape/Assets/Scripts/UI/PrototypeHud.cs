@@ -37,7 +37,7 @@ namespace EchoEscape
 
             GUILayout.BeginArea(new Rect(14f, 14f, 620f, 300f), panelStyle);
             GUILayout.Label("Echo Escape Training Room", titleStyle);
-            GUILayout.Label("Move: A/D or Arrow Keys | Jump: Space/W | Record: Q | Replay Echo: E | Open Chest: F | Restart: R", hintStyle);
+            GUILayout.Label("Move: A/D or Arrow Keys | Jump: Space/W | Attack: J | Record: Q | Replay Echo: E | Open Chest: F | Restart: R", hintStyle);
             GUILayout.Space(6f);
 
             TutorialDirector tutorial = manager.Tutorial;
@@ -65,8 +65,8 @@ namespace EchoEscape
 
             GUILayout.Label(recordingText, bodyStyle);
             GUILayout.Label($"Deaths: {manager.DeathCount}", bodyStyle);
-            GUILayout.Label($"Pending loot: {FormatLoot(manager.PendingLoot)}", bodyStyle);
-            GUILayout.Label($"Secured loot: {FormatLoot(manager.SecuredLoot)}", bodyStyle);
+            GUILayout.Label($"Pending Loot: {FormatLoot(manager.PendingLoot)}", bodyStyle);
+            GUILayout.Label($"Secured Loot: {FormatLoot(manager.SecuredLoot)}", bodyStyle);
             GUILayout.EndArea();
 
             if (tutorial != null)

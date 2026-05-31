@@ -54,6 +54,27 @@ namespace EchoEscape
             Debug.Log("Loot feedback UI shown.");
         }
 
+        /// <summary>
+        /// Displays the death popup, including any pending loot lost before the scene reloads.
+        /// </summary>
+        /// <param name="lostLoot">Pending loot that was cleared by death.</param>
+        public void ShowDeath(IReadOnlyList<LootDefinition> lostLoot)
+        {
+            EnsureUi();
+
+            popupTitleText.text = "You Died";
+            popupBodyText.text = lostLoot != null && lostLoot.Count > 0
+                ? $"Loot Lost: {FormatLoot(lostLoot)}"
+                : "Restarting current level...";
+            popupPanel.SetActive(true);
+
+            if (hideRoutine != null)
+            {
+                StopCoroutine(hideRoutine);
+                hideRoutine = null;
+            }
+        }
+
         // Updates the persistent current and secured loot labels.
         /// <summary>
         /// Refreshes the persistent current and secured loot summary.
@@ -64,7 +85,7 @@ namespace EchoEscape
         {
             EnsureUi();
 
-            currentLootText.text = $"Current Loot: {FormatLoot(pendingLoot)}";
+            currentLootText.text = $"Pending Loot: {FormatLoot(pendingLoot)}";
             securedLootText.text = $"Secured Loot: {FormatLoot(securedLoot)}";
         }
 
@@ -121,7 +142,7 @@ namespace EchoEscape
             panelRect.anchoredPosition = new Vector2(16f, -16f);
             panelRect.sizeDelta = new Vector2(360f, 72f);
 
-            currentLootText = CreateText("CurrentLootText", panel.transform, "Current Loot: none", 18, FontStyle.Bold, new Color(1f, 0.9f, 0.35f));
+            currentLootText = CreateText("CurrentLootText", panel.transform, "Pending Loot: none", 18, FontStyle.Bold, new Color(1f, 0.9f, 0.35f));
             RectTransform currentRect = currentLootText.GetComponent<RectTransform>();
             currentRect.anchoredPosition = new Vector2(18f, -16f);
             currentRect.sizeDelta = new Vector2(324f, 24f);

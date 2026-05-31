@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -78,6 +79,10 @@ namespace EchoEscape
         /// </summary>
         public bool useLootFeedbackUi = true;
 
+        [Header("Death")]
+        [SerializeField]
+        private float deathReloadDelay = 1f;
+
         // 这个属性保存 HUD 当前要显示的短状态信息。
         /// <summary>
         /// Current short message shown by prototype HUD or status systems.
@@ -147,6 +152,7 @@ namespace EchoEscape
         private readonly List<LootDefinition> pendingLoot = new List<LootDefinition>();
         private readonly List<LootDefinition> securedLoot = new List<LootDefinition>();
         private static Sprite chestSprite;
+        private bool deathInProgress;
 
         // 这个函数在 GameManager 创建时运行，用来设置单例引用和基础组件。
         /// <summary>
@@ -287,19 +293,20 @@ namespace EchoEscape
 
         // 这个函数处理玩家死亡：清空未保存奖励、移除当前回声，并把玩家送回复活点。
         /// <summary>
-        /// Handles player death, clears pending loot, removes active Echo, and respawns the player.
+        /// Handles player death, clears pending loot, removes active Echo, and reloads the current scene.
         /// </summary>
         /// <param name="reason">Short text explaining why the player died.</param>
         public void KillPlayer(string reason)
         {
-            if (HasWon)
+            if (HasWon || deathInProgress)
             {
                 return;
             }
 
+            deathInProgress = true;
             DeathCount++;
             AudioService?.PlayHurt();
-            int lostCount = pendingLoot.Count;
+            List<LootDefinition> lostLoot = new List<LootDefinition>(pendingLoot);
             pendingLoot.Clear();
 
             if (recorder != null)
@@ -307,19 +314,19 @@ namespace EchoEscape
                 recorder.DestroyActiveEcho();
             }
 
-            if (player != null && playerSpawn != null)
-            {
-                player.Respawn(playerSpawn.position);
-            }
+            DisablePlayerForDeath();
 
-            string lossText = lostCount > 0 ? $" Lost {lostCount} unbanked loot item(s)." : string.Empty;
+            string lossText = lostLoot.Count > 0 ? $" Loot Lost: {FormatLoot(lostLoot)}" : string.Empty;
             UpdateStatus($"You died: {reason}.{lossText}");
             RefreshLootFeedback();
+            LootFeedback?.ShowDeath(lostLoot);
 
-            if (lostCount > 0)
+            if (lostLoot.Count > 0)
             {
                 Debug.Log("Player died. Pending loot lost.");
             }
+
+            StartCoroutine(ReloadCurrentSceneAfterDeath());
         }
 
         // 这个函数在玩家到达出口时完成本轮游戏，并把待保存奖励转成已保存奖励。
@@ -413,6 +420,62 @@ namespace EchoEscape
             {
                 LootFeedback?.RefreshLootState(pendingLoot, securedLoot);
             }
+        }
+
+        private IEnumerator ReloadCurrentSceneAfterDeath()
+        {
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, deathReloadDelay));
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        private void DisablePlayerForDeath()
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            Rigidbody2D body = player.GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.velocity = Vector2.zero;
+            }
+
+            PlayerAttack attack = player.GetComponent<PlayerAttack>();
+            if (attack != null)
+            {
+                attack.enabled = false;
+            }
+
+            GravityFlipController gravityFlip = player.GetComponent<GravityFlipController>();
+            if (gravityFlip != null)
+            {
+                gravityFlip.enabled = false;
+            }
+
+            if (recorder != null)
+            {
+                recorder.enabled = false;
+            }
+
+            player.enabled = false;
+        }
+
+        private static string FormatLoot(IReadOnlyList<LootDefinition> loot)
+        {
+            if (loot == null || loot.Count == 0)
+            {
+                return "none";
+            }
+
+            List<string> labels = new List<string>(loot.Count);
+            for (int i = 0; i < loot.Count; i++)
+            {
+                labels.Add($"{loot[i].itemName} [{loot[i].rarity}]");
+            }
+
+            return string.Join(", ", labels);
         }
 
         // 这个函数从可用 ChestSpawnPoint 中选一部分位置生成宝箱。
