@@ -715,7 +715,11 @@ MonoBehaviour:
   maxHealth: 1
   chasePlayer: 1
   detectionRange: 5
-  attackRange: 1
+  attackRange: 0.85
+  enemyAttackBoxSize: {x: 0.65, y: 0.6}
+  enemyAttackOffset: {x: 0.45, y: 0}
+  enemyAttackActiveDelay: 0.15
+  enemyAttackActiveDuration: 0.12
   chaseSpeed: 1.75
   returnSpeed: 1.1
   attackCooldown: 1
@@ -2918,9 +2922,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackKey: 106
-  attackBoxSize: {x: 1.1, y: 0.9}
-  attackOffset: {x: 0.75, y: -0.05}
-  attackCooldown: 0.35
+  attackBoxSize: {x: 0.65, y: 0.5}
+  attackBoxOffset: {x: 0.55, y: 0}
+  attackDamage: 1
+  enemyLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  attackActiveDelay: 0.1
+  attackActiveDuration: 0.12
+  attackCooldown: 0.4
   debugLogs: 1
 --- !u!70 &1401991324
 CapsuleCollider2D:

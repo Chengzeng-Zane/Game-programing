@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EchoEscape
 {
@@ -38,7 +40,24 @@ namespace EchoEscape
         private float detectionRange = 5f;
 
         [SerializeField]
-        private float attackRange = 1f;
+        private float attackRange = 0.85f;
+
+        [Header("Attack Hitbox")]
+        [SerializeField]
+        [FormerlySerializedAs("attackBoxSize")]
+        private Vector2 enemyAttackBoxSize = new Vector2(0.65f, 0.6f);
+
+        [SerializeField]
+        [FormerlySerializedAs("attackBoxOffset")]
+        private Vector2 enemyAttackOffset = new Vector2(0.45f, 0f);
+
+        [SerializeField]
+        [FormerlySerializedAs("attackActiveDelay")]
+        private float enemyAttackActiveDelay = 0.15f;
+
+        [SerializeField]
+        [FormerlySerializedAs("attackActiveDuration")]
+        private float enemyAttackActiveDuration = 0.12f;
 
         [SerializeField]
         private float chaseSpeed = 1.75f;
@@ -94,9 +113,12 @@ namespace EchoEscape
         private float attackAnimationTimer;
         private float nextAttackTime;
         private Transform playerTarget;
+        private Coroutine attackRoutine;
         private int currentHealth;
         private bool defeated;
         private bool playingDeathAnimation;
+        private bool facingRight = true;
+        private bool attackHitboxActive;
         private EnemyVisualState visualState = EnemyVisualState.Idle;
 
         private enum EnemyVisualState
@@ -158,9 +180,9 @@ namespace EchoEscape
                 return;
             }
 
-            if (attackAnimationTimer > 0f)
+            if (attackRoutine != null || attackAnimationTimer > 0f)
             {
-                attackAnimationTimer -= Time.deltaTime;
+                attackAnimationTimer = Mathf.Max(0f, attackAnimationTimer - Time.deltaTime);
                 SetVisualState(EnemyVisualState.Attack);
                 AdvanceFrame(attackFramesPerSecond, false);
                 return;
@@ -179,14 +201,16 @@ namespace EchoEscape
                 float distanceToPlayer = Vector2.Distance(transform.position, target.position);
                 bool withinLeash = Vector2.Distance(startPosition, target.position) <= leashDistance;
 
-                if (distanceToPlayer <= attackRange && withinLeash)
-                {
-                    AttackPlayer();
-                    return;
-                }
-
                 if (distanceToPlayer <= detectionRange && withinLeash)
                 {
+                    FaceTarget(target);
+
+                    if (distanceToPlayer <= attackRange)
+                    {
+                        StartAttack(target);
+                        return;
+                    }
+
                     ChasePlayer(target);
                     return;
                 }
@@ -240,24 +264,105 @@ namespace EchoEscape
         /// <param name="other">The collider that touched the enemy.</param>
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (defeated || !IsPlayer(other))
+            TryAttackCollider(other);
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            TryAttackCollider(other);
+        }
+
+        private void TryAttackCollider(Collider2D other)
+        {
+            if (defeated)
             {
                 return;
             }
 
-            AttackPlayer();
+            PlayerController2D player = GetPlayer(other);
+            if (player == null)
+            {
+                return;
+            }
+
+            StartAttack(player.transform);
         }
 
-        private void AttackPlayer()
+        private void StartAttack(Transform target)
         {
+            if (attackRoutine != null || attackAnimationTimer > 0f)
+            {
+                return;
+            }
+
+            FaceTarget(target);
+
+            if (!CanStartAttack(target))
+            {
+                return;
+            }
+
             if (Time.time < nextAttackTime)
             {
                 return;
             }
 
             nextAttackTime = Time.time + attackCooldown;
-            PlayAttackAnimation();
+            attackRoutine = StartCoroutine(AttackRoutine());
+        }
 
+        private IEnumerator AttackRoutine()
+        {
+            PlayAttackAnimation(enemyAttackActiveDelay + enemyAttackActiveDuration);
+
+            if (enemyAttackActiveDelay > 0f)
+            {
+                yield return new WaitForSeconds(enemyAttackActiveDelay);
+            }
+
+            if (defeated || playingDeathAnimation)
+            {
+                attackRoutine = null;
+                yield break;
+            }
+
+            attackHitboxActive = true;
+            bool hitPlayer = false;
+            float endTime = Time.time + Mathf.Max(0.01f, enemyAttackActiveDuration);
+            while (Time.time < endTime && !defeated && !playingDeathAnimation)
+            {
+                if (!hitPlayer && TryHitPlayerInAttackBox())
+                {
+                    hitPlayer = true;
+                }
+
+                yield return null;
+            }
+
+            attackHitboxActive = false;
+            attackRoutine = null;
+        }
+
+        private bool TryHitPlayerInAttackBox()
+        {
+            Collider2D[] hits = Physics2D.OverlapBoxAll(AttackBoxCenter(), enemyAttackBoxSize, 0f);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                PlayerController2D player = GetPlayer(hits[i]);
+                if (player == null || !IsInFacingDirection(player.transform.position))
+                {
+                    continue;
+                }
+
+                KillPlayer();
+                return true;
+            }
+
+            return false;
+        }
+
+        private void KillPlayer()
+        {
             if (EchoEscapeGameManager.Instance != null)
             {
                 EchoEscapeGameManager.Instance.KillPlayer(deathReason);
@@ -266,6 +371,25 @@ namespace EchoEscape
             {
                 Debug.LogWarning("Cursed Ghost attacked the player, but no EchoEscapeGameManager was found.");
             }
+        }
+
+        private bool CanStartAttack(Transform target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            float effectiveAttackRange = Mathf.Max(0f, attackRange);
+            float attackRangeSquared = effectiveAttackRange * effectiveAttackRange;
+            if (((Vector2)transform.position - (Vector2)target.position).sqrMagnitude > attackRangeSquared)
+            {
+                return false;
+            }
+
+            float effectiveLeashDistance = Mathf.Max(0f, leashDistance);
+            float leashDistanceSquared = effectiveLeashDistance * effectiveLeashDistance;
+            return ((Vector2)startPosition - (Vector2)target.position).sqrMagnitude <= leashDistanceSquared;
         }
 
         /// <summary>
@@ -297,6 +421,15 @@ namespace EchoEscape
             }
 
             defeated = true;
+            if (attackRoutine != null)
+            {
+                StopCoroutine(attackRoutine);
+                attackRoutine = null;
+            }
+
+            attackHitboxActive = false;
+            attackAnimationTimer = 0f;
+
             if (debugLogs)
             {
                 Debug.Log("Enemy defeated.");
@@ -319,44 +452,28 @@ namespace EchoEscape
             SetVisualState(EnemyVisualState.Death);
         }
 
-        /// <summary>
-        /// Checks whether a collider belongs to the real player.
-        /// </summary>
-        /// <param name="other">Collider being checked.</param>
-        /// <returns>True if the collider is on the Player or its child object; otherwise false.</returns>
-        private bool IsPlayer(Collider2D other)
+        private PlayerController2D GetPlayer(Collider2D other)
         {
-            return HasTag(other, "Player") ||
-                other.GetComponent<PlayerController2D>() != null ||
-                other.GetComponentInParent<PlayerController2D>() != null;
+            if (other == null ||
+                HasTag(other, "Echo") ||
+                other.GetComponent<EchoReplayController>() != null ||
+                other.GetComponentInParent<EchoReplayController>() != null)
+            {
+                return null;
+            }
+
+            return other.GetComponent<PlayerController2D>() ?? other.GetComponentInParent<PlayerController2D>();
         }
 
-        /// <summary>
-        /// Safely checks a tag without throwing if the tag is missing from Project Settings.
-        /// </summary>
-        /// <param name="other">Collider whose object or root should be checked.</param>
-        /// <param name="tagName">Tag name to compare.</param>
-        /// <returns>True if the tag matches; otherwise false.</returns>
-        private bool HasTag(Collider2D other, string tagName)
-        {
-            try
-            {
-                return other.CompareTag(tagName) || other.transform.root.CompareTag(tagName);
-            }
-            catch (UnityException)
-            {
-                return false;
-            }
-        }
-
-        private void PlayAttackAnimation()
+        private void PlayAttackAnimation(float minimumDuration)
         {
             if (attackFrames.Length == 0)
             {
                 return;
             }
 
-            attackAnimationTimer = Mathf.Max(attackAnimationDuration, attackFrames.Length / Mathf.Max(1f, attackFramesPerSecond));
+            float frameDuration = attackFrames.Length / Mathf.Max(1f, attackFramesPerSecond);
+            attackAnimationTimer = Mathf.Max(attackAnimationDuration, Mathf.Max(minimumDuration, frameDuration));
             SetVisualState(EnemyVisualState.Attack);
         }
 
@@ -421,9 +538,67 @@ namespace EchoEscape
 
         private void UpdateFacing(float horizontalDirection)
         {
-            if (visualRenderer != null && Mathf.Abs(horizontalDirection) > 0.05f)
+            if (Mathf.Abs(horizontalDirection) <= 0.05f)
             {
-                visualRenderer.flipX = horizontalDirection < 0f;
+                return;
+            }
+
+            facingRight = horizontalDirection > 0f;
+            if (visualRenderer != null)
+            {
+                visualRenderer.flipX = !facingRight;
+            }
+        }
+
+        private void FaceTarget(Transform target)
+        {
+            if (target != null)
+            {
+                UpdateFacing(target.position.x - transform.position.x);
+            }
+        }
+
+        private Vector2 AttackBoxCenter()
+        {
+            float direction = facingRight ? 1f : -1f;
+            Vector2 offset = new Vector2(Mathf.Abs(enemyAttackOffset.x) * direction, enemyAttackOffset.y);
+            return (Vector2)transform.position + offset;
+        }
+
+        private bool IsInFacingDirection(Vector2 targetPosition)
+        {
+            float direction = facingRight ? 1f : -1f;
+            return (targetPosition.x - transform.position.x) * direction > 0.01f;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = new Color(0.2f, 0.75f, 1f, 0.7f);
+            Gizmos.DrawWireSphere(transform.position, Mathf.Max(0f, detectionRange));
+
+            Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.85f);
+            Gizmos.DrawWireSphere(transform.position, Mathf.Max(0f, attackRange));
+
+            Vector2 center = AttackBoxCenter();
+            Gizmos.color = attackHitboxActive
+                ? new Color(1f, 0f, 0f, 0.32f)
+                : new Color(1f, 0.45f, 0.05f, 0.18f);
+            Gizmos.DrawCube(center, enemyAttackBoxSize);
+            Gizmos.color = attackHitboxActive
+                ? new Color(1f, 0f, 0f, 0.95f)
+                : new Color(1f, 0.45f, 0.05f, 0.85f);
+            Gizmos.DrawWireCube(center, enemyAttackBoxSize);
+        }
+
+        private bool HasTag(Collider2D other, string tagName)
+        {
+            try
+            {
+                return other.CompareTag(tagName) || other.transform.root.CompareTag(tagName);
+            }
+            catch (UnityException)
+            {
+                return false;
             }
         }
 
