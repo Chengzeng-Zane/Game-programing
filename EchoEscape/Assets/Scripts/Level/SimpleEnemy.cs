@@ -79,6 +79,12 @@ namespace EchoEscape
         private SpriteRenderer visualRenderer;
 
         [SerializeField]
+        private bool spriteDefaultFacesRight;
+
+        [SerializeField]
+        private bool facingRight;
+
+        [SerializeField]
         private string idleFramesPath = "Ancient Forest 1.6/Enemies/Cursed Ghost/Float/Float-Sheet";
 
         [SerializeField]
@@ -117,8 +123,9 @@ namespace EchoEscape
         private int currentHealth;
         private bool defeated;
         private bool playingDeathAnimation;
-        private bool facingRight = true;
         private bool attackHitboxActive;
+        private bool hasKilledPlayer;
+        private bool pausedAfterPlayerDeath;
         private EnemyVisualState visualState = EnemyVisualState.Idle;
 
         private enum EnemyVisualState
@@ -152,6 +159,7 @@ namespace EchoEscape
 
             deathFrames = LoadFrames(deathFramesPath);
             attackFrames = LoadFrames(attackFramesPath);
+            ApplyFacingToVisual();
             SetVisualState(EnemyVisualState.Idle);
         }
 
@@ -177,6 +185,12 @@ namespace EchoEscape
 
             if (defeated)
             {
+                return;
+            }
+
+            if (ShouldPauseAfterPlayerDeath())
+            {
+                PauseAfterPlayerDeath();
                 return;
             }
 
@@ -279,6 +293,12 @@ namespace EchoEscape
                 return;
             }
 
+            if (ShouldPauseAfterPlayerDeath())
+            {
+                PauseAfterPlayerDeath();
+                return;
+            }
+
             PlayerController2D player = GetPlayer(other);
             if (player == null)
             {
@@ -290,6 +310,12 @@ namespace EchoEscape
 
         private void StartAttack(Transform target)
         {
+            if (ShouldPauseAfterPlayerDeath())
+            {
+                PauseAfterPlayerDeath();
+                return;
+            }
+
             if (attackRoutine != null || attackAnimationTimer > 0f)
             {
                 return;
@@ -308,10 +334,10 @@ namespace EchoEscape
             }
 
             nextAttackTime = Time.time + attackCooldown;
-            attackRoutine = StartCoroutine(AttackRoutine());
+            attackRoutine = StartCoroutine(AttackRoutine(target));
         }
 
-        private IEnumerator AttackRoutine()
+        private IEnumerator AttackRoutine(Transform target)
         {
             PlayAttackAnimation(enemyAttackActiveDelay + enemyAttackActiveDuration);
 
@@ -320,7 +346,7 @@ namespace EchoEscape
                 yield return new WaitForSeconds(enemyAttackActiveDelay);
             }
 
-            if (defeated || playingDeathAnimation)
+            if (defeated || playingDeathAnimation || ShouldPauseAfterPlayerDeath())
             {
                 attackRoutine = null;
                 yield break;
@@ -328,10 +354,12 @@ namespace EchoEscape
 
             attackHitboxActive = true;
             bool hitPlayer = false;
+            bool playerIsInFront = target != null && IsInFacingDirection(target.position);
+            bool playerInsideHitbox = false;
             float endTime = Time.time + Mathf.Max(0.01f, enemyAttackActiveDuration);
-            while (Time.time < endTime && !defeated && !playingDeathAnimation)
+            while (Time.time < endTime && !defeated && !playingDeathAnimation && !ShouldPauseAfterPlayerDeath())
             {
-                if (!hitPlayer && TryHitPlayerInAttackBox())
+                if (!hitPlayer && TryHitPlayerInAttackBox(target, out playerIsInFront, out playerInsideHitbox))
                 {
                     hitPlayer = true;
                 }
@@ -341,20 +369,33 @@ namespace EchoEscape
 
             attackHitboxActive = false;
             attackRoutine = null;
+            LogEnemyAttackCheck(target, playerIsInFront, playerInsideHitbox, hitPlayer);
         }
 
-        private bool TryHitPlayerInAttackBox()
+        private bool TryHitPlayerInAttackBox(Transform target, out bool playerIsInFront, out bool playerInsideHitbox)
         {
+            playerIsInFront = target != null && IsInFacingDirection(target.position);
+            playerInsideHitbox = false;
+
             Collider2D[] hits = Physics2D.OverlapBoxAll(AttackBoxCenter(), enemyAttackBoxSize, 0f);
             for (int i = 0; i < hits.Length; i++)
             {
                 PlayerController2D player = GetPlayer(hits[i]);
-                if (player == null || !IsInFacingDirection(player.transform.position))
+                if (player == null)
+                {
+                    continue;
+                }
+
+                playerInsideHitbox = true;
+                playerIsInFront = IsInFacingDirection(player.transform.position);
+                if (!playerIsInFront)
                 {
                     continue;
                 }
 
                 KillPlayer();
+                hasKilledPlayer = true;
+                PauseAfterPlayerDeath(false);
                 return true;
             }
 
@@ -370,6 +411,37 @@ namespace EchoEscape
             else if (debugLogs)
             {
                 Debug.LogWarning("Cursed Ghost attacked the player, but no EchoEscapeGameManager was found.");
+            }
+        }
+
+        private bool ShouldPauseAfterPlayerDeath()
+        {
+            return hasKilledPlayer ||
+                (EchoEscapeGameManager.Instance != null && EchoEscapeGameManager.Instance.IsPlayerDeadOrDying);
+        }
+
+        private void PauseAfterPlayerDeath(bool stopAttackRoutine = true)
+        {
+            if (pausedAfterPlayerDeath)
+            {
+                return;
+            }
+
+            pausedAfterPlayerDeath = true;
+            attackHitboxActive = false;
+            attackAnimationTimer = 0f;
+
+            if (stopAttackRoutine && attackRoutine != null)
+            {
+                StopCoroutine(attackRoutine);
+                attackRoutine = null;
+            }
+
+            SetVisualState(EnemyVisualState.Idle);
+
+            if (debugLogs)
+            {
+                Debug.Log($"{name} paused after triggering player death.");
             }
         }
 
@@ -544,10 +616,7 @@ namespace EchoEscape
             }
 
             facingRight = horizontalDirection > 0f;
-            if (visualRenderer != null)
-            {
-                visualRenderer.flipX = !facingRight;
-            }
+            ApplyFacingToVisual();
         }
 
         private void FaceTarget(Transform target)
@@ -569,6 +638,30 @@ namespace EchoEscape
         {
             float direction = facingRight ? 1f : -1f;
             return (targetPosition.x - transform.position.x) * direction > 0.01f;
+        }
+
+        private void ApplyFacingToVisual()
+        {
+            if (visualRenderer != null)
+            {
+                visualRenderer.flipX = spriteDefaultFacesRight ? !facingRight : facingRight;
+            }
+        }
+
+        private void LogEnemyAttackCheck(Transform target, bool playerIsInFront, bool playerInsideHitbox, bool hitPlayer)
+        {
+            if (!debugLogs)
+            {
+                return;
+            }
+
+            string playerPosition = target != null ? target.position.ToString("F2") : "none";
+            bool flipX = visualRenderer != null && visualRenderer.flipX;
+            Debug.Log(
+                $"[EnemyAttackCheck] enemy={name}, enemyPos={transform.position.ToString("F2")}, playerPos={playerPosition}, " +
+                $"facingRight={facingRight}, flipX={flipX}, spriteDefaultFacesRight={spriteDefaultFacesRight}, " +
+                $"playerIsInFront={playerIsInFront}, attackBoxCenter={AttackBoxCenter().ToString("F2")}, " +
+                $"attackBoxSize={enemyAttackBoxSize.ToString("F2")}, playerInsideHitbox={playerInsideHitbox}, final={(hitPlayer ? "hit" : "miss")}");
         }
 
         private void OnDrawGizmosSelected()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace EchoEscape
@@ -17,6 +18,7 @@ namespace EchoEscape
         [SerializeField] private float jumpFramesPerSecond = 10f;
         [SerializeField] private float attackFramesPerSecond = 14f;
         [SerializeField] private float attackDuration = 0.28f;
+        [SerializeField] private float deathFramesPerSecond = 15f;
         [SerializeField] private float horizontalRunThreshold = 0.12f;
         [SerializeField] private float airborneVelocityThreshold = 0.25f;
 
@@ -24,23 +26,28 @@ namespace EchoEscape
         private const string RunPath = "Ancient Forest 1.6/Ruby V4 - Demo/Run/run-Sheet";
         private const string JumpPath = "Ancient Forest 1.6/Ruby V4 - Demo/Jump/Sheet/jump_up-Sheet";
         private const string AttackPath = "Ancient Forest 1.6/Ruby V4 - Demo/Attack/attack_1-Sheet";
+        private const string DeathPath = "Ancient Forest 1.6/Ruby V4 - Demo/Death/deatht-Sheet";
 
         private Sprite[] idleFrames;
         private Sprite[] runFrames;
         private Sprite[] jumpFrames;
         private Sprite[] attackFrames;
+        private Sprite[] deathFrames;
         private Sprite[] currentFrames;
         private int currentFrameIndex;
         private float frameTimer;
         private float attackTimer;
+        private Coroutine deathRoutine;
         private VisualState currentState = VisualState.Idle;
+        private bool animationLocked;
 
         private enum VisualState
         {
             Idle,
             Run,
             Jump,
-            Attack
+            Attack,
+            Death
         }
 
         private void Awake()
@@ -69,12 +76,23 @@ namespace EchoEscape
             runFrames = LoadFrames(RunPath);
             jumpFrames = LoadFrames(JumpPath);
             attackFrames = LoadFrames(AttackPath);
+            deathFrames = LoadFrames(DeathPath);
             SetState(VisualState.Idle);
         }
 
         private void Update()
         {
-            if (spriteRenderer == null || body == null)
+            if (spriteRenderer == null)
+            {
+                return;
+            }
+
+            if (animationLocked)
+            {
+                return;
+            }
+
+            if (body == null)
             {
                 return;
             }
@@ -118,6 +136,11 @@ namespace EchoEscape
 
         public void PlayAttack()
         {
+            if (animationLocked)
+            {
+                return;
+            }
+
             if (attackFrames == null || attackFrames.Length == 0)
             {
                 return;
@@ -126,6 +149,78 @@ namespace EchoEscape
             float fullClipDuration = attackFrames.Length / Mathf.Max(1f, attackFramesPerSecond);
             attackTimer = Mathf.Max(attackDuration, fullClipDuration);
             SetState(VisualState.Attack);
+        }
+
+        public float PlayDeath(string deathSource = "death")
+        {
+            if (spriteRenderer == null)
+            {
+                return 0f;
+            }
+
+            string spriteBefore = spriteRenderer.sprite != null ? spriteRenderer.sprite.name : "none";
+            bool animatorEnabledBefore = animator != null && animator.enabled;
+            bool stoppedDeathCoroutine = deathRoutine != null;
+            bool stoppedAttackAnimation = attackTimer > 0f;
+
+            attackTimer = 0f;
+            animationLocked = true;
+
+            if (deathRoutine != null)
+            {
+                StopCoroutine(deathRoutine);
+                deathRoutine = null;
+            }
+
+            if (animator != null && animator.enabled)
+            {
+                animator.enabled = false;
+            }
+
+            spriteRenderer.color = Color.white;
+
+            if (deathFrames == null || deathFrames.Length == 0)
+            {
+                ForceIdleFrame();
+                Debug.LogWarning(
+                    $"[PlayerDeathVisual] Death sprites missing at Resources/{DeathPath}; " +
+                    $"falling back to idle frame. deathSource={deathSource}, spriteBefore={spriteBefore}");
+                return 0f;
+            }
+
+            currentState = VisualState.Death;
+            currentFrames = deathFrames;
+            currentFrameIndex = 0;
+            frameTimer = 0f;
+            ApplyCurrentFrame();
+
+            float duration = deathFrames.Length / Mathf.Max(1f, deathFramesPerSecond);
+            deathRoutine = StartCoroutine(PlayDeathSequence(duration));
+            string spriteAfter = spriteRenderer.sprite != null ? spriteRenderer.sprite.name : "none";
+
+            Debug.Log(
+                $"[PlayerDeathVisual] deathSource={deathSource}, method=PlayerAnimationController.PlayDeath, " +
+                $"playHurtCalled=false, deathFrames={deathFrames.Length}, deathDuration={duration:F2}, " +
+                $"spriteBefore={spriteBefore}, spriteAfter={spriteAfter}, stoppedDeathCoroutine={stoppedDeathCoroutine}, " +
+                $"stoppedAttackAnimation={stoppedAttackAnimation}, " +
+                $"animationLocked={animationLocked}, animatorEnabledBefore={animatorEnabledBefore}, " +
+                $"animatorEnabledAfter={(animator != null && animator.enabled)}");
+
+            return duration;
+        }
+
+        private void ForceIdleFrame()
+        {
+            if (idleFrames == null || idleFrames.Length == 0)
+            {
+                return;
+            }
+
+            currentState = VisualState.Idle;
+            currentFrames = idleFrames;
+            currentFrameIndex = 0;
+            frameTimer = 0f;
+            ApplyCurrentFrame();
         }
 
         private void SetState(VisualState nextState)
@@ -141,6 +236,7 @@ namespace EchoEscape
                 VisualState.Run => runFrames,
                 VisualState.Jump => jumpFrames,
                 VisualState.Attack => attackFrames,
+                VisualState.Death => deathFrames,
                 _ => idleFrames
             };
 
@@ -161,6 +257,7 @@ namespace EchoEscape
                 VisualState.Run => runFramesPerSecond,
                 VisualState.Jump => jumpFramesPerSecond,
                 VisualState.Attack => attackFramesPerSecond,
+                VisualState.Death => deathFramesPerSecond,
                 _ => idleFramesPerSecond
             };
 
@@ -201,6 +298,36 @@ namespace EchoEscape
             {
                 spriteRenderer.sprite = currentFrames[Mathf.Clamp(currentFrameIndex, 0, currentFrames.Length - 1)];
             }
+        }
+
+        private IEnumerator PlayDeathSequence(float duration)
+        {
+            if (deathFrames == null || deathFrames.Length == 0)
+            {
+                deathRoutine = null;
+                yield break;
+            }
+
+            float frameDuration = 1f / Mathf.Max(1f, deathFramesPerSecond);
+            float elapsed = 0f;
+
+            while (elapsed < duration && currentFrameIndex < deathFrames.Length - 1)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                frameTimer += Time.unscaledDeltaTime;
+                while (frameTimer >= frameDuration && currentFrameIndex < deathFrames.Length - 1)
+                {
+                    frameTimer -= frameDuration;
+                    currentFrameIndex++;
+                    ApplyCurrentFrame();
+                }
+
+                yield return null;
+            }
+
+            currentFrameIndex = deathFrames.Length - 1;
+            ApplyCurrentFrame();
+            deathRoutine = null;
         }
 
         private void UpdateAnimatorParameters(float speed, bool isGrounded, float verticalVelocity)

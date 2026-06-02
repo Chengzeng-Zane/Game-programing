@@ -1946,6 +1946,8 @@ MonoBehaviour:
   verticalChaseStrength: 0.35
   leashDistance: 6
   visualRenderer: {fileID: 0}
+  spriteDefaultFacesRight: 0
+  facingRight: 1
   idleFramesPath:
   fallbackIdleFramesPath:
   deathFramesPath:

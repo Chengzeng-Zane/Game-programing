@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace EchoEscape
 {
@@ -81,6 +82,10 @@ namespace EchoEscape
 
         [Header("Death")]
         [SerializeField]
+        [FormerlySerializedAs("deathHurtDelay")]
+        private float deathAnimationFallbackDelay = 0.8f;
+
+        [SerializeField]
         private float deathReloadDelay = 1f;
 
         // 这个属性保存 HUD 当前要显示的短状态信息。
@@ -100,6 +105,11 @@ namespace EchoEscape
         /// True after the player has reached the exit.
         /// </summary>
         public bool HasWon { get; private set; }
+
+        /// <summary>
+        /// True while the player death sequence is active and the current scene is waiting to reload.
+        /// </summary>
+        public bool IsPlayerDeadOrDying => deathInProgress;
 
         // 这个属性保存挂在 GameManager 上的教程状态机。
         /// <summary>
@@ -315,6 +325,14 @@ namespace EchoEscape
             }
 
             DisablePlayerForDeath();
+            StartCoroutine(HandleDeathSequence(reason, lostLoot));
+        }
+
+        private IEnumerator HandleDeathSequence(string reason, List<LootDefinition> lostLoot)
+        {
+            float deathAnimationDuration = PlayPlayerDeathAnimation(reason);
+            float deathAnimationWait = Mathf.Clamp(Mathf.Max(deathAnimationFallbackDelay, deathAnimationDuration), 0.6f, 1f);
+            yield return new WaitForSecondsRealtime(deathAnimationWait);
 
             string lossText = lostLoot.Count > 0 ? $" Loot Lost: {FormatLoot(lostLoot)}" : string.Empty;
             UpdateStatus($"You died: {reason}.{lossText}");
@@ -326,7 +344,7 @@ namespace EchoEscape
                 Debug.Log("Player died. Pending loot lost.");
             }
 
-            StartCoroutine(ReloadCurrentSceneAfterDeath());
+            yield return ReloadCurrentSceneAfterDeath();
         }
 
         // 这个函数在玩家到达出口时完成本轮游戏，并把待保存奖励转成已保存奖励。
@@ -338,7 +356,7 @@ namespace EchoEscape
         /// </remarks>
         public void Win()
         {
-            if (HasWon)
+            if (HasWon || deathInProgress)
             {
                 return;
             }
@@ -429,6 +447,17 @@ namespace EchoEscape
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
+        private float PlayPlayerDeathAnimation(string reason)
+        {
+            if (player == null)
+            {
+                return 0f;
+            }
+
+            PlayerAnimationController animationController = player.GetComponentInChildren<PlayerAnimationController>();
+            return animationController != null ? animationController.PlayDeath(reason) : 0f;
+        }
+
         private void DisablePlayerForDeath()
         {
             if (player == null)
@@ -440,6 +469,8 @@ namespace EchoEscape
             if (body != null)
             {
                 body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+                body.constraints = RigidbodyConstraints2D.FreezeAll;
             }
 
             PlayerAttack attack = player.GetComponent<PlayerAttack>();

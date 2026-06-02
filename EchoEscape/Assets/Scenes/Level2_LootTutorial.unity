@@ -726,6 +726,8 @@ MonoBehaviour:
   verticalChaseStrength: 0.35
   leashDistance: 6
   visualRenderer: {fileID: 373077169}
+  spriteDefaultFacesRight: 0
+  facingRight: 0
   idleFramesPath: Ancient Forest 1.6/Enemies/Cursed Ghost/Float/Float-Sheet
   fallbackIdleFramesPath: Ancient Forest 1.6/Enemies/Cursed Ghost/Idle/Idle-Sheet
   deathFramesPath: Ancient Forest 1.6/Enemies/Cursed Ghost/Dead/Dead-Sheet
