@@ -57,7 +57,6 @@ namespace EchoEscape
 
             if (IsPlayer(other))
             {
-                Debug.Log("Tutorial triggered: " + tutorialTitle);
                 ShowTutorial();
             }
         }

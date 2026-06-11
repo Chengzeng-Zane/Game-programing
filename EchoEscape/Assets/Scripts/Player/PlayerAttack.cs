@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EchoEscape
 {
@@ -16,20 +19,35 @@ namespace EchoEscape
         private KeyCode attackKey = KeyCode.J; // Keyboard key used to perform the prototype attack.
 
         [SerializeField]
-        private Vector2 attackBoxSize = new Vector2(1.1f, 0.9f); // Width and height of the attack hit area.
+        private Vector2 attackBoxSize = new Vector2(0.65f, 0.5f); // Width and height of the attack hit area.
 
         [SerializeField]
-        private Vector2 attackOffset = new Vector2(0.75f, -0.05f); // Offset from the player center toward the facing direction.
+        [FormerlySerializedAs("attackOffset")]
+        private Vector2 attackBoxOffset = new Vector2(0.55f, 0f); // Offset from the player center toward the facing direction.
 
         [SerializeField]
-        private float attackCooldown = 0.35f; // Minimum time between attacks.
+        private int attackDamage = 1;
+
+        [SerializeField]
+        private LayerMask enemyLayers = ~0; // Optional layer filter; SimpleEnemy is still required.
+
+        [SerializeField]
+        private float attackActiveDelay = 0.1f; // Startup time before the sword hitbox becomes active.
+
+        [SerializeField]
+        private float attackActiveDuration = 0.12f; // Short window where the sword hitbox can deal damage.
+
+        [SerializeField]
+        private float attackCooldown = 0.4f; // Minimum time between attacks.
 
         [SerializeField]
         private bool debugLogs = true; // Prints simple combat messages for playtesting.
 
         private PlayerController2D playerController;
         private PlayerAnimationController animationController;
+        private Coroutine attackRoutine;
         private float nextAttackTime;
+        private bool attackHitboxActive;
 
         /// <summary>
         /// Unity event method called when the attack component is created.
@@ -51,9 +69,8 @@ namespace EchoEscape
         /// </remarks>
         private void Update()
         {
-            if (Input.GetKeyDown(attackKey) && Time.time >= nextAttackTime)
+            if (Input.GetKeyDown(attackKey))
             {
-                nextAttackTime = Time.time + attackCooldown;
                 Attack();
             }
         }
@@ -66,10 +83,64 @@ namespace EchoEscape
         /// </remarks>
         public void Attack()
         {
+            if (attackRoutine != null || Time.time < nextAttackTime)
+            {
+                return;
+            }
+
+            nextAttackTime = Time.time + attackCooldown;
+            attackRoutine = StartCoroutine(AttackRoutine());
+        }
+
+        /// <summary>
+        /// Description:
+        /// Runs the delayed attack timing and active hitbox window.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// IEnumerator - Unity coroutine steps for one attack
+        /// </summary>
+        private IEnumerator AttackRoutine()
+        {
             animationController?.PlayAttack();
 
+            if (attackActiveDelay > 0f)
+            {
+                yield return new WaitForSeconds(attackActiveDelay);
+            }
+
+            attackHitboxActive = true;
+            HashSet<SimpleEnemy> damagedEnemies = new HashSet<SimpleEnemy>();
+            bool defeatedEnemy = false;
+            float endTime = Time.time + Mathf.Max(0.01f, attackActiveDuration);
+
+            while (Time.time < endTime)
+            {
+                defeatedEnemy |= CheckAttackHits(damagedEnemies);
+                yield return null;
+            }
+
+            attackHitboxActive = false;
+            attackRoutine = null;
+
+            if (debugLogs && !defeatedEnemy)
+            {
+                Debug.Log("Player attacked.");
+            }
+        }
+
+        /// <summary>
+        /// Description:
+        /// Checks the attack box and damages each enemy only once during this attack.
+        /// Inputs:
+        /// damagedEnemies - enemies already hit by this attack
+        /// Returns:
+        /// bool - true if at least one enemy was defeated or damaged
+        /// </summary>
+        private bool CheckAttackHits(HashSet<SimpleEnemy> damagedEnemies)
+        {
             Vector2 center = AttackCenter();
-            Collider2D[] hits = Physics2D.OverlapBoxAll(center, attackBoxSize, 0f);
+            Collider2D[] hits = Physics2D.OverlapBoxAll(center, attackBoxSize, 0f, enemyLayers);
             bool defeatedEnemy = false;
 
             foreach (Collider2D hit in hits)
@@ -80,19 +151,18 @@ namespace EchoEscape
                     enemy = hit.GetComponentInParent<SimpleEnemy>();
                 }
 
-                if (enemy == null)
+                if (enemy == null ||
+                    !IsInFacingDirection(enemy.transform.position) ||
+                    !damagedEnemies.Add(enemy))
                 {
                     continue;
                 }
 
-                enemy.TakeDamage(1);
+                enemy.TakeDamage(attackDamage);
                 defeatedEnemy = true;
             }
 
-            if (debugLogs && !defeatedEnemy)
-            {
-                Debug.Log("Player attacked.");
-            }
+            return defeatedEnemy;
         }
 
         /// <summary>
@@ -101,10 +171,42 @@ namespace EchoEscape
         /// <returns>The center point used by Physics2D.OverlapBoxAll.</returns>
         private Vector2 AttackCenter()
         {
-            bool facingRight = playerController == null || playerController.FacingRight;
+            bool facingRight = IsFacingRight();
             float direction = facingRight ? 1f : -1f;
-            Vector2 offset = new Vector2(attackOffset.x * direction, attackOffset.y);
+            Vector2 offset = new Vector2(Mathf.Abs(attackBoxOffset.x) * direction, attackBoxOffset.y);
             return (Vector2)transform.position + offset;
+        }
+
+        /// <summary>
+        /// Description:
+        /// Checks whether a target is in front of the player.
+        /// Inputs:
+        /// targetPosition - world position of the target
+        /// Returns:
+        /// bool - true if the target is in the facing direction
+        /// </summary>
+        private bool IsInFacingDirection(Vector2 targetPosition)
+        {
+            float direction = IsFacingRight() ? 1f : -1f;
+            return (targetPosition.x - transform.position.x) * direction > 0.01f;
+        }
+
+        /// <summary>
+        /// Description:
+        /// Reads the player's facing direction from PlayerController2D.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// bool - true if the player is facing right
+        /// </summary>
+        private bool IsFacingRight()
+        {
+            if (playerController == null)
+            {
+                playerController = GetComponent<PlayerController2D>();
+            }
+
+            return playerController == null || playerController.FacingRight;
         }
 
         /// <summary>
@@ -112,8 +214,15 @@ namespace EchoEscape
         /// </summary>
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.45f);
-            Gizmos.DrawWireCube(AttackCenter(), attackBoxSize);
+            Vector2 center = AttackCenter();
+            Gizmos.color = attackHitboxActive
+                ? new Color(1f, 0.25f, 0.1f, 0.32f)
+                : new Color(1f, 0.85f, 0.2f, 0.18f);
+            Gizmos.DrawCube(center, attackBoxSize);
+            Gizmos.color = attackHitboxActive
+                ? new Color(1f, 0.1f, 0.05f, 0.9f)
+                : new Color(1f, 0.85f, 0.2f, 0.8f);
+            Gizmos.DrawWireCube(center, attackBoxSize);
         }
     }
 }

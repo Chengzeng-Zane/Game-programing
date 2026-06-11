@@ -10,7 +10,7 @@ namespace EchoEscape
     /// </summary>
     /// <remarks>
     /// Attach this script to the Main Menu Controller object in the MainMenu scene.
-    /// It creates menu world art, UI buttons, controls/credits modals, background music,
+    /// It creates menu background art, UI buttons, a settings panel, background music,
     /// and safely starts the gameplay scene when one is assigned in Build Settings.
     /// </remarks>
     public class MainMenuController : MonoBehaviour
@@ -21,29 +21,17 @@ namespace EchoEscape
         /// </summary>
         public string gameSceneName = string.Empty;
 
-        [Header("Menu Motion")]
-        /// <summary>
-        /// Speed used by decorative menu coin bobbing animation.
-        /// </summary>
-        public float coinBobSpeed = 2.2f;
+        private readonly Color buttonNormal = new Color(0.075f, 0.14f, 0.13f, 0.96f);
+        private readonly Color buttonHover = new Color(0.16f, 0.29f, 0.22f, 1f);
+        private readonly Color buttonPressed = new Color(0.94f, 0.67f, 0.22f, 1f);
+        private readonly Color textLight = new Color(1f, 0.95f, 0.78f, 1f);
+        private readonly Color textMuted = new Color(0.72f, 0.84f, 0.76f, 1f);
+        private readonly Color panelDark = new Color(0.035f, 0.06f, 0.055f, 0.94f);
+        private readonly Color gold = new Color(0.96f, 0.68f, 0.25f, 1f);
+        private readonly Color runeGold = new Color(1f, 0.82f, 0.36f, 0.92f);
 
-        /// <summary>
-        /// Vertical distance used by decorative menu coin bobbing animation.
-        /// </summary>
-        public float coinBobHeight = 0.12f;
-
-        private readonly Color buttonNormal = new Color(0.075f, 0.1f, 0.15f, 0.96f);
-        private readonly Color buttonHover = new Color(0.18f, 0.26f, 0.36f, 1f);
-        private readonly Color buttonPressed = new Color(0.94f, 0.66f, 0.2f, 1f);
-        private readonly Color textLight = new Color(0.94f, 0.96f, 1f, 1f);
-        private readonly Color textMuted = new Color(0.74f, 0.8f, 0.88f, 1f);
-
-        private Transform[] bobbingCoins;
-        private Vector3[] coinBasePositions;
         private Font menuFont;
-        private GameObject modalRoot;
-        private Text modalTitle;
-        private Text modalBody;
+        private GameObject settingsRoot;
 
         /// <summary>
         /// Unity event method called when the menu controller is created.
@@ -65,15 +53,13 @@ namespace EchoEscape
         /// Unity event method called once per frame.
         /// </summary>
         /// <remarks>
-        /// Animates menu coins and lets Escape close an open modal.
+        /// Lets Escape close the settings panel.
         /// </remarks>
         private void Update()
         {
-            AnimateCoins();
-
-            if (modalRoot != null && modalRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            if (settingsRoot != null && settingsRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
             {
-                CloseModal();
+                HideSettings();
             }
         }
 
@@ -81,63 +67,57 @@ namespace EchoEscape
         /// Attempts to load the configured gameplay scene.
         /// </summary>
         /// <remarks>
-        /// Called by the Start Game button. If no valid gameplay scene is assigned, a safe modal is shown instead.
+        /// Called by the Start Game button. If no valid gameplay scene is assigned, a warning is logged.
         /// </remarks>
         public void StartGame()
         {
             if (string.IsNullOrWhiteSpace(gameSceneName) || !SceneExistsInBuild(gameSceneName))
             {
-                ShowModal("GAMEPLAY", "Gameplay scene is not ready yet.");
+                Debug.LogWarning("Gameplay scene is not ready yet.");
                 return;
             }
 
+            EchoEscapeGameManager.ResetChestClaimsForNewRun();
             SceneManager.LoadScene(gameSceneName);
         }
 
         /// <summary>
-        /// Opens the controls modal.
+        /// Shows the settings panel.
         /// </summary>
         /// <remarks>
-        /// Called by the Controls button.
+        /// Called by the Settings button.
         /// </remarks>
-        public void ShowControls()
+        public void ShowSettings()
         {
-            ShowModal(
-                "CONTROLS",
-                "MOVE      A / D OR ARROW KEYS\n" +
-                "JUMP      SPACE / W / UP\n" +
-                "RECORD    Q\n" +
-                "REPLAY    E\n" +
-                "OPEN      F\n" +
-                "RESTART   R\n\n" +
-                "Record a short route, replay your echo, hold switches, open random chests, and extract before death removes unbanked loot.");
+            if (settingsRoot != null)
+            {
+                settingsRoot.SetActive(true);
+            }
         }
 
         /// <summary>
-        /// Opens the credits modal.
-        /// </summary>
-        /// <remarks>
-        /// Called by the Credits button.
-        /// </remarks>
-        public void ShowCredits()
-        {
-            ShowModal(
-                "CREDITS",
-                "Echo Escape prototype\n\n" +
-                "Pixel art, font, music, and sound effects are from the Brackeys Platformer Bundle.\n\n" +
-                "License: CC0 1.0 Universal\n\n" +
-                "Bundle credits include Brackeys, analogStudios_, RottingPixels, Asbjorn Thirslund, Jayvee Enaguas, and HarvettFox96.");
-        }
-
-        /// <summary>
-        /// Closes the currently open menu modal.
+        /// Hides the settings panel.
         /// </summary>
         /// <remarks>
         /// Called by the Back button and by Escape in Update.
         /// </remarks>
+        public void HideSettings()
+        {
+            if (settingsRoot != null)
+            {
+                settingsRoot.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// Closes the settings panel.
+        /// </summary>
+        /// <remarks>
+        /// Kept for older button references.
+        /// </remarks>
         public void CloseModal()
         {
-            modalRoot.SetActive(false);
+            HideSettings();
         }
 
         /// <summary>
@@ -149,6 +129,7 @@ namespace EchoEscape
         public void QuitGame()
         {
 #if UNITY_EDITOR
+            Debug.Log("Quit requested from Main Menu.");
             UnityEditor.EditorApplication.isPlaying = false;
 #else
             Application.Quit();
@@ -170,7 +151,7 @@ namespace EchoEscape
 
             camera.orthographic = true;
             camera.orthographicSize = 5.4f;
-            camera.backgroundColor = new Color(0.045f, 0.055f, 0.08f, 1f);
+            camera.backgroundColor = new Color(0.018f, 0.035f, 0.04f, 1f);
             camera.transform.position = new Vector3(0f, 0f, -10f);
         }
 
@@ -201,29 +182,20 @@ namespace EchoEscape
         {
             GameObject worldRoot = new GameObject("Pixel Menu World");
 
-            CreateTiledSprite("Distant Vault Floor", PixelArtLibrary.StoneTile, new Vector2(0f, -3.95f), new Vector2(22f, 1.2f), -2, worldRoot.transform, new Color(0.5f, 0.62f, 0.74f, 0.32f));
-            CreateTiledSprite("Main Platform", PixelArtLibrary.GroundTile, new Vector2(0f, -3.4f), new Vector2(18.5f, 1f), -1, worldRoot.transform, Color.white);
-            CreateTiledSprite("Left Ledge", PixelArtLibrary.GroundTile, new Vector2(-5.6f, -1.9f), new Vector2(3.4f, 0.65f), -1, worldRoot.transform, Color.white);
-            CreateTiledSprite("Right Ledge", PixelArtLibrary.GroundTile, new Vector2(5.2f, -1.55f), new Vector2(3.4f, 0.65f), -1, worldRoot.transform, Color.white);
+            CreateTiledSprite("Deep Forest Backdrop", PixelArtLibrary.StoneTile, new Vector2(0f, 0.65f), new Vector2(24f, 9.4f), -8, worldRoot.transform, new Color(0.01f, 0.055f, 0.052f, 0.72f));
+            CreateTiledSprite("Distant Forest Silhouette", PixelArtLibrary.StoneTile, new Vector2(-1.8f, -0.65f), new Vector2(24f, 4.9f), -7, worldRoot.transform, new Color(0.015f, 0.11f, 0.085f, 0.42f));
+            CreateTiledSprite("Near Forest Silhouette", PixelArtLibrary.StoneTile, new Vector2(2.1f, -1.2f), new Vector2(24f, 3.8f), -6, worldRoot.transform, new Color(0.008f, 0.045f, 0.04f, 0.68f));
 
-            CreateSprite("Vault Door Decoration", PixelArtLibrary.DoorTile, new Vector2(0f, -1.08f), new Vector3(5.4f, 5.4f, 1f), -3, worldRoot.transform, new Color(0.55f, 0.65f, 0.88f, 0.16f));
-            CreateSprite("Menu Chest", PixelArtLibrary.ChestTile, new Vector2(-5.8f, -1.28f), new Vector3(1.35f, 1.35f, 1f), 2, worldRoot.transform, new Color(1f, 1f, 1f, 0.9f));
-            CreateSprite("Menu Slime", PixelArtLibrary.HazardSlime, new Vector2(5.45f, -2.62f), new Vector3(1.3f, 1.3f, 1f), 2, worldRoot.transform, new Color(1f, 1f, 1f, 0.9f));
-            CreateSprite("Exit Gem Decoration", PixelArtLibrary.ExitGem, new Vector2(6.35f, -0.82f), new Vector3(1.35f, 1.35f, 1f), 2, worldRoot.transform, new Color(1f, 1f, 1f, 0.9f));
+            CreateTiledSprite("Left Ancient Pillar", PixelArtLibrary.StoneTile, new Vector2(-6.6f, -0.2f), new Vector2(0.92f, 8.1f), -5, worldRoot.transform, new Color(0.08f, 0.16f, 0.11f, 0.72f));
+            CreateTiledSprite("Right Ancient Pillar", PixelArtLibrary.StoneTile, new Vector2(6.6f, -0.2f), new Vector2(0.92f, 8.1f), -5, worldRoot.transform, new Color(0.08f, 0.16f, 0.11f, 0.72f));
+            CreateTiledSprite("Low Ruin Ground Shadow", PixelArtLibrary.StoneTile, new Vector2(0f, -4.12f), new Vector2(22f, 1.05f), -4, worldRoot.transform, new Color(0.05f, 0.11f, 0.09f, 0.82f));
 
-            bobbingCoins = new Transform[5];
-            coinBasePositions = new Vector3[bobbingCoins.Length];
-            for (int i = 0; i < bobbingCoins.Length; i++)
-            {
-                float x = -1.24f + (i * 0.62f);
-                SpriteRenderer coin = CreateSprite("Menu Coin " + (i + 1), PixelArtLibrary.CoinTile, new Vector2(x, -2.72f), new Vector3(0.9f, 0.9f, 1f), 2, worldRoot.transform, new Color(1f, 1f, 1f, 0.95f));
-                bobbingCoins[i] = coin.transform;
-                coinBasePositions[i] = coin.transform.position;
-            }
+            CreateSprite("Central Ruin Mark Glow", PixelArtLibrary.DoorTile, new Vector2(0f, -0.9f), new Vector3(6.2f, 6.2f, 1f), -3, worldRoot.transform, new Color(0.24f, 0.9f, 0.68f, 0.12f));
+            CreateSprite("Central Ruin Mark", PixelArtLibrary.DoorTile, new Vector2(0f, -0.9f), new Vector3(4.65f, 4.65f, 1f), -2, worldRoot.transform, new Color(0.82f, 0.74f, 0.48f, 0.2f));
         }
 
         /// <summary>
-        /// Creates the menu UI canvas, title, buttons, build note, and modal.
+        /// Creates the menu UI canvas, title, buttons, and settings panel.
         /// </summary>
         private void BuildCanvas()
         {
@@ -232,20 +204,25 @@ namespace EchoEscape
             Canvas canvas = CreateCanvas();
             Transform canvasTransform = canvas.transform;
 
-            Text title = CreateText("Title", canvasTransform, "ECHO ESCAPE", 78, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(860f, 110f));
-            title.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.85f);
+            CreatePanel("Forest Vignette Top", canvasTransform, new Color(0f, 0f, 0f, 0.22f), new Vector2(0.5f, 1f), new Vector2(0f, -34f), new Vector2(1320f, 68f));
+            CreatePanel("Forest Vignette Bottom", canvasTransform, new Color(0f, 0f, 0f, 0.34f), new Vector2(0.5f, 0f), new Vector2(0f, 38f), new Vector2(1320f, 76f));
 
-            Text subtitle = CreateText("Subtitle", canvasTransform, "record yourself, raid the vault, escape with the loot", 24, textMuted, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -164f), new Vector2(920f, 46f));
-            subtitle.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.65f);
+            GameObject heroPanel = CreateFramedPanel("Main Menu Panel", canvasTransform, panelDark, new Vector2(0.5f, 0.52f), new Vector2(0f, 0f), new Vector2(560f, 500f), new Color(0.06f, 0.42f, 0.28f, 0.72f));
+            CreateText("Small Kicker", heroPanel.transform, "FOREST VAULT", 18, runeGold, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(460f, 36f));
 
-            CreateButton("Start Game Button", canvasTransform, "START GAME", new Vector2(0.5f, 0.5f), new Vector2(0f, 92f), StartGame, new Vector2(360f, 64f));
-            CreateButton("Controls Button", canvasTransform, "CONTROLS", new Vector2(0.5f, 0.5f), new Vector2(0f, 12f), ShowControls, new Vector2(360f, 64f));
-            CreateButton("Credits Button", canvasTransform, "CREDITS", new Vector2(0.5f, 0.5f), new Vector2(0f, -68f), ShowCredits, new Vector2(360f, 64f));
-            CreateButton("Quit Button", canvasTransform, "QUIT", new Vector2(0.5f, 0.5f), new Vector2(0f, -148f), QuitGame, new Vector2(360f, 64f));
+            Text title = CreateText("Title", heroPanel.transform, "ECHO ESCAPE", 62, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(500f, 92f));
+            title.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.9f);
 
-            CreateText("Build Note", canvasTransform, "Sprint 2 prototype menu", 18, new Color(0.68f, 0.74f, 0.84f, 1f), TextAnchor.LowerLeft, new Vector2(0f, 0f), new Vector2(26f, 24f), new Vector2(420f, 34f));
+            Text subtitle = CreateText("Subtitle", heroPanel.transform, "Record your echo. Secure the loot. Escape alive.", 22, textMuted, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -176f), new Vector2(470f, 46f));
+            subtitle.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.72f);
 
-            BuildModal(canvasTransform);
+            CreateDivider("Title Gold Divider", heroPanel.transform, new Vector2(0.5f, 1f), new Vector2(0f, -214f), new Vector2(390f, 4f), gold);
+
+            CreateButton("Start Game Button", heroPanel.transform, "START GAME", new Vector2(0.5f, 1f), new Vector2(0f, -272f), StartGame, new Vector2(330f, 62f));
+            CreateButton("Settings Button", heroPanel.transform, "SETTINGS", new Vector2(0.5f, 1f), new Vector2(0f, -350f), ShowSettings, new Vector2(330f, 58f));
+            CreateButton("Quit Button", heroPanel.transform, "QUIT", new Vector2(0.5f, 1f), new Vector2(0f, -422f), QuitGame, new Vector2(330f, 58f));
+
+            BuildSettingsPanel(canvasTransform);
         }
 
         /// <summary>
@@ -268,48 +245,48 @@ namespace EchoEscape
         }
 
         /// <summary>
-        /// Builds the modal overlay used for controls, credits, and safe gameplay messages.
+        /// Builds the settings overlay used by the main menu.
         /// </summary>
-        /// <param name="parent">Canvas transform that owns the modal.</param>
-        private void BuildModal(Transform parent)
+        /// <param name="parent">Canvas transform that owns the settings panel.</param>
+        private void BuildSettingsPanel(Transform parent)
         {
-            modalRoot = new GameObject("Menu Modal");
-            modalRoot.transform.SetParent(parent, false);
+            settingsRoot = new GameObject("Settings Panel");
+            settingsRoot.transform.SetParent(parent, false);
 
-            Image blocker = modalRoot.AddComponent<Image>();
-            blocker.color = new Color(0f, 0f, 0f, 0.62f);
+            Image blocker = settingsRoot.AddComponent<Image>();
+            blocker.color = new Color(0f, 0.015f, 0.01f, 0.72f);
 
-            RectTransform blockerRect = modalRoot.GetComponent<RectTransform>();
+            RectTransform blockerRect = settingsRoot.GetComponent<RectTransform>();
             blockerRect.anchorMin = Vector2.zero;
             blockerRect.anchorMax = Vector2.one;
             blockerRect.offsetMin = Vector2.zero;
             blockerRect.offsetMax = Vector2.zero;
 
-            GameObject panel = CreatePanel("Modal Panel", modalRoot.transform, new Color(0.08f, 0.11f, 0.16f, 0.98f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 430f));
-            Outline outline = panel.AddComponent<Outline>();
-            outline.effectColor = new Color(0.96f, 0.68f, 0.25f, 0.9f);
-            outline.effectDistance = new Vector2(3f, -3f);
+            GameObject panel = CreateFramedPanel("Settings Content Panel", settingsRoot.transform, new Color(0.035f, 0.075f, 0.065f, 0.98f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620f, 470f), new Color(0.96f, 0.68f, 0.25f, 0.9f));
+            CreateText("Settings Title", panel.transform, "CONTROLS", 40, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(520f, 70f));
+            CreateDivider("Settings Divider", panel.transform, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(470f, 3f), new Color(1f, 0.78f, 0.3f, 0.9f));
 
-            modalTitle = CreateText("Modal Title", panel.transform, string.Empty, 38, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -56f), new Vector2(680f, 70f));
-            modalBody = CreateText("Modal Body", panel.transform, string.Empty, 22, textMuted, TextAnchor.UpperLeft, new Vector2(0.5f, 0.5f), new Vector2(0f, -22f), new Vector2(660f, 250f));
-            modalBody.horizontalOverflow = HorizontalWrapMode.Wrap;
-            modalBody.verticalOverflow = VerticalWrapMode.Overflow;
-            modalBody.lineSpacing = 1.1f;
+            Text controls = CreateText(
+                "Controls List",
+                panel.transform,
+                "Move: A / D\n" +
+                "Jump: Space\n" +
+                "Record Echo: Q\n" +
+                "Replay Echo: E\n" +
+                "Open Chest: F\n" +
+                "Attack: J\n" +
+                "Gravity Flip: Up / Down",
+                24,
+                textMuted,
+                TextAnchor.UpperLeft,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0f, -18f),
+                new Vector2(440f, 230f));
+            controls.lineSpacing = 1.2f;
+            controls.verticalOverflow = VerticalWrapMode.Overflow;
 
-            CreateButton("Close Modal Button", panel.transform, "BACK", new Vector2(0.5f, 0f), new Vector2(0f, 46f), CloseModal, new Vector2(220f, 56f));
-            modalRoot.SetActive(false);
-        }
-
-        /// <summary>
-        /// Shows the menu modal with a title and body message.
-        /// </summary>
-        /// <param name="title">Modal title text.</param>
-        /// <param name="body">Modal body text.</param>
-        private void ShowModal(string title, string body)
-        {
-            modalTitle.text = title;
-            modalBody.text = body;
-            modalRoot.SetActive(true);
+            CreateButton("Back Button", panel.transform, "BACK", new Vector2(0.5f, 0f), new Vector2(0f, 48f), HideSettings, new Vector2(220f, 56f));
+            settingsRoot.SetActive(false);
         }
 
         /// <summary>
@@ -343,8 +320,11 @@ namespace EchoEscape
             GameObject buttonObject = CreatePanel(name, parent, buttonNormal, anchor, anchoredPosition, size);
             Image image = buttonObject.GetComponent<Image>();
             Outline outline = buttonObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.94f, 0.66f, 0.2f, 0.85f);
+            outline.effectColor = new Color(0.94f, 0.66f, 0.2f, 0.88f);
             outline.effectDistance = new Vector2(2f, -2f);
+            Shadow shadow = buttonObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.65f);
+            shadow.effectDistance = new Vector2(4f, -4f);
 
             Button button = buttonObject.AddComponent<Button>();
             button.targetGraphic = image;
@@ -362,8 +342,71 @@ namespace EchoEscape
             };
 
             Text text = CreateText(name + " Text", buttonObject.transform, label, 26, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, size);
+            text.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.86f);
             text.raycastTarget = false;
             return button;
+        }
+
+        /// <summary>
+        /// Creates a panel with outline, shadow, and small corner rune accents.
+        /// </summary>
+        /// <param name="name">GameObject name for the panel.</param>
+        /// <param name="parent">Parent transform for the panel.</param>
+        /// <param name="color">Main panel color.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        /// <param name="size">Width and height of the panel.</param>
+        /// <param name="outlineColor">Outline color used for the frame.</param>
+        /// <returns>The created framed panel GameObject.</returns>
+        private GameObject CreateFramedPanel(string name, Transform parent, Color color, Vector2 anchor, Vector2 anchoredPosition, Vector2 size, Color outlineColor)
+        {
+            GameObject panel = CreatePanel(name, parent, color, anchor, anchoredPosition, size);
+
+            Outline outline = panel.AddComponent<Outline>();
+            outline.effectColor = outlineColor;
+            outline.effectDistance = new Vector2(3f, -3f);
+
+            Shadow shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.58f);
+            shadow.effectDistance = new Vector2(8f, -8f);
+
+            CreateCornerAccent(name + " Top Left Rune", panel.transform, new Vector2(0f, 1f), new Vector2(28f, -28f));
+            CreateCornerAccent(name + " Top Right Rune", panel.transform, new Vector2(1f, 1f), new Vector2(-28f, -28f));
+            CreateCornerAccent(name + " Bottom Left Rune", panel.transform, new Vector2(0f, 0f), new Vector2(28f, 28f));
+            CreateCornerAccent(name + " Bottom Right Rune", panel.transform, new Vector2(1f, 0f), new Vector2(-28f, 28f));
+
+            return panel;
+        }
+
+        /// <summary>
+        /// Creates a thin decorative UI divider.
+        /// </summary>
+        /// <param name="name">GameObject name for the divider.</param>
+        /// <param name="parent">Parent transform for the divider.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        /// <param name="size">Width and height of the divider.</param>
+        /// <param name="color">Divider color.</param>
+        private void CreateDivider(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, Vector2 size, Color color)
+        {
+            GameObject divider = CreatePanel(name, parent, color, anchor, anchoredPosition, size);
+            Shadow shadow = divider.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.7f);
+            shadow.effectDistance = new Vector2(0f, -2f);
+        }
+
+        /// <summary>
+        /// Creates one square corner accent for a framed menu panel.
+        /// </summary>
+        /// <param name="name">GameObject name for the accent.</param>
+        /// <param name="parent">Parent transform for the accent.</param>
+        /// <param name="anchor">Anchor position for the RectTransform.</param>
+        /// <param name="anchoredPosition">Anchored UI position.</param>
+        private void CreateCornerAccent(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition)
+        {
+            GameObject accent = CreatePanel(name, parent, runeGold, anchor, anchoredPosition, new Vector2(16f, 16f));
+            RectTransform rect = accent.GetComponent<RectTransform>();
+            rect.rotation = Quaternion.Euler(0f, 0f, 45f);
         }
 
         /// <summary>
@@ -474,23 +517,6 @@ namespace EchoEscape
             renderer.color = color;
             renderer.sortingOrder = sortingOrder;
             return renderer;
-        }
-
-        /// <summary>
-        /// Animates decorative menu coins with a simple vertical sine wave.
-        /// </summary>
-        private void AnimateCoins()
-        {
-            if (bobbingCoins == null || coinBasePositions == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < bobbingCoins.Length; i++)
-            {
-                float y = Mathf.Sin((Time.time * coinBobSpeed) + i) * coinBobHeight;
-                bobbingCoins[i].position = coinBasePositions[i] + new Vector3(0f, y, 0f);
-            }
         }
 
         /// <summary>

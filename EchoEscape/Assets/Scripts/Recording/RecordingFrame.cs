@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace EchoEscape
 {
-    // 这个结构保存玩家某一瞬间的移动数据，供回声回放使用。
     /// <summary>
     /// Stores one sampled moment of the player's movement for the Echo replay system.
     /// </summary>
@@ -12,19 +11,16 @@ namespace EchoEscape
     /// </remarks>
     public struct RecordingFrame
     {
-        // 这个变量保存这一帧录制时玩家的世界坐标位置。
         /// <summary>
         /// The world position of the player when this frame was recorded.
         /// </summary>
         public Vector3 position;
 
-        // 这个变量保存这一帧被记录时已经过去的录制时间。
         /// <summary>
         /// The elapsed recording time when this frame was captured.
         /// </summary>
         public float time;
 
-        // 这个变量表示录制这一帧时玩家是否朝右。
         /// <summary>
         /// True when the player was facing right during this frame.
         /// </summary>
@@ -35,7 +31,6 @@ namespace EchoEscape
         /// </summary>
         public bool isGravityFlipped;
 
-        // 这个构造函数创建一帧保存下来的移动数据，之后给回声回放使用。
         /// <summary>
         /// Creates one saved movement frame for later Echo playback.
         /// </summary>

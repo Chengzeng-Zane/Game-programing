@@ -210,7 +210,7 @@ namespace EchoEscape
                 case TutorialStep.PassDoor:
                     Title = "Work with yourself";
                     Objective = "Use the echo to keep the door open, then pass through the red door.";
-                    Hint = "If the timing is wrong, press R to restart and record a cleaner route.";
+                    Hint = "If the timing is wrong, record a cleaner route and try the echo again.";
                     break;
 
                 case TutorialStep.OpenChest:
