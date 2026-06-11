@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace EchoEscape
 {
-    // 这个脚本标记一个可能生成宝箱的位置，供 GameManager 随机选择。
     /// <summary>
     /// Marks a possible location where the game manager can spawn a random chest.
     /// </summary>
@@ -15,7 +14,15 @@ namespace EchoEscape
         [SerializeField]
         private bool hideMarkerVisualsOnPlay = true;
 
-        // 这个函数在对象创建时初始化。
+        /// <summary>
+        /// Description:
+        /// Called when the marker object is created.
+        /// It hides marker visuals in Play Mode so only the real chest is seen.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Awake()
         {
             if (hideMarkerVisualsOnPlay && Application.isPlaying)
@@ -24,7 +31,6 @@ namespace EchoEscape
             }
         }
 
-        // 这个函数隐藏旧版可见生成点标记，避免它盖住真正生成出来的宝箱。
         /// <summary>
         /// Hides legacy visible marker geometry so it does not cover the spawned chest.
         /// </summary>

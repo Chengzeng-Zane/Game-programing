@@ -38,6 +38,15 @@ namespace EchoEscape
             SetGravity(false);
         }
 
+        /// <summary>
+        /// Description:
+        /// Called when the component is created.
+        /// It caches player physics components and starts with normal gravity.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
@@ -52,6 +61,15 @@ namespace EchoEscape
             SetGravity(false);
         }
 
+        /// <summary>
+        /// Description:
+        /// Called every frame by Unity.
+        /// It reads Up Arrow and Down Arrow to request gravity flip changes.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.UpArrow))
@@ -65,6 +83,15 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Tries to flip or restore gravity only if the player is grounded and a platform exists in that direction.
+        /// Inputs:
+        /// flipped - true to flip upward, false to restore normal gravity
+        /// checkDirection - direction used to search for a standable platform
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void TrySetGravity(bool flipped, Vector2 checkDirection)
         {
             if (isFlipped == flipped || !playerController.IsGrounded())
@@ -82,6 +109,14 @@ namespace EchoEscape
             LogDebug(flipped ? "Gravity flipped." : "Gravity restored.");
         }
 
+        /// <summary>
+        /// Description:
+        /// Applies normal or flipped gravity to the Rigidbody2D.
+        /// Inputs:
+        /// flipped - true for upside-down gravity, false for normal gravity
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetGravity(bool flipped)
         {
             isFlipped = flipped;
@@ -90,6 +125,15 @@ namespace EchoEscape
             transform.rotation = Quaternion.Euler(0f, 0f, flipped ? 180f : 0f);
         }
 
+        /// <summary>
+        /// Description:
+        /// Raycasts in one direction to find the nearest valid platform.
+        /// Inputs:
+        /// direction - up or down direction to check
+        /// platformHit - output hit information for the platform
+        /// Returns:
+        /// bool - true if a standable platform was found
+        /// </summary>
         private bool TryFindStandablePlatform(Vector2 direction, out RaycastHit2D platformHit)
         {
             platformHit = default;
@@ -115,6 +159,14 @@ namespace EchoEscape
             return platformHit.collider != null;
         }
 
+        /// <summary>
+        /// Description:
+        /// Checks whether a collider can be used as a gravity flip landing surface.
+        /// Inputs:
+        /// hitCollider - collider found by the raycast
+        /// Returns:
+        /// bool - true if the collider is a solid ground or platform object
+        /// </summary>
         private bool IsStandablePlatform(Collider2D hitCollider)
         {
             if (hitCollider == null || hitCollider.isTrigger)
@@ -135,6 +187,15 @@ namespace EchoEscape
                 || objectTag == "Platform";
         }
 
+        /// <summary>
+        /// Description:
+        /// Moves the player onto the target platform after gravity changes.
+        /// Inputs:
+        /// platformHit - raycast hit for the target platform
+        /// direction - direction the player moved during the flip
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SnapToPlatform(RaycastHit2D platformHit, Vector2 direction)
         {
             if (playerCollider == null)
@@ -161,6 +222,14 @@ namespace EchoEscape
             transform.position = new Vector3(targetPosition.x, targetPosition.y, transform.position.z);
         }
 
+        /// <summary>
+        /// Description:
+        /// Writes optional gravity flip debug messages to the Console.
+        /// Inputs:
+        /// message - text to print
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void LogDebug(string message)
         {
             if (debugLogs)

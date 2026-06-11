@@ -1,4 +1,3 @@
-using System.Text;
 using UnityEngine;
 
 namespace EchoEscape
@@ -65,8 +64,6 @@ namespace EchoEscape
 
             GUILayout.Label(recordingText, bodyStyle);
             GUILayout.Label($"Deaths: {manager.DeathCount}", bodyStyle);
-            GUILayout.Label($"Pending Loot: {FormatLoot(manager.PendingLoot)}", bodyStyle);
-            GUILayout.Label($"Secured Loot: {FormatLoot(manager.SecuredLoot)}", bodyStyle);
             GUILayout.EndArea();
 
             if (tutorial != null)
@@ -126,33 +123,5 @@ namespace EchoEscape
             };
         }
 
-        /// <summary>
-        /// Converts a loot list into a comma-separated label for the HUD.
-        /// </summary>
-        /// <param name="loot">Loot list to display.</param>
-        /// <returns>A readable loot summary, or "none" when the list is empty.</returns>
-        private string FormatLoot(System.Collections.Generic.IReadOnlyList<LootDefinition> loot)
-        {
-            if (loot == null || loot.Count == 0)
-            {
-                return "none";
-            }
-
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < loot.Count; i++)
-            {
-                if (i > 0)
-                {
-                    builder.Append(", ");
-                }
-
-                builder.Append(loot[i].itemName);
-                builder.Append(" [");
-                builder.Append(loot[i].rarity);
-                builder.Append("]");
-            }
-
-            return builder.ToString();
-        }
     }
 }

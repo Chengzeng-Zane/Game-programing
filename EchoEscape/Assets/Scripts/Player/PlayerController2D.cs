@@ -26,7 +26,13 @@ namespace EchoEscape
         /// <summary>
         /// Radius used when searching for nearby unopened chests.
         /// </summary>
-        public float interactRadius = 1.1f;
+        public float interactRadius = 0.75f;
+
+        [SerializeField]
+        private float chestFacingTolerance = 0.18f;
+
+        [SerializeField]
+        private float chestVerticalTolerance = 0.75f;
 
         /// <summary>
         /// True when the latest horizontal input indicates the player is facing right.
@@ -59,6 +65,12 @@ namespace EchoEscape
         /// </remarks>
         private void Update()
         {
+            if (Time.timeScale <= 0f)
+            {
+                moveInput = 0f;
+                return;
+            }
+
             moveInput = Input.GetAxisRaw("Horizontal");
 
             if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
@@ -169,7 +181,7 @@ namespace EchoEscape
             foreach (Collider2D hit in hits)
             {
                 Chest chest = hit.GetComponent<Chest>();
-                if (chest == null || chest.IsOpened)
+                if (chest == null || chest.IsOpened || chest.IsOpening || !CanInteractWithChest(chest))
                 {
                     continue;
                 }
@@ -186,10 +198,27 @@ namespace EchoEscape
             {
                 nearestChest.Open();
             }
-            else if (EchoEscapeGameManager.Instance != null)
+        }
+
+        /// <summary>
+        /// Checks whether a chest is close enough and in front of the player for F interaction.
+        /// </summary>
+        /// <param name="chest">Chest candidate found by the overlap search.</param>
+        /// <returns>True when pressing F should open this chest.</returns>
+        private bool CanInteractWithChest(Chest chest)
+        {
+            Vector2 toChest = chest.transform.position - transform.position;
+            if (Mathf.Abs(toChest.y) > chestVerticalTolerance)
             {
-                EchoEscapeGameManager.Instance.UpdateStatus("No unopened chest close enough. Stand beside it and press F.");
+                return false;
             }
+
+            if (Mathf.Abs(toChest.x) <= chestFacingTolerance)
+            {
+                return true;
+            }
+
+            return FacingRight ? toChest.x > 0f : toChest.x < 0f;
         }
     }
 }

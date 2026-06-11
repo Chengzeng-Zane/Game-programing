@@ -7,6 +7,11 @@ namespace EchoEscape
     /// <summary>
     /// Drives the player's visual-only Ruby sprite animation from Rigidbody2D motion.
     /// </summary>
+    /// <remarks>
+    /// Attach this script to the PlayerVisual child object.
+    /// It chooses idle, run, jump, attack, or death sprites based on player motion and combat events.
+    /// The Player root still owns movement, physics, recording, and attacks.
+    /// </remarks>
     public class PlayerAnimationController : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer spriteRenderer;
@@ -50,6 +55,15 @@ namespace EchoEscape
             Death
         }
 
+        /// <summary>
+        /// Description:
+        /// Called when the player visual is created.
+        /// It finds needed components and loads Ruby animation frames from Resources.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Awake()
         {
             if (spriteRenderer == null)
@@ -80,6 +94,15 @@ namespace EchoEscape
             SetState(VisualState.Idle);
         }
 
+        /// <summary>
+        /// Description:
+        /// Called every frame by Unity.
+        /// It chooses the correct player animation based on velocity, grounded state, attack state, and death lock.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Update()
         {
             if (spriteRenderer == null)
@@ -134,6 +157,14 @@ namespace EchoEscape
             UpdateAnimatorParameters(horizontalSpeed, isGrounded, velocity.y);
         }
 
+        /// <summary>
+        /// Description:
+        /// Starts the Ruby attack animation.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         public void PlayAttack()
         {
             if (animationLocked)
@@ -151,6 +182,14 @@ namespace EchoEscape
             SetState(VisualState.Attack);
         }
 
+        /// <summary>
+        /// Description:
+        /// Starts the Ruby death animation and locks normal movement animation.
+        /// Inputs:
+        /// deathSource - text used in debug messages
+        /// Returns:
+        /// float - death animation duration, or 0 if death frames are missing
+        /// </summary>
         public float PlayDeath(string deathSource = "death")
         {
             if (spriteRenderer == null)
@@ -209,6 +248,14 @@ namespace EchoEscape
             return duration;
         }
 
+        /// <summary>
+        /// Description:
+        /// Shows the first idle sprite when death frames are missing.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void ForceIdleFrame()
         {
             if (idleFrames == null || idleFrames.Length == 0)
@@ -223,6 +270,14 @@ namespace EchoEscape
             ApplyCurrentFrame();
         }
 
+        /// <summary>
+        /// Description:
+        /// Changes the current Ruby animation state.
+        /// Inputs:
+        /// nextState - animation state to show
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetState(VisualState nextState)
         {
             if (currentState == nextState && currentFrames != null)
@@ -245,6 +300,14 @@ namespace EchoEscape
             ApplyCurrentFrame();
         }
 
+        /// <summary>
+        /// Description:
+        /// Advances the current sprite animation by time.
+        /// Inputs:
+        /// loop - true to loop frames, false to stop on the last frame
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void AdvanceFrame(bool loop = true)
         {
             if (currentFrames == null || currentFrames.Length <= 1)
@@ -273,6 +336,14 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Checks whether the player should be treated as grounded for animation.
+        /// Inputs:
+        /// velocity - current Rigidbody2D velocity
+        /// Returns:
+        /// bool - true if idle/run animation can be used
+        /// </summary>
         private bool IsGrounded(Vector2 velocity)
         {
             return playerController != null
@@ -280,6 +351,15 @@ namespace EchoEscape
                 : Mathf.Abs(velocity.y) <= airborneVelocityThreshold;
         }
 
+        /// <summary>
+        /// Description:
+        /// Flips the Ruby sprite to face the movement or player input direction.
+        /// Inputs:
+        /// velocity - current Rigidbody2D velocity
+        /// horizontalSpeed - absolute horizontal speed
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void UpdateFacing(Vector2 velocity, float horizontalSpeed)
         {
             if (horizontalSpeed > horizontalRunThreshold)
@@ -292,6 +372,14 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Applies the selected animation frame to the SpriteRenderer.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void ApplyCurrentFrame()
         {
             if (spriteRenderer != null && currentFrames != null && currentFrames.Length > 0)
@@ -300,6 +388,14 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Plays the death sprite frames using unscaled time.
+        /// Inputs:
+        /// duration - total death animation duration
+        /// Returns:
+        /// IEnumerator - Unity coroutine steps for the death animation
+        /// </summary>
         private IEnumerator PlayDeathSequence(float duration)
         {
             if (deathFrames == null || deathFrames.Length == 0)
@@ -330,6 +426,16 @@ namespace EchoEscape
             deathRoutine = null;
         }
 
+        /// <summary>
+        /// Description:
+        /// Sends player movement values to an Animator if one exists.
+        /// Inputs:
+        /// speed - horizontal speed
+        /// isGrounded - true when the player is on ground
+        /// verticalVelocity - vertical Rigidbody2D velocity
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void UpdateAnimatorParameters(float speed, bool isGrounded, float verticalVelocity)
         {
             if (animator == null || animator.runtimeAnimatorController == null)
@@ -343,6 +449,15 @@ namespace EchoEscape
             SetAnimatorBool("IsGravityFlipped", body != null && body.gravityScale < 0f);
         }
 
+        /// <summary>
+        /// Description:
+        /// Safely sets a float Animator parameter if it exists.
+        /// Inputs:
+        /// parameterName - Animator parameter name
+        /// value - value to assign
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetAnimatorFloat(string parameterName, float value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Float))
@@ -351,6 +466,15 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Safely sets a bool Animator parameter if it exists.
+        /// Inputs:
+        /// parameterName - Animator parameter name
+        /// value - value to assign
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetAnimatorBool(string parameterName, bool value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Bool))
@@ -359,6 +483,15 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Checks whether the Animator contains a parameter before setting it.
+        /// Inputs:
+        /// parameterName - Animator parameter name
+        /// type - expected Animator parameter type
+        /// Returns:
+        /// bool - true if the parameter exists with the expected type
+        /// </summary>
         private bool HasAnimatorParameter(string parameterName, AnimatorControllerParameterType type)
         {
             AnimatorControllerParameter[] parameters = animator.parameters;
@@ -374,6 +507,14 @@ namespace EchoEscape
             return false;
         }
 
+        /// <summary>
+        /// Description:
+        /// Loads and sorts Ruby sprite frames from Resources.
+        /// Inputs:
+        /// resourcePath - path under Assets/Resources without file extension
+        /// Returns:
+        /// Sprite[] - sorted animation frames
+        /// </summary>
         private static Sprite[] LoadFrames(string resourcePath)
         {
             Sprite[] frames = Resources.LoadAll<Sprite>(resourcePath);

@@ -19,7 +19,10 @@ namespace EchoEscape
         /// </summary>
         public string deathReason = "hit a hazard";
 
-        private bool fallbackDeathInProgress;
+        [SerializeField]
+        private bool debugLogs;
+
+        private static bool fallbackDeathInProgress;
 
         /// <summary>
         /// Unity physics event called when another 2D collider enters this hazard trigger.
@@ -27,27 +30,56 @@ namespace EchoEscape
         /// <param name="other">The collider that entered the hazard area.</param>
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.GetComponent<PlayerController2D>() == null && other.GetComponentInParent<PlayerController2D>() == null)
+            bool isPlayer = other != null &&
+                (other.GetComponent<PlayerController2D>() != null || other.GetComponentInParent<PlayerController2D>() != null);
+
+            if (!isPlayer)
             {
                 return;
             }
 
-            if (EchoEscapeGameManager.Instance != null)
+            KillPlayerUsingExistingDeathFlow(this, deathReason, name, debugLogs);
+        }
+
+        /// <summary>
+        /// Runs the same death flow used by hazard triggers in scenes with or without a Game Manager.
+        /// </summary>
+        /// <param name="runner">Component used to start the fallback reload coroutine.</param>
+        /// <param name="reason">Short text explaining why the player died.</param>
+        /// <param name="sourceName">Name of the hazard object that requested death.</param>
+        /// <param name="writeDebugLogs">If true, writes death-flow diagnostics to the console.</param>
+        public static void KillPlayerUsingExistingDeathFlow(MonoBehaviour runner, string reason, string sourceName, bool writeDebugLogs)
+        {
+            bool hasGameManager = EchoEscapeGameManager.Instance != null;
+            if (writeDebugLogs)
             {
-                EchoEscapeGameManager.Instance.KillPlayer(deathReason);
+                Debug.Log("[DeathFlow] KillPlayer called");
+                Debug.Log($"[DeathFlow] reason = {reason}");
+                Debug.Log($"[DeathFlow] will respawn/reload = {hasGameManager || runner != null}");
+            }
+
+            if (hasGameManager)
+            {
+                EchoEscapeGameManager.Instance.KillPlayer(reason);
                 return;
             }
 
-            if (fallbackDeathInProgress)
+            if (fallbackDeathInProgress || runner == null)
             {
                 return;
             }
 
             fallbackDeathInProgress = true;
-            StartCoroutine(ShowDeathAndReloadCurrentScene());
+            runner.StartCoroutine(ShowDeathAndReloadCurrentScene());
         }
 
-        private IEnumerator ShowDeathAndReloadCurrentScene()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void ResetFallbackDeathState()
+        {
+            fallbackDeathInProgress = false;
+        }
+
+        private static IEnumerator ShowDeathAndReloadCurrentScene()
         {
             CreateFallbackDeathUi();
             yield return new WaitForSecondsRealtime(1f);

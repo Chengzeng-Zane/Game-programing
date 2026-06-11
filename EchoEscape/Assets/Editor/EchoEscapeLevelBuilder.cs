@@ -1,6 +1,5 @@
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using EchoEscape;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -16,7 +15,7 @@ using Object = UnityEngine.Object;
 /// <remarks>
 /// This is an Editor-only utility script.
 /// Use the Unity menu item Echo Escape/Build Prototype Levels to keep the art-authored
-/// Level1_Tutorial scene in the build, rebuild Level2, and update Build Settings.
+/// level scenes in the build and update Build Settings.
 /// </remarks>
 public static class EchoEscapeLevelBuilder
 {
@@ -35,7 +34,7 @@ public static class EchoEscapeLevelBuilder
     /// Rebuilds the prototype level setup used by the current project.
     /// </summary>
     /// <remarks>
-    /// Called from the Unity editor menu. It preserves the official art-authored Level1_Tutorial scene and rebuilds Level2.
+    /// Called from the Unity editor menu. It preserves the official art-authored level scenes.
     /// </remarks>
     [MenuItem("Echo Escape/Build Prototype Levels")]
     public static void BuildPrototypeLevels()
@@ -44,12 +43,12 @@ public static class EchoEscapeLevelBuilder
         EnsureTag("Echo");
         EnsureWhitePlaceholderSprite();
         EnsureOfficialLevel1SceneExists();
-        BuildLevel2LootTutorial();
+        EnsureOfficialLevel2SceneExists();
         UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Echo Escape prototype levels rebuilt. Official Level1_Tutorial was preserved, and Level2 teaches attack, loot risk, and extraction.");
+        Debug.Log("Echo Escape prototype level scenes checked and preserved. Build Settings were updated.");
     }
 
     /// <summary>
@@ -93,6 +92,20 @@ public static class EchoEscapeLevelBuilder
         if (!File.Exists(ToDiskPath(Level1ScenePath)))
         {
             Debug.LogError("Official Level1_Tutorial scene is missing. Restore Assets/Scenes/Level1_Tutorial.unity before building prototype levels.");
+        }
+    }
+
+    /// <summary>
+    /// Confirms the official art-authored Level2_LootTutorial scene exists before build settings are updated.
+    /// </summary>
+    /// <remarks>
+    /// Level2_LootTutorial is now an art-authored scene, so the old procedural Level2 bootstrap is no longer invoked.
+    /// </remarks>
+    private static void EnsureOfficialLevel2SceneExists()
+    {
+        if (!File.Exists(ToDiskPath(Level2ScenePath)))
+        {
+            Debug.LogError("Official Level2_LootTutorial scene is missing. Restore Assets/Scenes/Level2_LootTutorial.unity before building prototype levels.");
         }
     }
 
@@ -219,36 +232,6 @@ public static class EchoEscapeLevelBuilder
         CreateQuestionMarkGravity(root, popupManager);
 
         SaveScene(scene, Level1ScenePath);
-    }
-
-    /// <summary>
-    /// Creates the Level2_LootTutorial scene with attack, slime, chest, hazard, and exit objects.
-    /// </summary>
-    private static void BuildLevel2LootTutorial()
-    {
-        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        InvokeLevel2LootBuilder();
-        SaveScene(scene, Level2ScenePath);
-    }
-
-    /// <summary>
-    /// Calls the runtime Level2 builder without creating a hard editor assembly dependency on newly generated project files.
-    /// </summary>
-    /// <remarks>
-    /// Unity regenerates .csproj files automatically, but command-line dotnet builds can lag behind newly created runtime scripts.
-    /// Reflection keeps the editor utility compilable until Unity refreshes those generated project files.
-    /// </remarks>
-    private static void InvokeLevel2LootBuilder()
-    {
-        System.Type setupType = System.Type.GetType("EchoEscape.Level2LootTutorialSetup, Assembly-CSharp");
-        MethodInfo buildMethod = setupType?.GetMethod("BuildLayout", BindingFlags.Public | BindingFlags.Static);
-        if (buildMethod == null)
-        {
-            Debug.LogWarning("Level2LootTutorialSetup.BuildLayout was not found. Open Unity and let it recompile scripts, then run Echo Escape/Build Prototype Levels again.");
-            return;
-        }
-
-        buildMethod.Invoke(null, null);
     }
 
     /// <summary>
@@ -431,7 +414,7 @@ public static class EchoEscapeLevelBuilder
             "QuestionMark_Gravity",
             new Vector2(20.4f, -0.28f),
             "Gravity Flip",
-            "Press Up Arrow to flip gravity when there is a platform above.\nPress Down Arrow to return when there is ground below.\nPress Space to jump.\n\nUse gravity flip to reach paths on the ceiling.",
+            "Press Up Arrow to flip gravity upward.\nPress Down Arrow to flip back.",
             popupManager,
             parent);
     }
@@ -570,7 +553,7 @@ public static class EchoEscapeLevelBuilder
         popupTrigger.popupManager = popupManager;
         popupTrigger.tutorialTitle = title;
         popupTrigger.tutorialMessage = message;
-        popupTrigger.showOnlyOnce = false;
+        popupTrigger.showOnlyOnce = true;
         popupTrigger.hideAfterUse = false;
 
         GameObject icon = new GameObject("QuestionMarkIcon");
@@ -655,7 +638,7 @@ public static class EchoEscapeLevelBuilder
         Text closeText = CreateUiText(
             "CloseHintText",
             panelObject.transform,
-            "Press Esc to close.",
+            "Press C to close.",
             16,
             FontStyle.Normal,
             new Vector2(0f, -248f),

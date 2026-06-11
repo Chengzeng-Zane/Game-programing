@@ -6,6 +6,11 @@ namespace EchoEscape
     /// <summary>
     /// Drives the visual-only Ruby ghost animation for an Echo replay object.
     /// </summary>
+    /// <remarks>
+    /// Attach this script to the EchoVisual child object created by ActionRecorder.
+    /// It reads RecordingFrame data from EchoReplayController and displays a tinted Ruby animation.
+    /// It does not move the Echo or press buttons by itself.
+    /// </remarks>
     public class EchoAnimationController : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer spriteRenderer;
@@ -38,6 +43,15 @@ namespace EchoEscape
             Jump
         }
 
+        /// <summary>
+        /// Description:
+        /// Called when the Echo visual is created.
+        /// It finds visual components, loads Ruby sprite frames, and starts in idle state.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Awake()
         {
             if (spriteRenderer == null)
@@ -62,6 +76,15 @@ namespace EchoEscape
             SetState(VisualState.Idle);
         }
 
+        /// <summary>
+        /// Description:
+        /// Called every frame by Unity.
+        /// It advances the current sprite animation.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void Update()
         {
             AdvanceFrame();
@@ -103,6 +126,14 @@ namespace EchoEscape
             UpdateAnimatorParameters(Mathf.Abs(velocity.x), Mathf.Abs(velocity.y) <= verticalJumpThreshold, velocity.y, frame.isGravityFlipped);
         }
 
+        /// <summary>
+        /// Description:
+        /// Changes the Echo visual state between idle, run, and jump.
+        /// Inputs:
+        /// nextState - visual animation state to show
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetState(VisualState nextState)
         {
             if (currentState == nextState && currentFrames != null)
@@ -123,6 +154,14 @@ namespace EchoEscape
             ApplyCurrentFrame();
         }
 
+        /// <summary>
+        /// Description:
+        /// Moves to the next sprite frame when enough time has passed.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void AdvanceFrame()
         {
             if (currentFrames == null || currentFrames.Length <= 1)
@@ -147,6 +186,14 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Applies the current sprite frame to the SpriteRenderer.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void ApplyCurrentFrame()
         {
             if (spriteRenderer != null && currentFrames != null && currentFrames.Length > 0)
@@ -155,6 +202,17 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Sends Echo movement values to an Animator if one exists.
+        /// Inputs:
+        /// speed - horizontal movement speed
+        /// isGrounded - true when the Echo is not jumping
+        /// verticalVelocity - vertical movement speed
+        /// isGravityFlipped - true when the recorded frame was upside down
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void UpdateAnimatorParameters(float speed, bool isGrounded, float verticalVelocity, bool isGravityFlipped)
         {
             if (animator == null || animator.runtimeAnimatorController == null)
@@ -168,6 +226,15 @@ namespace EchoEscape
             SetAnimatorBool("IsGravityFlipped", isGravityFlipped);
         }
 
+        /// <summary>
+        /// Description:
+        /// Safely sets a float Animator parameter if it exists.
+        /// Inputs:
+        /// parameterName - Animator parameter name
+        /// value - value to assign
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetAnimatorFloat(string parameterName, float value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Float))
@@ -176,6 +243,15 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Safely sets a bool Animator parameter if it exists.
+        /// Inputs:
+        /// parameterName - Animator parameter name
+        /// value - value to assign
+        /// Returns:
+        /// void (no return)
+        /// </summary>
         private void SetAnimatorBool(string parameterName, bool value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Bool))
@@ -184,6 +260,15 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Checks whether the Animator contains a parameter before setting it.
+        /// Inputs:
+        /// parameterName - Animator parameter name
+        /// type - expected Animator parameter type
+        /// Returns:
+        /// bool - true if the parameter exists with the expected type
+        /// </summary>
         private bool HasAnimatorParameter(string parameterName, AnimatorControllerParameterType type)
         {
             AnimatorControllerParameter[] parameters = animator.parameters;
@@ -199,6 +284,14 @@ namespace EchoEscape
             return false;
         }
 
+        /// <summary>
+        /// Description:
+        /// Loads and sorts Ruby animation frames from Resources.
+        /// Inputs:
+        /// resourcePath - path under Assets/Resources without file extension
+        /// Returns:
+        /// Sprite[] - sorted animation frames
+        /// </summary>
         private static Sprite[] LoadFrames(string resourcePath)
         {
             Sprite[] frames = Resources.LoadAll<Sprite>(resourcePath);

@@ -92,6 +92,14 @@ namespace EchoEscape
             attackRoutine = StartCoroutine(AttackRoutine());
         }
 
+        /// <summary>
+        /// Description:
+        /// Runs the delayed attack timing and active hitbox window.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// IEnumerator - Unity coroutine steps for one attack
+        /// </summary>
         private IEnumerator AttackRoutine()
         {
             animationController?.PlayAttack();
@@ -121,6 +129,14 @@ namespace EchoEscape
             }
         }
 
+        /// <summary>
+        /// Description:
+        /// Checks the attack box and damages each enemy only once during this attack.
+        /// Inputs:
+        /// damagedEnemies - enemies already hit by this attack
+        /// Returns:
+        /// bool - true if at least one enemy was defeated or damaged
+        /// </summary>
         private bool CheckAttackHits(HashSet<SimpleEnemy> damagedEnemies)
         {
             Vector2 center = AttackCenter();
@@ -161,12 +177,28 @@ namespace EchoEscape
             return (Vector2)transform.position + offset;
         }
 
+        /// <summary>
+        /// Description:
+        /// Checks whether a target is in front of the player.
+        /// Inputs:
+        /// targetPosition - world position of the target
+        /// Returns:
+        /// bool - true if the target is in the facing direction
+        /// </summary>
         private bool IsInFacingDirection(Vector2 targetPosition)
         {
             float direction = IsFacingRight() ? 1f : -1f;
             return (targetPosition.x - transform.position.x) * direction > 0.01f;
         }
 
+        /// <summary>
+        /// Description:
+        /// Reads the player's facing direction from PlayerController2D.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// bool - true if the player is facing right
+        /// </summary>
         private bool IsFacingRight()
         {
             if (playerController == null)

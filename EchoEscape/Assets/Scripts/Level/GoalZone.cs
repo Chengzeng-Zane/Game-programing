@@ -13,6 +13,9 @@ namespace EchoEscape
     /// </remarks>
     public class GoalZone : MonoBehaviour
     {
+        private const string Level3SceneName = "Level3_RiskReward";
+        private const string MainMenuSceneName = "MainMenu";
+
         [SerializeField]
         private string nextSceneName;
 
@@ -107,6 +110,7 @@ namespace EchoEscape
                 Debug.Log("Loading next scene: " + sceneName);
             }
 
+            SecurePendingLootBeforeSceneLoad();
             SceneManager.LoadScene(nextIndex);
             return true;
         }
@@ -129,8 +133,48 @@ namespace EchoEscape
                 Debug.Log("Loading next scene: " + sceneName);
             }
 
+            if (TryShowLevel3EndingBeforeSceneLoad(sceneName))
+            {
+                return true;
+            }
+
+            SecurePendingLootBeforeSceneLoad();
             SceneManager.LoadScene(sceneName);
             return true;
+        }
+
+        /// <summary>
+        /// Shows the Level3 final Echo Wizard dialogue before returning to MainMenu.
+        /// </summary>
+        /// <param name="sceneName">Scene name requested by the exit.</param>
+        /// <returns>True if the ending sequence took over scene loading.</returns>
+        private bool TryShowLevel3EndingBeforeSceneLoad(string sceneName)
+        {
+            if (SceneManager.GetActiveScene().name != Level3SceneName || sceneName != MainMenuSceneName)
+            {
+                return false;
+            }
+
+            LevelIntroSequence introSequence = FindObjectOfType<LevelIntroSequence>();
+            if (introSequence == null)
+            {
+                Debug.LogWarning("Level3 ending dialogue could not be shown because LevelIntroSequence is missing.");
+                return false;
+            }
+
+            SecurePendingLootBeforeSceneLoad();
+            return introSequence.ShowEndingSequence(sceneName);
+        }
+
+        /// <summary>
+        /// Secures pending loot before the current scene unloads.
+        /// </summary>
+        private void SecurePendingLootBeforeSceneLoad()
+        {
+            if (EchoEscapeGameManager.Instance != null)
+            {
+                EchoEscapeGameManager.Instance.SecurePendingLoot();
+            }
         }
 
         /// <summary>

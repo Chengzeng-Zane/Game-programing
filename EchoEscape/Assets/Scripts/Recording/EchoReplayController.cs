@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace EchoEscape
 {
-    // 这个脚本让生成出来的回声对象按保存的玩家移动帧进行回放。
     /// <summary>
     /// Replays saved player movement frames on a spawned Echo object.
     /// </summary>
@@ -21,7 +20,6 @@ namespace EchoEscape
         private int index;
         private bool finished;
 
-        // 这个函数在回声对象创建时运行，用来准备 Rigidbody2D 和碰撞设置。
         /// <summary>
         /// Unity event method called when the Echo object is created.
         /// </summary>
@@ -35,7 +33,6 @@ namespace EchoEscape
             visual = GetComponentInChildren<EchoAnimationController>();
         }
 
-        // 这个函数按固定物理帧运行，用来更新 Rigidbody2D 移动速度。
         /// <summary>
         /// Unity physics event method called at a fixed timestep.
         /// </summary>
@@ -74,7 +71,6 @@ namespace EchoEscape
             }
         }
 
-        // 这个函数把玩家录制好的帧数据加载到当前回声对象里。
         /// <summary>
         /// Loads the recorded player frames that this Echo should replay.
         /// </summary>
@@ -93,7 +89,6 @@ namespace EchoEscape
             }
         }
 
-        // 这个函数把录制时的朝向应用到回声的像素角色外观上。
         /// <summary>
         /// Applies recorded facing direction to an optional pixel character visual.
         /// </summary>
