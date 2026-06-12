@@ -43,10 +43,51 @@ namespace EchoEscape
         private void SkinCharacters()
         {
             PlayerController2D player = FindObjectOfType<PlayerController2D>();
-            if (player != null && player.GetComponent<PixelCharacterVisual>() == null)
+            if (player == null)
             {
-                PixelCharacterVisual visual = player.gameObject.AddComponent<PixelCharacterVisual>();
-                visual.SetStyle(false, Color.white);
+                return;
+            }
+
+            if (player.GetComponentInChildren<PlayerAnimationController>(true) != null)
+            {
+                PixelCharacterVisual existingFallbackVisual = player.GetComponent<PixelCharacterVisual>();
+                if (existingFallbackVisual != null)
+                {
+                    existingFallbackVisual.enabled = false;
+                }
+
+                HideFallbackCharacterSprite(player.transform);
+                return;
+            }
+
+            if (player.GetComponent<PixelCharacterVisual>() == null)
+            {
+                PixelCharacterVisual fallbackVisual = player.gameObject.AddComponent<PixelCharacterVisual>();
+                fallbackVisual.SetStyle(false, Color.white);
+            }
+        }
+
+        /// <summary>
+        /// Hides the older runtime fallback sprite when the Ruby animation controller is present.
+        /// </summary>
+        /// <param name="playerTransform">Root transform of the player object.</param>
+        private void HideFallbackCharacterSprite(Transform playerTransform)
+        {
+            if (playerTransform == null)
+            {
+                return;
+            }
+
+            Transform fallbackSprite = playerTransform.Find("Player Pixel Sprite");
+            if (fallbackSprite == null)
+            {
+                return;
+            }
+
+            SpriteRenderer fallbackRenderer = fallbackSprite.GetComponent<SpriteRenderer>();
+            if (fallbackRenderer != null)
+            {
+                fallbackRenderer.enabled = false;
             }
         }
 

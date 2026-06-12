@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -17,6 +18,7 @@ namespace EchoEscape
         private const string DefaultContinueHint = "Press C to continue.";
         private const string EndingContinueHint = "Press C to return to Main Menu.";
         private const string EndingBodyText = "You escaped the Silent Forest.\nThank you for playing Echo Escape.";
+        private static readonly HashSet<string> scenesSkippingNextIntro = new HashSet<string>();
 
         [SerializeField] private GameObject introRoot;
         [SerializeField] private Text storyText;
@@ -63,8 +65,47 @@ namespace EchoEscape
                 return;
             }
 
+            if (ConsumeSkipIntroForCurrentScene())
+            {
+                if (introRoot != null)
+                {
+                    introRoot.SetActive(false);
+                }
+
+                RestoreGameplayTime();
+                return;
+            }
+
             EnsureIntroUi();
             ShowIntro();
+        }
+
+        /// <summary>
+        /// Skips the configured level intro the next time the named scene loads.
+        /// </summary>
+        /// <param name="sceneName">Scene name that should skip its next intro playback.</param>
+        public static void SkipNextIntroForScene(string sceneName)
+        {
+            if (!string.IsNullOrWhiteSpace(sceneName))
+            {
+                scenesSkippingNextIntro.Add(sceneName);
+            }
+        }
+
+        /// <summary>
+        /// Consumes the one-time skip flag for the active scene.
+        /// </summary>
+        /// <returns>True if the active scene should skip this intro playback.</returns>
+        private static bool ConsumeSkipIntroForCurrentScene()
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            if (string.IsNullOrWhiteSpace(sceneName) || !scenesSkippingNextIntro.Contains(sceneName))
+            {
+                return false;
+            }
+
+            scenesSkippingNextIntro.Remove(sceneName);
+            return true;
         }
 
         /// <summary>

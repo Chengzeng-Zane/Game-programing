@@ -18,14 +18,15 @@ namespace EchoEscape
         [SerializeField] private Animator animator;
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private PlayerController2D playerController;
-        [SerializeField] private float idleFramesPerSecond = 10f;
-        [SerializeField] private float runFramesPerSecond = 12f;
+        [SerializeField] private float idleFramesPerSecond = 4f;
+        [SerializeField] private float runFramesPerSecond = 16f;
         [SerializeField] private float jumpFramesPerSecond = 10f;
         [SerializeField] private float attackFramesPerSecond = 14f;
         [SerializeField] private float attackDuration = 0.28f;
         [SerializeField] private float deathFramesPerSecond = 15f;
-        [SerializeField] private float horizontalRunThreshold = 0.12f;
+        [SerializeField] private float horizontalRunThreshold = 0.35f;
         [SerializeField] private float airborneVelocityThreshold = 0.25f;
+        [SerializeField] private int idleHoldFrameIndex = 4;
 
         private const string IdlePath = "Ancient Forest 1.6/Ruby V4 - Demo/Idle/ruby_idle-Sheet";
         private const string RunPath = "Ancient Forest 1.6/Ruby V4 - Demo/Run/run-Sheet";
@@ -57,6 +58,44 @@ namespace EchoEscape
 
         /// <summary>
         /// Description:
+        /// Keeps the editor preview on the intended idle sprite while not in Play Mode.
+        /// Inputs:
+        /// none
+        /// Returns:
+        /// void (no return)
+        /// </summary>
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+            {
+                return;
+            }
+
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponent<SpriteRenderer>();
+            }
+
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
+            }
+
+            if (animator != null)
+            {
+                animator.enabled = false;
+            }
+
+            Sprite[] previewIdleFrames = LoadFrames(IdlePath);
+            if (spriteRenderer != null && previewIdleFrames.Length > 0)
+            {
+                int targetFrameIndex = Mathf.Clamp(idleHoldFrameIndex, 0, previewIdleFrames.Length - 1);
+                spriteRenderer.sprite = previewIdleFrames[targetFrameIndex];
+            }
+        }
+
+        /// <summary>
+        /// Description:
         /// Called when the player visual is created.
         /// It finds needed components and loads Ruby animation frames from Resources.
         /// Inputs:
@@ -74,6 +113,11 @@ namespace EchoEscape
             if (animator == null)
             {
                 animator = GetComponent<Animator>();
+            }
+
+            if (animator != null)
+            {
+                animator.enabled = false;
             }
 
             if (body == null)
@@ -149,11 +193,16 @@ namespace EchoEscape
             else
             {
                 SetState(VisualState.Idle);
+                HoldIdleFrame();
             }
 
             UpdateFacing(velocity, horizontalSpeed);
 
-            AdvanceFrame();
+            if (currentState != VisualState.Idle)
+            {
+                AdvanceFrame();
+            }
+
             UpdateAnimatorParameters(horizontalSpeed, isGrounded, velocity.y);
         }
 
@@ -271,6 +320,27 @@ namespace EchoEscape
         }
 
         /// <summary>
+        /// Shows a calm standing frame instead of looping through more crouched idle poses.
+        /// </summary>
+        private void HoldIdleFrame()
+        {
+            if (idleFrames == null || idleFrames.Length == 0)
+            {
+                return;
+            }
+
+            int targetFrameIndex = Mathf.Clamp(idleHoldFrameIndex, 0, idleFrames.Length - 1);
+            if (currentFrames != idleFrames || currentFrameIndex == targetFrameIndex)
+            {
+                return;
+            }
+
+            currentFrameIndex = targetFrameIndex;
+            frameTimer = 0f;
+            ApplyCurrentFrame();
+        }
+
+        /// <summary>
         /// Description:
         /// Changes the current Ruby animation state.
         /// Inputs:
@@ -298,6 +368,11 @@ namespace EchoEscape
             currentFrameIndex = 0;
             frameTimer = 0f;
             ApplyCurrentFrame();
+
+            if (nextState == VisualState.Idle)
+            {
+                HoldIdleFrame();
+            }
         }
 
         /// <summary>

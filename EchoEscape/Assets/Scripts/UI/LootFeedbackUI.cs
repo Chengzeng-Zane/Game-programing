@@ -18,6 +18,7 @@ namespace EchoEscape
     {
         private const string Level2SceneName = "Level2_LootTutorial";
         private const string Level3SceneName = "Level3_RiskReward";
+        private const string Level1SceneName = "Level1_Tutorial";
         private const string PopupFontResourcePath = "BrackeysPlatformer/Fonts/PixelOperator8-Bold";
 
         private static readonly Color OrnatePanelColor = new Color(0.005f, 0.025f, 0.02f, 0.96f);
@@ -299,7 +300,7 @@ namespace EchoEscape
 
         /// <summary>
         /// Description:
-        /// Creates the larger ornate loot popup preview used in Level2.
+        /// Creates the larger ornate loot popup preview used in gameplay levels.
         /// Inputs:
         /// parent - Canvas transform that owns the panel
         /// Returns:
@@ -386,7 +387,7 @@ namespace EchoEscape
 
         /// <summary>
         /// Description:
-        /// Checks whether the active scene should use the Level2 ornate loot preview.
+        /// Checks whether the active scene should use the ornate loot and death popup.
         /// Inputs:
         /// none
         /// Returns:
@@ -395,7 +396,9 @@ namespace EchoEscape
         private static bool ShouldUseOrnateLootPopup()
         {
             string activeSceneName = SceneManager.GetActiveScene().name;
-            return activeSceneName == Level2SceneName || activeSceneName == Level3SceneName;
+            return activeSceneName == Level1SceneName ||
+                activeSceneName == Level2SceneName ||
+                activeSceneName == Level3SceneName;
         }
 
         /// <summary>

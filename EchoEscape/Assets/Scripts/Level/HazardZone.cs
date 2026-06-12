@@ -84,7 +84,9 @@ namespace EchoEscape
             CreateFallbackDeathUi();
             yield return new WaitForSecondsRealtime(1f);
             Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            string sceneName = SceneManager.GetActiveScene().name;
+            LevelIntroSequence.SkipNextIntroForScene(sceneName);
+            SceneManager.LoadScene(sceneName);
         }
 
         private static void CreateFallbackDeathUi()

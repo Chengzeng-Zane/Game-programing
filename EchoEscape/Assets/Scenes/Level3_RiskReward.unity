@@ -217,7 +217,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.02, g: 0.02, b: 0.025, a: 1}
+  m_BackGroundColor: {r: 0.032, g: 0.062, b: 0.074, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -5674,13 +5674,13 @@ MonoBehaviour:
   animator: {fileID: 9100200004}
   body: {fileID: 1503}
   playerController: {fileID: 1505}
-  idleFramesPerSecond: 10
-  runFramesPerSecond: 12
+  idleFramesPerSecond: 4
+  runFramesPerSecond: 16
   jumpFramesPerSecond: 10
   attackFramesPerSecond: 14
   attackDuration: 0.28
   deathFramesPerSecond: 15
-  horizontalRunThreshold: 0.12
+  horizontalRunThreshold: 0.35
   airborneVelocityThreshold: 0.25
 --- !u!1 &920000001
 GameObject:
@@ -5741,7 +5741,7 @@ Transform:
   m_GameObject: {fileID: 920000101}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.8, y: 0.1, z: 0.18}
+  m_LocalPosition: {x: 8.8, y: 1.25, z: 0.18}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5787,13 +5787,13 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: -20
-  m_Sprite: {fileID: 21300000, guid: 69528c4a880d492598e0af76584401ac, type: 3}
-  m_Color: {r: 0.16, g: 0.22, b: 0.17, a: 0.32}
+  m_SortingOrder: -22
+  m_Sprite: {fileID: 21300000, guid: 8f654c4fa7e6473fbc2e954c2d33eb27, type: 3}
+  m_Color: {r: 0.86, g: 0.89, b: 0.9, a: 0.82}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 2
-  m_Size: {x: 44, y: 8.4}
+  m_Size: {x: 100, y: 12}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1

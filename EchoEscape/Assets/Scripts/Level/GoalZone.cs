@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,6 +16,7 @@ namespace EchoEscape
     {
         private const string Level3SceneName = "Level3_RiskReward";
         private const string MainMenuSceneName = "MainMenu";
+        private const float Level3EndingDelayAfterLoot = 2.75f;
 
         [SerializeField]
         private string nextSceneName;
@@ -162,19 +164,44 @@ namespace EchoEscape
                 return false;
             }
 
-            SecurePendingLootBeforeSceneLoad();
-            return introSequence.ShowEndingSequence(sceneName);
+            StartCoroutine(ShowLevel3EndingAfterLootFeedback(sceneName, introSequence));
+            return true;
         }
 
         /// <summary>
         /// Secures pending loot before the current scene unloads.
         /// </summary>
-        private void SecurePendingLootBeforeSceneLoad()
+        /// <returns>Number of loot items secured.</returns>
+        private int SecurePendingLootBeforeSceneLoad()
         {
             if (EchoEscapeGameManager.Instance != null)
             {
-                EchoEscapeGameManager.Instance.SecurePendingLoot();
+                return EchoEscapeGameManager.Instance.SecurePendingLoot();
             }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Shows Level3 secured-loot feedback before the final Echo Wizard dialogue.
+        /// </summary>
+        /// <param name="targetSceneName">Scene loaded after the ending dialogue completes.</param>
+        /// <param name="introSequence">Intro sequence used for the ending dialogue.</param>
+        /// <returns>Coroutine steps for delayed ending playback.</returns>
+        private IEnumerator ShowLevel3EndingAfterLootFeedback(string targetSceneName, LevelIntroSequence introSequence)
+        {
+            int securedLootCount = SecurePendingLootBeforeSceneLoad();
+            if (securedLootCount > 0)
+            {
+                yield return new WaitForSecondsRealtime(Level3EndingDelayAfterLoot);
+            }
+
+            if (introSequence != null && introSequence.ShowEndingSequence(targetSceneName))
+            {
+                yield break;
+            }
+
+            SceneManager.LoadScene(targetSceneName);
         }
 
         /// <summary>

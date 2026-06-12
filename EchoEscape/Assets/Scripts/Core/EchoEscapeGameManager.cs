@@ -483,7 +483,9 @@ namespace EchoEscape
         {
             yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, deathReloadDelay));
             Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            string sceneName = SceneManager.GetActiveScene().name;
+            LevelIntroSequence.SkipNextIntroForScene(sceneName);
+            SceneManager.LoadScene(sceneName);
         }
 
         /// <summary>
