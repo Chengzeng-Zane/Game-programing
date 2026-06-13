@@ -91,9 +91,10 @@ Gameplay scripts now include Chinese summary comments and function-level explana
 
 ## Development Progress
 
-- Week 1: Repository setup, Unity project setup, concept and planning documents.
-- Week 2: Tutorial level, Echo recording/replay, loot feedback, Ruby player visuals, Level 2 forest visuals, and Cursed Ghost enemy behavior.
-- Week 3: Level 3 risk-reward route, Gravity Flip void death coverage, improved chest/collectible/loot feedback, enemy behavior component split, level backgrounds, music, ending flow, and script documentation.
+- Week 1 - Core Gameplay for Level 1 and Level 2: Set up the repository and Unity project, then built the first version of the main 2D platforming loop. Level 1 focused on movement, jumping, Echo recording and replay, pressure plate puzzles, door opening, and reaching the exit. Level 2 introduced chest interaction, loot collection, basic enemy danger, player attack, and the rule that pending loot can be lost on death.
+- Week 2 - UI and Player Feedback: Improved the player-facing feedback for the first two levels. This included tutorial popups, recording status, Echo replay feedback, button and door feedback, chest opening feedback, pending and secured loot display, death messages, level completion feedback, Ruby player visuals, Level 2 forest visuals, and Cursed Ghost enemy behavior.
+- Week 3 - Level 3 Development: Built Level 3 as the main combined challenge level. This added a risk-reward route that brings together Echo puzzle solving, enemy danger, treasure chest rewards, Gravity Flip traversal, river and pit hazards, extraction-style loot decisions, and a more complete end-of-level flow.
+- Week 4 - Polish, Effects, Testing, and Documentation: Focused on final polish and submission preparation. This included improving level backgrounds, music, death and restart flow, Gravity Flip void death coverage, collectible drop weighting, chest and loot feedback, enemy script organisation, script comments, README content, asset credits, known issue checks, Kanban updates, and full Level 1 to Level 3 testing.
 
 ## Credits
 
