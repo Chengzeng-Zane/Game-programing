@@ -4,82 +4,45 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// Controls a pressure plate that opens or closes a linked door.
+    /// 脚本总览：压力板机关脚本。玩家或 Echo 站上去会按下按钮，常用于开门或解除魔法屏障。
+    /// 玩法逻辑：脚本维护一个压在板上的 Collider 列表，只要列表里还有有效玩家或 Echo，按钮就是 pressed；按下后会更新门、按钮动画和颜色反馈。Echo 回放结束后停在压力板上，就能替玩家持续开门。
+    /// 协作关系：ActionRecorder/EchoReplayController 生成 Echo；Door 接收压力板开关状态。
     /// </summary>
-    /// <remarks>
-    /// Attach this script to the yellow pressure plate trigger object.
-    /// It detects Player and Echo colliders, stores current occupants in a HashSet,
-    /// and keeps the linked Door open while at least one valid occupant remains on the plate.
-    /// </remarks>
     public class PressurePlate : MonoBehaviour
     {
-        /// <summary>
-        /// Door opened while this plate is pressed.
-        /// </summary>
         public Door linkedDoor;
-
-        /// <summary>
-        /// If true, writes Console messages when Player or Echo presses the plate.
-        /// </summary>
         public bool enableDebugLogs = true;
-
-        /// <summary>
-        /// Keeps decorative child renderer colors instead of applying one flat tint.
-        /// </summary>
         [SerializeField] private bool useLayeredVisualColors;
-
-        /// <summary>
-        /// Root transform for decorative pressure plate layers.
-        /// </summary>
         [SerializeField] private Transform layeredVisualRoot;
-
-        /// <summary>
-        /// Brightness multiplier used when the layered visual is pressed.
-        /// </summary>
         [SerializeField] private float pressedVisualBoost = 1.35f;
-
-        /// <summary>
-        /// Animator used by the decorative button visual.
-        /// </summary>
         [SerializeField] private Animator buttonVisualAnimator;
-
-        /// <summary>
-        /// Local movement applied while the plate is pressed.
-        /// </summary>
         [SerializeField] private Vector3 pressedLocalOffset = new Vector3(0f, -0.05f, 0f);
-
-        /// <summary>
-        /// True when at least one Player or Echo collider is currently on the plate.
-        /// </summary>
         public bool IsPressed => occupants.Count > 0;
 
         private readonly HashSet<Collider2D> occupants = new HashSet<Collider2D>();
         private readonly Dictionary<SpriteRenderer, Color> layeredVisualBaseColors = new Dictionary<SpriteRenderer, Color>();
         private Transform pressedMotionRoot;
         private Vector3 restingPressedMotionLocalPosition;
-
         /// <summary>
-        /// Unity event method called when the pressure plate object is created.
+        /// 初始化压力板组件和初始视觉状态，保证一开始门和按钮状态一致。
         /// </summary>
-        /// <remarks>
-        /// Stores the unpressed visual position so the plate can visually move when pressed.
-        /// </remarks>
         private void Awake()
         {
+            // 先找到可移动的按钮视觉根节点，后面按下/松开时只移动视觉，不动真实 Collider。
             pressedMotionRoot = ResolvePressedMotionRoot();
             if (pressedMotionRoot != null)
             {
                 restingPressedMotionLocalPosition = pressedMotionRoot.localPosition;
             }
 
+            // 缓存原始颜色，按下变亮后才能准确恢复原色。
             CacheLayeredVisualColors();
             Refresh();
         }
-
         /// <summary>
-        /// Unity physics event called when another 2D collider enters the trigger area.
+        /// 玩家或 Echo 进入压力板时加入占用列表，并刷新按钮和门状态。
         /// </summary>
-        /// <param name="other">The collider that entered the pressure plate trigger.</param>
+        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (!CanPress(other))
@@ -91,11 +54,10 @@ namespace EchoEscape
             LogOccupant(other);
             Refresh();
         }
-
         /// <summary>
-        /// Unity physics event called when another 2D collider leaves the trigger area.
+        /// 玩家或 Echo 离开压力板时从占用列表移除，并重新判断是否还有对象压住。
         /// </summary>
-        /// <param name="other">The collider that exited the pressure plate trigger.</param>
+        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
         private void OnTriggerExit2D(Collider2D other)
         {
             if (!CanPress(other))
@@ -106,14 +68,14 @@ namespace EchoEscape
             occupants.Remove(other);
             Refresh();
         }
-
         /// <summary>
-        /// Determines whether a collider is allowed to press this plate.
+        /// 判断一个 Collider 是否可以按下压力板。通常 Player 和 Echo 可以，普通道具或敌人不会触发。
         /// </summary>
-        /// <param name="other">The collider being tested.</param>
-        /// <returns>True for Player or Echo objects; otherwise false.</returns>
+        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
         private bool CanPress(Collider2D other)
         {
+            // Player 和 Echo 都可以压机关；Echo 是解谜用途，所以不能只判断 Player。
             return HasTag(other, "Player") ||
                 HasTag(other, "Echo") ||
                 other.GetComponent<PlayerController2D>() != null ||
@@ -121,18 +83,16 @@ namespace EchoEscape
                 other.GetComponent<EchoReplayController>() != null ||
                 other.GetComponentInParent<EchoReplayController>() != null;
         }
-
         /// <summary>
-        /// Updates plate visuals and opens or closes the linked door based on current occupants.
+        /// 根据当前占用列表计算按钮是否按下，并同步门、动画、颜色和按钮位置。
         /// </summary>
-        /// <remarks>
-        /// The HashSet prevents the door from closing when the player leaves but the Echo remains on the plate.
-        /// </remarks>
         private void Refresh()
         {
+            // Echo 或玩家被销毁时，HashSet 里可能留下空引用；刷新前先清理。
             occupants.RemoveWhere(occupant => occupant == null);
 
             bool pressed = occupants.Count > 0;
+            // pressed 状态同时驱动视觉反馈和真实 Door 逻辑。
             ApplyPressedMotion(pressed);
             UpdateButtonVisualAnimator(pressed);
 
@@ -149,19 +109,20 @@ namespace EchoEscape
             {
                 if (pressed)
                 {
+                    // 只要还有任意有效对象压住，门就保持打开。
                     linkedDoor.OpenDoor();
                 }
                 else
                 {
+                    // 所有对象离开后门关闭，形成需要 Echo 持续压住的谜题。
                     linkedDoor.CloseDoor();
                 }
             }
         }
-
         /// <summary>
-        /// Finds the visual transform that should move when the plate is pressed.
+        /// 找到需要做下沉动画的按钮视觉根节点。
         /// </summary>
-        /// <returns>The visual transform, or null if this plate has no movable visual.</returns>
+        /// <returns>返回找到的 Transform；找不到时可能返回 null。</returns>
         private Transform ResolvePressedMotionRoot()
         {
             if (buttonVisualAnimator != null)
@@ -176,11 +137,10 @@ namespace EchoEscape
 
             return null;
         }
-
         /// <summary>
-        /// Moves only the decorative visual, never the trigger collider root.
+        /// 根据 pressed 状态移动按钮视觉，让压力板看起来真的被压下。
         /// </summary>
-        /// <param name="pressed">True when the plate is currently pressed.</param>
+        /// <param name="pressed">true 表示压力板被按下，false 表示松开。</param>
         private void ApplyPressedMotion(bool pressed)
         {
             if (pressedMotionRoot == null)
@@ -190,26 +150,25 @@ namespace EchoEscape
 
             pressedMotionRoot.localPosition = restingPressedMotionLocalPosition + (pressed ? pressedLocalOffset : Vector3.zero);
         }
-
         /// <summary>
-        /// Switches the decorative button animator between idle and pressed states.
+        /// 把 pressed 状态传给按钮 Animator，用于播放按钮按下或松开的动画。
         /// </summary>
-        /// <param name="pressed">True when the pressure plate is active.</param>
+        /// <param name="pressed">true 表示压力板被按下，false 表示松开。</param>
         private void UpdateButtonVisualAnimator(bool pressed)
         {
             if (buttonVisualAnimator == null ||
                 !buttonVisualAnimator.isActiveAndEnabled ||
                 !buttonVisualAnimator.gameObject.activeInHierarchy)
             {
+                // Animator 物体未激活时直接调用会有 Unity 警告，所以先过滤。
                 return;
             }
 
             buttonVisualAnimator.SetBool("Pressed", pressed);
             buttonVisualAnimator.Play(pressed ? "Pressed" : "Idle");
         }
-
         /// <summary>
-        /// Stores the original renderer colors for layered visual mode.
+        /// 缓存按钮多层 SpriteRenderer 的原始颜色，方便按下时变亮、松开时恢复。
         /// </summary>
         private void CacheLayeredVisualColors()
         {
@@ -224,11 +183,10 @@ namespace EchoEscape
                 layeredVisualBaseColors[renderer] = renderer.color;
             }
         }
-
         /// <summary>
-        /// Applies the idle or pressed color state to layered visuals.
+        /// 根据按钮是否按下，给多层 SpriteRenderer 应用不同颜色反馈。
         /// </summary>
-        /// <param name="pressed">True when the plate is currently pressed.</param>
+        /// <param name="pressed">true 表示压力板被按下，false 表示松开。</param>
         private void ApplyLayeredVisualColors(bool pressed)
         {
             if (layeredVisualBaseColors.Count == 0)
@@ -247,12 +205,11 @@ namespace EchoEscape
                 renderer.color = pressed ? BoostPressedColor(entry.Value) : entry.Value;
             }
         }
-
         /// <summary>
-        /// Brightens a decorative renderer color while preserving its base hue.
+        /// 把原始颜色调亮，用作按钮被按下时的视觉反馈。
         /// </summary>
-        /// <param name="baseColor">The original renderer color.</param>
-        /// <returns>The color used while the plate is pressed.</returns>
+        /// <param name="baseColor">baseColor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <returns>返回处理后的颜色值。</returns>
         private Color BoostPressedColor(Color baseColor)
         {
             float red = Mathf.Min(1f, baseColor.r * 1.08f + 0.03f);
@@ -260,11 +217,10 @@ namespace EchoEscape
             float blue = Mathf.Min(1f, baseColor.b * pressedVisualBoost + 0.05f);
             return new Color(red, green, blue, baseColor.a);
         }
-
         /// <summary>
-        /// Writes a debug message that identifies what pressed the plate.
+        /// 输出进入压力板的对象信息，方便调试到底是谁压住了按钮。
         /// </summary>
-        /// <param name="other">The collider that pressed the plate.</param>
+        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
         private void LogOccupant(Collider2D other)
         {
             if (!enableDebugLogs)
@@ -275,25 +231,23 @@ namespace EchoEscape
             string occupantName = IsEcho(other) ? "Echo" : "Player";
             Debug.Log($"PressurePlate pressed by {occupantName}");
         }
-
         /// <summary>
-        /// Checks whether a collider belongs to an Echo replay object.
+        /// 判断 Collider 是否来自 Echo 回放体。Echo 可以压机关，但不能被当作玩家死亡或通关。
         /// </summary>
-        /// <param name="other">The collider to inspect.</param>
-        /// <returns>True if the collider or parent has Echo identity; otherwise false.</returns>
+        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
         private bool IsEcho(Collider2D other)
         {
             return HasTag(other, "Echo") ||
                 other.GetComponent<EchoReplayController>() != null ||
                 other.GetComponentInParent<EchoReplayController>() != null;
         }
-
         /// <summary>
-        /// Safely checks a tag without throwing if the tag does not exist in Unity settings.
+        /// 安全检查 Collider 或根对象 tag，避免 tag 不存在导致异常。
         /// </summary>
-        /// <param name="other">The collider whose object or root should be checked.</param>
-        /// <param name="tagName">The Unity tag name to compare.</param>
-        /// <returns>True if the collider object or root object has the tag; otherwise false.</returns>
+        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+        /// <param name="tagName">tagName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
         private bool HasTag(Collider2D other, string tagName)
         {
             try

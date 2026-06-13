@@ -7,66 +7,27 @@ using UnityEngine.Serialization;
 namespace EchoEscape
 {
     /// <summary>
-    /// Coordinates the main prototype game state for Echo Escape.
+    /// 脚本总览：关卡总管理器，是 Echo Escape 每一关运行时的中心脚本。它负责连接玩家、Echo 录制、教程、音效、视觉换皮、宝箱、loot、死亡和通关。
+    /// 玩法逻辑：关卡开始时查找 Player 和 ActionRecorder，准备音频/视觉服务，生成随机宝箱并刷新 HUD；玩家获得 loot 时先放入 pendingLoot，死亡会丢失；到达出口时把 pendingLoot 转成 securedLoot；死亡时播放死亡动画和 UI 后重载当前关卡。
+    /// 协作关系：HazardZone、GravityFlipVoidKillZone、EnemyAttack、Chest、CollectibleItem、GoalZone、LootFeedbackUI、PrototypeAudio、PrototypeVisualSkinner 都会调用或依赖它。
     /// </summary>
-    /// <remarks>
-    /// Attach this script to a scene-level Game Manager object.
-    /// It connects Player, ActionRecorder, TutorialDirector, audio, visual skinning, loot, death, and win state.
-    /// It is the central place other scripts call when the player dies, finds loot, or reaches the exit.
-    /// </remarks>
     public class EchoEscapeGameManager : MonoBehaviour
     {
-        /// <summary>
-        /// Global reference to the active game manager in the scene.
-        /// </summary>
         public static EchoEscapeGameManager Instance { get; private set; }
 
         [Header("Scene References")]
-        /// <summary>
-        /// Player controller currently used in the scene.
-        /// </summary>
         public PlayerController2D player;
-
-        /// <summary>
-        /// Recorder attached to the player for Q/E Echo playback.
-        /// </summary>
         public ActionRecorder recorder;
-
-        /// <summary>
-        /// Transform used when respawning the player after death.
-        /// </summary>
         public Transform playerSpawn;
 
         [Header("Loot")]
-        /// <summary>
-        /// Number of random chests to create from available ChestSpawnPoint markers.
-        /// </summary>
         public int chestsPerRun = 2;
-
-        /// <summary>
-        /// Weighted loot entries used when a chest is opened.
-        /// </summary>
         public LootDefinition[] lootTable;
 
         [Header("Tutorial / HUD")]
-        /// <summary>
-        /// If true, the older objective tracker is used by PrototypeHud.
-        /// </summary>
         public bool useTutorialDirector = true;
-
-        /// <summary>
-        /// If true, prototype blocks are automatically replaced with pixel-art sprites at runtime.
-        /// </summary>
         public bool usePrototypeVisualSkinner = true;
-
-        /// <summary>
-        /// First status message shown by the HUD when the scene starts.
-        /// </summary>
         public string startingStatusMessage = "Tutorial started. Learn record, replay, loot risk, and extraction.";
-
-        /// <summary>
-        /// If true, a Canvas-based loot pickup popup and loot summary are shown.
-        /// </summary>
         public bool useLootFeedbackUi = true;
 
         [Header("Death")]
@@ -79,65 +40,17 @@ namespace EchoEscape
 
         [SerializeField]
         private bool debugDeathFlow;
-
-        /// <summary>
-        /// Current short message shown by prototype HUD or status systems.
-        /// </summary>
         public string StatusMessage { get; private set; } = "Reach the exit. Use your echo to hold the plate.";
-
-        /// <summary>
-        /// Number of player deaths during this run.
-        /// </summary>
         public int DeathCount { get; private set; }
-
-        /// <summary>
-        /// True after the player has reached the exit.
-        /// </summary>
         public bool HasWon { get; private set; }
-
-        /// <summary>
-        /// True while the player death sequence is active and the current scene is waiting to reload.
-        /// </summary>
         public bool IsPlayerDeadOrDying => deathInProgress;
-
-        /// <summary>
-        /// Tutorial state machine attached to the Game Manager.
-        /// </summary>
         public TutorialDirector Tutorial { get; private set; }
-
-        /// <summary>
-        /// Audio helper used by gameplay scripts.
-        /// </summary>
         public PrototypeAudio AudioService { get; private set; }
-
-        /// <summary>
-        /// Visual skinning helper used to replace placeholder blocks with pixel art.
-        /// </summary>
         public PrototypeVisualSkinner VisualSkinner { get; private set; }
-
-        /// <summary>
-        /// Canvas-based loot feedback UI created for prototype scenes.
-        /// </summary>
         public LootFeedbackUI LootFeedback { get; private set; }
-
-        /// <summary>
-        /// Loot found but not yet secured at the exit.
-        /// </summary>
         public IReadOnlyList<LootDefinition> PendingLoot => pendingLoot;
-
-        /// <summary>
-        /// Loot successfully banked by reaching the exit.
-        /// </summary>
         public IReadOnlyList<LootDefinition> SecuredLoot => securedLoot;
-
-        /// <summary>
-        /// Number of currently unbanked loot items.
-        /// </summary>
         public int PendingLootCount => pendingLoot.Count;
-
-        /// <summary>
-        /// Number of secured loot items.
-        /// </summary>
         public int SecuredLootCount => securedLoot.Count;
 
         private readonly List<LootDefinition> pendingLoot = new List<LootDefinition>();
@@ -148,21 +61,19 @@ namespace EchoEscape
         private const int ChestSortingOrder = 5;
         private static Sprite chestSprite;
         private bool deathInProgress;
-
         /// <summary>
-        /// Unity event method called when the Game Manager is created.
+        /// 建立当前关卡的 GameManager 单例，并准备 AudioListener、音频服务、视觉换皮服务和默认 lootTable。
         /// </summary>
-        /// <remarks>
-        /// Sets the singleton reference, ensures audio/visual helper components exist, and creates fallback loot data.
-        /// </remarks>
         private void Awake()
         {
+            // 每个关卡只需要一个当前 GameManager，其他脚本都通过 Instance 找到统一入口。
             Instance = this;
             EnsureAudioListener();
             EnsurePresentationServices();
 
             if (lootTable == null || lootTable.Length == 0)
             {
+                // 如果 Inspector 没配置 lootTable，就给一个最小可玩的默认表，避免开箱为空。
                 lootTable = new[]
                 {
                     new LootDefinition("Old Coin", "Common", 60),
@@ -171,27 +82,26 @@ namespace EchoEscape
                 };
             }
         }
-
         /// <summary>
-        /// Unity event method called before the first frame update.
+        /// 关卡开始时查找玩家和录制器，启动教程系统，随机生成宝箱，应用视觉换皮，并刷新初始状态和 loot UI。
         /// </summary>
-        /// <remarks>
-        /// Finds scene references, starts the tutorial, spawns chests, and applies visual skinning.
-        /// </remarks>
         private void Start()
         {
             if (player == null)
             {
+                // 场景没手动拖引用时自动找 Player，降低场景配置出错概率。
                 player = FindObjectOfType<PlayerController2D>();
             }
 
             if (recorder == null && player != null)
             {
+                // Recorder 通常挂在 Player 上，GameManager 需要它来清理死亡时的 Echo。
                 recorder = player.GetComponent<ActionRecorder>();
             }
 
             if (useTutorialDirector)
             {
+                // 老版目标追踪需要 TutorialDirector；没有就运行时补上。
                 Tutorial = GetComponent<TutorialDirector>();
                 if (Tutorial == null)
                 {
@@ -200,6 +110,7 @@ namespace EchoEscape
             }
             else
             {
+                // 关闭教程时把已有 TutorialDirector 禁用，避免它继续改 HUD 状态。
                 TutorialDirector existingTutorial = GetComponent<TutorialDirector>();
                 if (existingTutorial != null)
                 {
@@ -218,50 +129,51 @@ namespace EchoEscape
             UpdateStatus(startingStatusMessage);
             RefreshLootFeedback();
         }
-
         /// <summary>
-        /// Updates the short gameplay status message displayed by HUD systems.
+        /// 更新当前关卡状态文字。PrototypeHud、教程或 UI 可以读取这个状态显示给玩家。
         /// </summary>
-        /// <param name="message">Message to store as the current status.</param>
+        /// <param name="message">要显示到 HUD 或写入日志的文字。</param>
         public void UpdateStatus(string message)
         {
             StatusMessage = message;
         }
-
         /// <summary>
-        /// Adds newly opened chest loot to the pending loot list.
+        /// 玩家获得战利品时调用。loot 会进入 pendingLoot，表示“拿到了但还没安全带走”，死亡会丢失。
         /// </summary>
-        /// <param name="loot">Loot definition rolled by a chest.</param>
+        /// <param name="loot">单个战利品数据，包含物品名、稀有度和权重。</param>
         public void AddPendingLoot(LootDefinition loot)
         {
+            // pendingLoot 表示“本关拿到了但还没带出去”，死亡时会被清空。
             pendingLoot.Add(loot);
             UpdateStatus($"Found: {loot.itemName}. Escape safely or lose it on death.");
             RefreshLootFeedback();
             LootFeedback?.ShowLootFound(loot);
             Debug.Log($"Pending loot updated: {loot.itemName}.");
         }
-
         /// <summary>
-        /// Selects one loot entry using the weighted loot table.
+        /// 根据 lootTable 的权重随机抽一个奖励。权重越高越常见，权重低的物品更稀有。
         /// </summary>
-        /// <returns>The selected LootDefinition.</returns>
+        /// <returns>返回一个战利品定义，后续会进入 pending 或 secured loot 流程。</returns>
         public LootDefinition RollLoot()
         {
             IReadOnlyList<CollectibleItem> collectibles = CollectibleDatabase.GetAllCollectibles();
             if (collectibles.Count > 0)
             {
+                // 当前版本优先使用 CollectibleDatabase，方便显示正式收藏品图标和名字。
                 return CollectibleDatabase.GetRandomCollectible().ToLootDefinition();
             }
 
             int totalWeight = 0;
             foreach (LootDefinition loot in lootTable)
             {
+                // Mathf.Max 防止配置了 0 或负数权重导致总权重异常。
                 totalWeight += Mathf.Max(1, loot.weight);
             }
 
             int roll = Random.Range(0, totalWeight);
             foreach (LootDefinition loot in lootTable)
             {
+                // 逐项扣权重，roll 落在哪个区间就抽中哪个 loot。
                 roll -= Mathf.Max(1, loot.weight);
                 if (roll < 0)
                 {
@@ -271,44 +183,42 @@ namespace EchoEscape
 
             return lootTable[0];
         }
-
         /// <summary>
-        /// Checks whether the current scene already gave its chest reward this run.
+        /// 检查当前场景的宝箱奖励是否已经被领取。用于防止同一局里重复开宝箱刷奖励。
         /// </summary>
-        /// <returns>True if a chest reward was already claimed in this scene.</returns>
+        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
         public bool HasClaimedChestInCurrentScene()
         {
             return scenesWithClaimedChest.Contains(GetCurrentSceneChestKey());
         }
-
         /// <summary>
-        /// Marks the current scene chest reward as claimed for this run.
+        /// 标记当前场景宝箱已经领取。宝箱成功结算后调用。
         /// </summary>
         public void MarkChestClaimedInCurrentScene()
         {
             scenesWithClaimedChest.Add(GetCurrentSceneChestKey());
         }
-
         /// <summary>
-        /// Clears chest claim tracking when a new run starts.
+        /// 开始新游戏时清空所有场景的宝箱领取记录，让新一局可以重新拿宝箱。
         /// </summary>
         public static void ResetChestClaimsForNewRun()
         {
             scenesWithClaimedChest.Clear();
         }
-
         /// <summary>
-        /// Moves pending loot into secured loot before an exit or scene transition.
+        /// 到达出口时调用。它把 pendingLoot 移到 securedLoot，表示玩家成功把风险物品带出关卡。
         /// </summary>
-        /// <returns>Number of loot items secured.</returns>
+        /// <returns>返回整数结果，通常表示数量、索引或本次结算数量。</returns>
         public int SecurePendingLoot()
         {
             if (pendingLoot.Count == 0)
             {
+                // 没有待结算物品也刷新 UI，保证 HUD 不显示旧状态。
                 RefreshLootFeedback();
                 return 0;
             }
 
+            // 先复制再清空 pending，避免 UI 展示时引用到已被清掉的列表。
             List<LootDefinition> securedNow = new List<LootDefinition>(pendingLoot);
             securedLoot.AddRange(securedNow);
             pendingLoot.Clear();
@@ -319,11 +229,10 @@ namespace EchoEscape
             Debug.Log($"Loot secured: {FormatLoot(securedNow)}.");
             return securedNow.Count;
         }
-
         /// <summary>
-        /// Handles player death, clears pending loot, removes active Echo, and reloads the current scene.
+        /// 统一玩家死亡入口。危险区、敌人和反重力死亡都应该调用这里，保证死亡动画、UI、loot 丢失和重载逻辑一致。
         /// </summary>
-        /// <param name="reason">Short text explaining why the player died.</param>
+        /// <param name="reason">死亡原因或事件原因，用于死亡 UI、状态提示和调试日志。</param>
         public void KillPlayer(string reason)
         {
             if (debugDeathFlow)
@@ -335,40 +244,41 @@ namespace EchoEscape
 
             if (HasWon || deathInProgress)
             {
+                // 防止已经通关或正在死亡时重复进入死亡流程，避免多次重载或 UI 叠加。
                 return;
             }
 
             deathInProgress = true;
             DeathCount++;
             AudioService?.PlayHurt();
+            // 死亡会丢掉本关未带出的 pending loot，但不会影响已经 secured 的物品。
             List<LootDefinition> lostLoot = new List<LootDefinition>(pendingLoot);
             pendingLoot.Clear();
 
             if (recorder != null)
             {
+                // 死亡时销毁 Echo，避免重载前 Echo 继续压机关或触发奇怪状态。
                 recorder.DestroyActiveEcho();
             }
 
+            // 冻结玩家后再播放死亡流程，避免死亡动画期间角色还能被输入或物理推动。
             DisablePlayerForDeath();
             StartCoroutine(HandleDeathSequence(reason, lostLoot));
         }
-
         /// <summary>
-        /// Description:
-        /// Runs the death flow after KillPlayer is called.
-        /// It waits for the player death animation, shows lost loot, then reloads the scene.
-        /// Inputs:
-        /// reason - short text explaining why the player died
-        /// lostLoot - pending loot that was lost on death
-        /// Returns:
-        /// IEnumerator - Unity coroutine steps for the death sequence
+        /// 完整死亡协程。它先播放受伤音效和死亡动画，再显示丢失 loot，最后等待一段时间并重新加载当前场景。
         /// </summary>
+        /// <param name="reason">死亡原因或事件原因，用于死亡 UI、状态提示和调试日志。</param>
+        /// <param name="lostLoot">玩家死亡时丢失的 pending loot 列表。</param>
+        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
         private IEnumerator HandleDeathSequence(string reason, List<LootDefinition> lostLoot)
         {
+            // 先播放角色死亡动画，再显示死亡 UI；如果素材缺失就用 fallback 等待时间。
             float deathAnimationDuration = PlayPlayerDeathAnimation(reason);
             float deathAnimationWait = Mathf.Clamp(Mathf.Max(deathAnimationFallbackDelay, deathAnimationDuration), 0.6f, 1f);
             yield return new WaitForSecondsRealtime(deathAnimationWait);
 
+            // UI 文本里把死亡原因和本次丢失 loot 一起写清楚，玩家能理解风险回报机制。
             string lossText = lostLoot.Count > 0 ? $" Loot Lost: {FormatLoot(lostLoot)}" : string.Empty;
             UpdateStatus($"You died: {reason}.{lossText}");
             RefreshLootFeedback();
@@ -381,21 +291,19 @@ namespace EchoEscape
 
             yield return ReloadCurrentSceneAfterDeath();
         }
-
         /// <summary>
-        /// Completes the run and moves pending loot into secured loot.
+        /// 当前关卡获胜入口。它设置 HasWon，结算 pending loot，播放成功音效，并更新状态文字。
         /// </summary>
-        /// <remarks>
-        /// Called by GoalZone when the player reaches the exit trigger.
-        /// </remarks>
         public void Win()
         {
             if (HasWon || deathInProgress)
             {
+                // 胜利和死亡互斥，避免玩家进门瞬间又触发危险区导致状态冲突。
                 return;
             }
 
             HasWon = true;
+            // 通关时把 pendingLoot 转为 securedLoot，这一步才算真正带走奖励。
             int securedThisRun = SecurePendingLoot();
             AudioService?.PlaySuccess();
             UpdateStatus(securedThisRun > 0
@@ -404,9 +312,8 @@ namespace EchoEscape
             RefreshLootFeedback();
             Debug.Log("Extraction successful. Loot secured.");
         }
-
         /// <summary>
-        /// Ensures audio and visual helper components exist on the Game Manager.
+        /// 确保关卡里有音频、视觉换皮和 loot UI 服务。缺少组件时会自动挂到 GameManager 上。
         /// </summary>
         private void EnsurePresentationServices()
         {
@@ -442,9 +349,8 @@ namespace EchoEscape
                 LootFeedback.enabled = false;
             }
         }
-
         /// <summary>
-        /// Ensures SFX can play in generated scenes that started without an AudioListener.
+        /// 确保场景里有 AudioListener，否则音效和音乐可能播放了但听不到。
         /// </summary>
         private static void EnsureAudioListener()
         {
@@ -459,9 +365,8 @@ namespace EchoEscape
                 camera.gameObject.AddComponent<AudioListener>();
             }
         }
-
         /// <summary>
-        /// Pushes the current loot lists into the Canvas feedback UI.
+        /// 把当前 pendingLoot 和 securedLoot 同步到 LootFeedbackUI，刷新屏幕上的 loot 状态。
         /// </summary>
         private void RefreshLootFeedback()
         {
@@ -470,32 +375,24 @@ namespace EchoEscape
                 LootFeedback?.RefreshLootState(pendingLoot, securedLoot);
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Waits briefly, restores time scale, and reloads the current scene.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// IEnumerator - Unity coroutine steps for scene reload
+        /// 死亡反馈结束后重新加载当前场景，实现从本关起点重来。
         /// </summary>
+        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
         private IEnumerator ReloadCurrentSceneAfterDeath()
         {
             yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, deathReloadDelay));
             Time.timeScale = 1f;
             string sceneName = SceneManager.GetActiveScene().name;
+            // 死亡后重开当前关，不再播放一次关卡故事介绍，避免节奏被打断。
             LevelIntroSequence.SkipNextIntroForScene(sceneName);
             SceneManager.LoadScene(sceneName);
         }
-
         /// <summary>
-        /// Description:
-        /// Starts the player's death animation if a PlayerAnimationController exists.
-        /// Inputs:
-        /// reason - short text used for debug information
-        /// Returns:
-        /// float - animation duration, or 0 if no animation was played
+        /// 查找玩家视觉上的 PlayerAnimationController 并播放死亡动画，返回动画时长给死亡流程等待。
         /// </summary>
+        /// <param name="reason">死亡原因或事件原因，用于死亡 UI、状态提示和调试日志。</param>
+        /// <returns>返回浮点数结果，通常表示时间、距离、速度或动画时长。</returns>
         private float PlayPlayerDeathAnimation(string reason)
         {
             if (player == null)
@@ -506,14 +403,8 @@ namespace EchoEscape
             PlayerAnimationController animationController = player.GetComponentInChildren<PlayerAnimationController>();
             return animationController != null ? animationController.PlayDeath(reason) : 0f;
         }
-
         /// <summary>
-        /// Description:
-        /// Stops player movement and disables player input during the death sequence.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 死亡期间冻结玩家输入和物理运动，避免玩家在死亡 UI 或死亡动画期间继续移动。
         /// </summary>
         private void DisablePlayerForDeath()
         {
@@ -525,6 +416,7 @@ namespace EchoEscape
             Rigidbody2D body = player.GetComponent<Rigidbody2D>();
             if (body != null)
             {
+                // FreezeAll 锁住位置和旋转，保证死亡动画显示在死亡地点，不会继续滑动。
                 body.velocity = Vector2.zero;
                 body.angularVelocity = 0f;
                 body.constraints = RigidbodyConstraints2D.FreezeAll;
@@ -533,31 +425,31 @@ namespace EchoEscape
             PlayerAttack attack = player.GetComponent<PlayerAttack>();
             if (attack != null)
             {
+                // 死亡期间禁止继续攻击，避免敌人/宝箱/机关在死亡流程中被继续影响。
                 attack.enabled = false;
             }
 
             GravityFlipController gravityFlip = player.GetComponent<GravityFlipController>();
             if (gravityFlip != null)
             {
+                // 死亡后不能再让玩家按上下键翻转，否则死亡动画和位置会被打断。
                 gravityFlip.enabled = false;
             }
 
             if (recorder != null)
             {
+                // 死亡期间禁止继续录制/播放 Echo，避免重载前留下新的 Echo 状态。
                 recorder.enabled = false;
             }
 
+            // 最后禁用 PlayerController2D，这样 Update 不再读取移动、跳跃、开箱等输入。
             player.enabled = false;
         }
-
         /// <summary>
-        /// Description:
-        /// Converts a loot list into readable text for the death message.
-        /// Inputs:
-        /// loot - list of loot items to display
-        /// Returns:
-        /// string - readable loot names and rarity labels
+        /// 把一组 loot 转成 UI 可读的文字，例如多个物品用逗号连接。
         /// </summary>
+        /// <param name="loot">单个战利品数据，包含物品名、稀有度和权重。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string FormatLoot(IReadOnlyList<LootDefinition> loot)
         {
             if (loot == null || loot.Count == 0)
@@ -573,7 +465,11 @@ namespace EchoEscape
 
             return string.Join(", ", labels);
         }
-
+        /// <summary>
+        /// 把单个 LootDefinition 格式化成带稀有度的显示文字。
+        /// </summary>
+        /// <param name="loot">单个战利品数据，包含物品名、稀有度和权重。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string GetLootLabel(LootDefinition loot)
         {
             if (string.IsNullOrWhiteSpace(loot.rarity) || loot.rarity == "Collectible")
@@ -583,23 +479,21 @@ namespace EchoEscape
 
             return $"{loot.itemName} [{loot.rarity}]";
         }
-
         /// <summary>
-        /// Spawns random chest objects at a subset of available ChestSpawnPoint markers.
+        /// 读取场景里的 ChestSpawnPoint，并根据 chestsPerRun 随机生成宝箱。
         /// </summary>
-        /// <remarks>
-        /// Existing chests are removed first so restarting or rebuilding does not duplicate them.
-        /// </remarks>
         private void SpawnRandomChests()
         {
             Chest[] existingChests = FindObjectsOfType<Chest>();
             foreach (Chest chest in existingChests)
             {
+                // 运行时统一生成宝箱，先清掉场景里旧的 Chest，避免手放宝箱和随机宝箱重复。
                 Destroy(chest.gameObject);
             }
 
             if (HasClaimedChestInCurrentScene())
             {
+                // 如果本关宝箱已领取，重载场景后也不再生成，防止死亡/切场景后刷奖励。
                 UpdateStatus("This level's chest has already been claimed this run.");
                 return;
             }
@@ -615,6 +509,7 @@ namespace EchoEscape
 
             for (int i = 0; i < spawnCount; i++)
             {
+                // 从剩余点位随机抽一个并移除，保证同一轮不会两个宝箱生成在同一个点。
                 int index = Random.Range(0, available.Count);
                 ChestSpawnPoint point = available[index];
                 available.RemoveAt(index);
@@ -625,14 +520,13 @@ namespace EchoEscape
                 chest.spawnPoint = point;
             }
         }
-
         /// <summary>
-        /// Creates the visible, non-blocking chest object spawned from a chest marker.
+        /// 在指定位置创建运行时宝箱对象，补齐视觉、动画、Collider 和 Chest 脚本。
         /// </summary>
-        /// <param name="position">World position for the chest.</param>
-        /// <param name="index">Index of this chest in the current spawn pass.</param>
-        /// <param name="total">Total number of chests spawned this pass.</param>
-        /// <returns>The generated chest GameObject.</returns>
+        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
+        /// <param name="index">index 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="total">total 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <returns>返回创建或找到的 GameObject，方便调用方继续添加组件或设置位置。</returns>
         private static GameObject CreateChestBlock(Vector3 position, int index, int total)
         {
             string chestName = total == 1 ? "Chest_Block" : $"Chest_Block_{index + 1}";
@@ -655,11 +549,10 @@ namespace EchoEscape
 
             return chestObject;
         }
-
         /// <summary>
-        /// Creates a simple runtime square sprite for generated chests.
+        /// 创建或返回一个运行时宝箱占位 Sprite，给动态生成的宝箱使用。
         /// </summary>
-        /// <returns>A shared square sprite.</returns>
+        /// <returns>返回加载或生成的 Sprite；资源不存在时可能返回 null。</returns>
         private static Sprite GetChestSprite()
         {
             if (chestSprite != null)
@@ -673,7 +566,10 @@ namespace EchoEscape
             chestSprite.name = "RuntimeChestSquare";
             return chestSprite;
         }
-
+        /// <summary>
+        /// 生成当前场景用于记录宝箱领取状态的 key。
+        /// </summary>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string GetCurrentSceneChestKey()
         {
             Scene scene = SceneManager.GetActiveScene();
@@ -681,57 +577,23 @@ namespace EchoEscape
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        /// <summary>
+        /// 清理本次运行中的宝箱状态缓存。
+        /// </summary>
         private static void ResetRunChestState()
         {
             ResetChestClaimsForNewRun();
         }
     }
-
-    /// <summary>
-    /// Defines one possible loot item and its weighted random chance.
-    /// </summary>
-    /// <remarks>
-    /// EchoEscapeGameManager uses this serializable struct as entries in the loot table.
-    /// </remarks>
     [System.Serializable]
     public struct LootDefinition
     {
-        /// <summary>
-        /// Display name of the loot item.
-        /// </summary>
         public string itemName;
-
-        /// <summary>
-        /// Stable collectible identifier.
-        /// </summary>
         public string id;
-
-        /// <summary>
-        /// Rarity label shown in status messages.
-        /// </summary>
         public string rarity;
-
-        /// <summary>
-        /// Short collectible description shown in UI.
-        /// </summary>
         public string description;
-
-        /// <summary>
-        /// Optional collectible icon shown in UI.
-        /// </summary>
         public Sprite icon;
-
-        /// <summary>
-        /// Relative random weight used by RollLoot.
-        /// </summary>
         public int weight;
-
-        /// <summary>
-        /// Creates a loot table entry.
-        /// </summary>
-        /// <param name="itemName">Display name of the item.</param>
-        /// <param name="rarity">Rarity label for the item.</param>
-        /// <param name="weight">Relative random selection weight.</param>
         public LootDefinition(string itemName, string rarity, int weight)
         {
             id = itemName;
@@ -741,15 +603,6 @@ namespace EchoEscape
             icon = null;
             this.weight = weight;
         }
-
-        /// <summary>
-        /// Creates a collectible loot entry.
-        /// </summary>
-        /// <param name="id">Stable collectible identifier.</param>
-        /// <param name="itemName">Display name of the collectible.</param>
-        /// <param name="description">Short collectible description.</param>
-        /// <param name="icon">Optional collectible icon.</param>
-        /// <param name="weight">Relative random selection weight.</param>
         public LootDefinition(string id, string itemName, string description, Sprite icon, int weight)
         {
             this.id = id;

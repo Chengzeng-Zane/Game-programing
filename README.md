@@ -1,83 +1,100 @@
-# Game Programming
+# Echo Escape
 
-Personal game programming project for the games development module.
+Echo Escape is a 2D Unity platform puzzle game built for the Game Programming module. The game focuses on recording the player's past movement, replaying it as an Echo, using Gravity Flip traversal, collecting risky loot, and escaping through three connected levels.
 
-## Working Title
-Echo Escape
+## Current Build
 
-## Game Idea
-Echo Escape is a small 2D level-based game built around self-recorded actions and risk-reward loot. The player can record a short sequence of movement or actions, then replay that sequence through a copy of themselves to help solve traversal and timing challenges.
+The project is now a playable three-level prototype:
 
-The level also includes random treasure chests that can drop rare items. Those rewards are temporary until the player safely reaches the next secure point or completes the level section. If the player dies after opening a chest, the newly gained loot is lost.
+- `MainMenu` - pixel-art start menu with controls, credits, quit, and shared background music.
+- `Level1_Tutorial` - introduces movement, tutorial popups, pressure plates, Echo recording/replay, Gravity Flip, hazards, and portal flow.
+- `Level2_LootTutorial` - teaches treasure chests, pending loot, enemy danger, river hazards, and loot loss on death.
+- `Level3_RiskReward` - expands the route with risk-reward traversal, Magic Barrier / button logic, Gravity Flip void death zones, river hazards, final loot banking, and ending dialogue.
 
-The project is intentionally small in scope so the final result can be playable, stable, tested, and clearly explained.
+## Core Mechanics
 
-## Current Prototype
-The first prototype includes a tutorial-style opening sequence. It introduces movement, pressure plates, recording, echo replay, the door puzzle, random chest loot, loot loss on death, and extraction in a step-by-step order.
-
-The prototype now uses CC0 assets from the Brackeys Platformer Bundle for pixel-art character, tiles, loot visuals, hazard visuals, sound effects, and background music.
-
-The game now opens through a pixel-art main menu built with the same asset pack. The menu includes Start Game, Controls, Credits, and Quit options.
-
-## Current Unity Project
-- Unity version: 2022.3.62f3c1
-- Template: 2D Unity project
-- Main project folder: `EchoEscape/`
+- Player movement, jumping, facing direction, chest interaction, attack, and death animation.
+- Echo recording with `Q`, replay with `E`, and Echo pressure-plate support.
+- Gravity Flip traversal using upper platforms and gravity-aware ground detection.
+- Gravity Flip void kill zones for off-platform failure cases.
+- Treasure chests that grant collectible loot.
+- Pending loot that is lost on death and secured only when reaching the exit.
+- Cursed Ghost enemy behavior split into focused movement, targeting, attack, health, and animation components.
+- Unified death flow with death feedback, loot loss feedback, and current-scene reload.
+- Story intro popups that are skipped after death reloads.
+- Level 3 ending sequence that shows secured loot feedback before the final wizard message.
+- Shared background music and level sound effects.
 
 ## Controls
-Controls will be updated as the prototype develops.
 
-Planned controls:
-- Move: WASD or Arrow Keys
-- Jump: Space, W, or Up Arrow
-- Record / Stop recording: Q
-- Replay echo: E
-- Interact / Open chest: F
-- Restart: R
+- Move: `A` / `D` or Left / Right Arrow
+- Jump: `Space`
+- Attack: `J`
+- Record / Stop Recording: `Q`
+- Replay Echo: `E`
+- Open Chest / Interact: `F`
+- Continue Story / Close Tutorial Popup: `C`
+- Gravity Flip Up: Up Arrow
+- Gravity Flip Down: Down Arrow
+
+## Unity Project
+
+- Unity version: `2022.3.62f3c1`
+- Main Unity project folder: `EchoEscape/`
+- Main menu scene: `EchoEscape/Assets/Scenes/MainMenu.unity`
+- Gameplay scenes:
+  - `EchoEscape/Assets/Scenes/Level1_Tutorial.unity`
+  - `EchoEscape/Assets/Scenes/Level2_LootTutorial.unity`
+  - `EchoEscape/Assets/Scenes/Level3_RiskReward.unity`
 
 ## How to Run
+
 1. Open Unity Hub.
-2. Add or open the `EchoEscape` folder inside this repository.
-3. Use Unity 2022.3.62f3c1 or a compatible Unity 2022.3 LTS version.
+2. Add or open the `EchoEscape/` folder inside this repository.
+3. Use Unity `2022.3.62f3c1` or a compatible Unity 2022.3 LTS version.
 4. Open `EchoEscape/Assets/Scenes/MainMenu.unity`.
 5. Press Play in the Unity Editor.
 
-## Continuous Integration
-This repository uses GitHub Actions for basic repository checks on pull requests and pushes to `main`.
+## Validation
 
-The current CI workflow checks that the Unity project structure, prototype scene, scripts, README, credits, and testing log are present. It also blocks tracked Unity generated folders such as `Library/`, `Temp/`, `Obj/`, `Build/`, `Builds/`, `Logs/`, `UserSettings/`, and the source-only `ExternalAssets/` folder.
+Recent script compilation checks:
 
-Full Unity build and test automation is planned for later because it requires Unity license secrets to be configured in GitHub Actions.
+```powershell
+cd .\EchoEscape
+dotnet build .\Assembly-CSharp.csproj
+dotnet build .\Assembly-CSharp-Editor.csproj
+```
+
+Both projects currently build with `0` errors and `0` warnings.
+
+## Script Documentation
+
+Gameplay scripts now include Chinese summary comments and function-level explanations. Important logic blocks also include inline comments for coursework presentation and code explanation, especially around:
+
+- player movement and gravity-aware jumping
+- Echo recording and replay
+- Gravity Flip and void death checks
+- enemy targeting and attack hitboxes
+- loot pending / secured state
+- death and scene reload flow
+- tutorial, intro, and ending UI flow
 
 ## Project Structure
-- `EchoEscape/` - the actual Unity game project.
-- `EchoEscape/Assets/` - scenes, scripts, prefabs, art, audio, and UI.
-- `EchoEscape/Packages/` - Unity package manifest and package lock files.
+
+- `EchoEscape/Assets/Scenes/` - main menu and gameplay scenes.
+- `EchoEscape/Assets/Scripts/` - player, recording, level, enemy, loot, UI, audio, art, and core systems.
+- `EchoEscape/Assets/Resources/` - imported pixel art, animation frames, UI images, audio, and music.
+- `EchoEscape/Docs/` - concept, level design, testing log, and asset credits.
+- `EchoEscape/Packages/` - Unity package manifest and lock files.
 - `EchoEscape/ProjectSettings/` - Unity project settings.
-- `EchoEscape/Docs/` - concept, development plan, testing log, and credits.
 - `inclass activity/` - class activity evidence kept separate from the final game project.
 
-## Progress Log
-- 2026-04-16: Repository created.
-- 2026-05-05: Connected Unity project to the GitHub repository and added planning documents.
-- 2026-05-05: Moved the final Unity game into its dedicated Unity project folder to separate it from class activity material.
-- 2026-05-05: Added a first playable prototype with player movement, echo replay, random chests, hazards, and extraction.
-- 2026-05-05: Added a guided tutorial flow for the first prototype.
-- 2026-05-06: Imported Brackeys Platformer Bundle assets and connected prototype visual skinning and audio feedback.
-- 2026-05-06: Added a basic GitHub Actions workflow for repository hygiene checks.
-- 2026-05-07: Added a pixel-art main menu scene with Start Game, Controls, Credits, and Quit options.
-- 2026-05-18: Created prototype level layouts for `Level1_Tutorial`, `Level2_EchoPuzzleIntro`, and `Level3_RiskReward`.
-- 2026-05-18: Added map-only placeholder scenes for tutorial movement, future Echo puzzle setup, and future risk-reward chest routing. Gameplay mechanics will be implemented later.
+## Development Progress
 
-## Plan
-- [x] Define initial game concept and core mechanics
-- [ ] Build playable prototype
-- [ ] Polish and testing
-
-## Weekly Update
-- Week 1: Setup repository and project structure
-- Week 2: Connect Unity project and prepare planning/testing documentation
-- Week 2: Separate class activity evidence from the final Unity project
+- Week 1: Repository setup, Unity project setup, concept and planning documents.
+- Week 2: Tutorial level, Echo recording/replay, loot feedback, Ruby player visuals, Level 2 forest visuals, and Cursed Ghost enemy behavior.
+- Week 3: Level 3 risk-reward route, Gravity Flip void death coverage, improved chest/collectible/loot feedback, enemy behavior component split, level backgrounds, music, ending flow, and script documentation.
 
 ## Credits
+
 External assets and references are recorded in `EchoEscape/Docs/Credits.md`.

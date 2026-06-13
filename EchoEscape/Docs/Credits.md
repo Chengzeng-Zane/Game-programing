@@ -38,7 +38,7 @@ This is a short summary of the local license file, not a replacement for the ful
 
 ### Dark Forest 1.0
 
-Used for Level 1 background visuals.
+Used for dark forest background visuals across the playable levels.
 
 Source files used include:
 
@@ -60,4 +60,8 @@ The following parts were implemented specifically for Echo Escape:
 - Level 1 tutorial layout and puzzle design.
 - Button / door puzzle integration.
 - Level 2 loot chest risk-reward system.
+- Level 3 risk-reward route and ending flow.
+- Gravity Flip void death zones.
+- Cursed Ghost enemy behavior split into focused movement, targeting, attack, health, and animation components.
+- Background music integration and shared audio service behavior.
 - UI feedback and scene flow integration.

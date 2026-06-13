@@ -5,12 +5,10 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// Shows a one-time story popup shortly after a level starts.
+    /// 脚本总览：简单关卡故事弹窗脚本。它用于进入关卡后延迟显示一段故事文本。
+    /// 玩法逻辑：Start 后等待一小段时间，再找到或创建 TutorialPopupManager，然后显示配置好的标题和内容。
+    /// 协作关系：和 TutorialPopupManager 配合。当前更完整的多页介绍主要由 LevelIntroSequence 负责。
     /// </summary>
-    /// <remarks>
-    /// Attach this to a scene object and assign story text in the Inspector.
-    /// It reuses TutorialPopupManager when one exists, or creates a small compatible popup UI.
-    /// </remarks>
     public class LevelStoryIntroPopup : MonoBehaviour
     {
         [SerializeField] private TutorialPopupManager popupManager;
@@ -19,34 +17,25 @@ namespace EchoEscape
         [SerializeField] private float delayBeforeShow = 0.3f;
 
         private bool hasShown;
-
         /// <summary>
-        /// Description:
-        /// Starts the delayed story popup.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// Unity 在第一帧前调用。这里通常连接场景对象，启动初始 UI、教程或关卡流程。
         /// </summary>
         private void Start()
         {
+            // 延迟一点显示，让场景和 UI 先初始化完成。
             StartCoroutine(ShowStoryAfterDelay());
         }
-
         /// <summary>
-        /// Description:
-        /// Waits briefly, then shows the story popup once.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// IEnumerator - delayed popup routine
+        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
         /// </summary>
+        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
         private IEnumerator ShowStoryAfterDelay()
         {
             yield return new WaitForSecondsRealtime(Mathf.Max(0f, delayBeforeShow));
 
             if (hasShown)
             {
+                // 防止协程被重复启动时同一个故事弹出多次。
                 yield break;
             }
 
@@ -54,43 +43,37 @@ namespace EchoEscape
             TutorialPopupManager manager = ResolvePopupManager();
             if (manager != null)
             {
+                // 具体暂停、显示和关闭逻辑交给 TutorialPopupManager。
                 manager.ShowPopup(storyTitle, storyMessage);
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Finds an existing popup manager or creates a compatible runtime one.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// TutorialPopupManager - manager used to display the story
+        /// 找到可用的 TutorialPopupManager。Inspector 没配置时先在场景里找，找不到再运行时创建。
         /// </summary>
+        /// <returns>返回 TutorialPopupManager 类型结果，供调用方继续判断或使用。</returns>
         private TutorialPopupManager ResolvePopupManager()
         {
             if (popupManager != null)
             {
+                // 优先使用 Inspector 指定的弹窗管理器。
                 return popupManager;
             }
 
             popupManager = FindObjectOfType<TutorialPopupManager>();
             if (popupManager != null)
             {
+                // 场景已有弹窗管理器时复用，避免重复 Canvas。
                 return popupManager;
             }
 
+            // 没有任何弹窗 UI 时创建一个最小可用版本。
             popupManager = CreateRuntimePopupManager();
             return popupManager;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates a minimal tutorial popup UI for scenes without one.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// TutorialPopupManager - created popup manager
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <returns>返回 TutorialPopupManager 类型结果，供调用方继续判断或使用。</returns>
         private static TutorialPopupManager CreateRuntimePopupManager()
         {
             GameObject canvasObject = new GameObject("TutorialPopupUI");
@@ -127,16 +110,12 @@ namespace EchoEscape
             manager.pauseGameWhenOpen = true;
             return manager;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one UI text object under the popup panel.
-        /// Inputs:
-        /// objectName - text object name
-        /// parent - parent transform
-        /// Returns:
-        /// Text - created text component
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="objectName">要创建或查找的 GameObject 名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <returns>返回创建或找到的 UI Text 组件。</returns>
         private static Text CreateText(string objectName, Transform parent)
         {
             GameObject textObject = new GameObject(objectName);

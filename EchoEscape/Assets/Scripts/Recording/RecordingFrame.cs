@@ -3,52 +3,36 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// Stores one sampled moment of the player's movement for the Echo replay system.
+    /// 脚本总览：Echo 录制的一帧数据。它记录玩家在某个物理帧的位置、时间、朝向和重力状态。
+    /// 玩法逻辑：ActionRecorder 连续保存很多 RecordingFrame，EchoReplayController 再按顺序读取，就能还原玩家刚才的路线。
+    /// 协作关系：ActionRecorder 写入；EchoReplayController 和 EchoAnimationController 读取。
     /// </summary>
-    /// <remarks>
-    /// The ActionRecorder creates a list of these frames while the player is recording.
-    /// EchoReplayController later reads the same frames to move the Echo through the saved path.
-    /// </remarks>
     public struct RecordingFrame
     {
-        /// <summary>
-        /// The world position of the player when this frame was recorded.
-        /// </summary>
         public Vector3 position;
-
-        /// <summary>
-        /// The elapsed recording time when this frame was captured.
-        /// </summary>
         public float time;
-
-        /// <summary>
-        /// True when the player was facing right during this frame.
-        /// </summary>
         public bool facingRight;
-
-        /// <summary>
-        /// True when the player was upside down from gravity flip during this frame.
-        /// </summary>
         public bool isGravityFlipped;
-
         /// <summary>
-        /// Creates one saved movement frame for later Echo playback.
+        /// 构造函数：创建这个数据对象，并把传入的字段保存起来，方便其他脚本用统一格式读取。
         /// </summary>
-        /// <param name="position">The player position to replay.</param>
-        /// <param name="time">The elapsed time since recording started.</param>
-        /// <param name="facingRight">Whether the player was facing right at this frame.</param>
+        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
+        /// <param name="time">time 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="this(position">this(position 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="time">time 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="facingRight">facingRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="false">false 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         public RecordingFrame(Vector3 position, float time, bool facingRight)
             : this(position, time, facingRight, false)
         {
         }
-
         /// <summary>
-        /// Creates one saved movement frame for later Echo playback.
+        /// 构造函数：创建这个数据对象，并把传入的字段保存起来，方便其他脚本用统一格式读取。
         /// </summary>
-        /// <param name="position">The player position to replay.</param>
-        /// <param name="time">The elapsed time since recording started.</param>
-        /// <param name="facingRight">Whether the player was facing right at this frame.</param>
-        /// <param name="isGravityFlipped">Whether the player was upside down at this frame.</param>
+        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
+        /// <param name="time">time 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="facingRight">facingRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="isGravityFlipped">isGravityFlipped 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         public RecordingFrame(Vector3 position, float time, bool facingRight, bool isGravityFlipped)
         {
             this.position = position;

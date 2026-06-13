@@ -7,13 +7,10 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// Shows and hides the dark tutorial popup UI used by question mark triggers.
+    /// 脚本总览：教学弹窗 UI 管理器。它负责问号教程、剧情弹窗、按键高亮、暂停游戏时间和关闭弹窗。
+    /// 玩法逻辑：ShowPopup 根据标题和内容显示面板，并决定是否暂停 Time.timeScale；ClosePopup 关闭后恢复时间；样式函数会创建森林风格边框、背景、阴影和装饰。
+    /// 协作关系：TutorialPopupTrigger 和 LevelStoryIntroPopup 调用它；它只控制 UI 和暂停，不直接控制玩家。
     /// </summary>
-    /// <remarks>
-    /// Attach this script to the tutorial popup Canvas object.
-    /// TutorialPopupTrigger calls ShowPopup when the player enters a question mark trigger.
-    /// The manager updates the title/body Text components, pauses the game if configured, and closes on C.
-    /// </remarks>
     public class TutorialPopupManager : MonoBehaviour
     {
         private const string DecorRootName = "StyledPopupDecorRoot";
@@ -32,51 +29,31 @@ namespace EchoEscape
         private static readonly Color CloseHintColor = new Color(0.8f, 0.9f, 1f, 1f);
 
         [Tooltip("The panel that contains the tutorial popup UI.")]
-        /// <summary>
-        /// Root panel GameObject that is enabled while a tutorial popup is visible.
-        /// </summary>
         public GameObject popupPanel;
 
         [Tooltip("The title text shown at the top of the popup.")]
-        /// <summary>
-        /// UI Text component used for the popup title.
-        /// </summary>
         public Text titleText;
 
         [Tooltip("The body text shown inside the popup.")]
-        /// <summary>
-        /// UI Text component used for the popup message body.
-        /// </summary>
         public Text bodyText;
 
         [Tooltip("If true, the game pauses while the popup is open.")]
-        /// <summary>
-        /// If true, Time.timeScale is set to zero while the popup is open.
-        /// </summary>
         public bool pauseGameWhenOpen = true;
 
         private bool popupOpen = false;
         private float previousTimeScale = 1.0f;
         private bool hasPausedTime = false;
-
         /// <summary>
-        /// Unity event method called when this object first becomes active.
+        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
         /// </summary>
-        /// <remarks>
-        /// Ensures the popup starts hidden before the player reaches any question mark trigger.
-        /// </remarks>
         private void Awake()
         {
             ApplyPopupVisualStyle();
             ClosePopupWithoutTimeChange();
         }
-
         /// <summary>
-        /// Unity event method called once per frame.
+        /// Unity 每帧调用。这里处理输入、计时器、UI 状态或非物理的实时刷新。
         /// </summary>
-        /// <remarks>
-        /// Listens for C while a popup is open.
-        /// </remarks>
         private void Update()
         {
             RestoreTimeScaleIfPopupWasHidden();
@@ -86,22 +63,23 @@ namespace EchoEscape
                 ClosePopup();
             }
         }
-
         /// <summary>
-        /// Shows a tutorial popup with the supplied title and message text.
+        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
         /// </summary>
-        /// <param name="popupTitle">Title displayed at the top of the popup.</param>
-        /// <param name="popupMessage">Body message displayed inside the popup.</param>
+        /// <param name="popupTitle">弹窗标题，用来决定显示文本和是否暂停游戏。</param>
+        /// <param name="popupMessage">弹窗正文内容。</param>
         public void ShowPopup(string popupTitle, string popupMessage)
         {
             if (popupPanel == null)
             {
+                // 弹窗面板缺失时只警告，不暂停游戏，避免玩家被卡住。
                 Debug.LogWarning("Tutorial popup panel is missing.");
                 return;
             }
 
             ApplyPopupVisualStyle();
 
+            // 先根据标题替换特殊教程文本，再把按键文字加高亮。
             string resolvedMessage = HighlightInputKeys(GetResolvedPopupMessage(popupTitle, popupMessage));
 
             if (titleText != null)
@@ -123,22 +101,19 @@ namespace EchoEscape
 
                 if (ShouldPauseForPopup(popupTitle) && popupPanel.activeInHierarchy && !hasPausedTime)
                 {
+                    // 教程弹窗暂停游戏；宝箱提示不暂停，避免打断开箱反馈节奏。
                     previousTimeScale = Time.timeScale > 0f ? Time.timeScale : 1.0f;
                     Time.timeScale = 0.0f;
                     hasPausedTime = true;
                 }
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Resolves popup copy that should stay consistent across rebuilt or open scenes.
-        /// Inputs:
-        /// popupTitle - popup title text
-        /// popupMessage - scene-authored popup message
-        /// Returns:
-        /// string - final popup message text
+        /// 根据弹窗标题决定最终显示文本。Gravity Flip 教程会强制显示准确按键说明。
         /// </summary>
+        /// <param name="popupTitle">弹窗标题，用来决定显示文本和是否暂停游戏。</param>
+        /// <param name="popupMessage">弹窗正文内容。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string GetResolvedPopupMessage(string popupTitle, string popupMessage)
         {
             if (popupTitle == "Gravity Flip")
@@ -148,28 +123,20 @@ namespace EchoEscape
 
             return popupMessage;
         }
-
         /// <summary>
-        /// Description:
-        /// Checks whether this popup should pause gameplay while visible.
-        /// Inputs:
-        /// popupTitle - popup title text
-        /// Returns:
-        /// bool - true if opening the popup should pause time
+        /// 根据当前游戏状态判断是否应该执行某个流程。
         /// </summary>
+        /// <param name="popupTitle">弹窗标题，用来决定显示文本和是否暂停游戏。</param>
+        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
         private bool ShouldPauseForPopup(string popupTitle)
         {
             return pauseGameWhenOpen && popupTitle != TreasureChestTitle;
         }
-
         /// <summary>
-        /// Description:
-        /// Highlights input keys so tutorial instructions are easier to scan.
-        /// Inputs:
-        /// message - plain tutorial message
-        /// Returns:
-        /// string - message with rich text key highlights
+        /// 把教程文本里的按键词替换成富文本高亮格式，让玩家一眼看到要按哪个键。
         /// </summary>
+        /// <param name="message">要显示到 HUD 或写入日志的文字。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string HighlightInputKeys(string message)
         {
             if (string.IsNullOrEmpty(message))
@@ -178,6 +145,7 @@ namespace EchoEscape
             }
 
             string highlightedMessage = message;
+            // 多字符组合先替换，避免后面单独替换 Q/E/F/J/C 时误拆。
             highlightedMessage = highlightedMessage.Replace("Left/Right Arrow", FormatKey("Left / Right"));
             highlightedMessage = highlightedMessage.Replace("Up Arrow", FormatKey("Up"));
             highlightedMessage = highlightedMessage.Replace("Down Arrow", FormatKey("Down"));
@@ -190,49 +158,36 @@ namespace EchoEscape
             highlightedMessage = HighlightSingleKey(highlightedMessage, "C");
             return highlightedMessage;
         }
-
         /// <summary>
-        /// Description:
-        /// Highlights one standalone key token without changing words like Echo.
-        /// Inputs:
-        /// message - tutorial message
-        /// keyName - single key name
-        /// Returns:
-        /// string - message with the key highlighted
+        /// 高亮单个按键名。使用正则单词边界，避免把普通单词里的字母也高亮。
         /// </summary>
+        /// <param name="message">要显示到 HUD 或写入日志的文字。</param>
+        /// <param name="keyName">keyName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string HighlightSingleKey(string message, string keyName)
         {
             return Regex.Replace(message, $@"\b{Regex.Escape(keyName)}\b", FormatKey(keyName));
         }
-
         /// <summary>
-        /// Description:
-        /// Creates a rich text keycap label.
-        /// Inputs:
-        /// keyName - input key name
-        /// Returns:
-        /// string - formatted keycap text
+        /// 把数据整理成适合玩家阅读或 UI 显示的文字。
         /// </summary>
+        /// <param name="keyName">keyName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string FormatKey(string keyName)
         {
             return $"<color={KeyHighlightColor}><b>[{keyName}]</b></color>";
         }
-
         /// <summary>
-        /// Closes the current tutorial popup and restores gameplay time if it was paused.
+        /// 关闭门、面板或通路，恢复阻挡或隐藏状态。
         /// </summary>
         public void ClosePopup()
         {
             ClosePopupWithoutTimeChange();
             RestoreTimeScaleIfNeeded();
         }
-
         /// <summary>
-        /// Hides the popup panel without changing Time.timeScale.
+        /// 关闭门、面板或通路，恢复阻挡或隐藏状态。
         /// </summary>
-        /// <remarks>
-        /// Used during Awake and by ClosePopup before time scale is restored.
-        /// </remarks>
         private void ClosePopupWithoutTimeChange()
         {
             if (popupPanel != null)
@@ -242,14 +197,8 @@ namespace EchoEscape
 
             popupOpen = false;
         }
-
         /// <summary>
-        /// Description:
-        /// Restores gameplay if a popup panel was hidden while it still owned the pause.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 如果弹窗被其他逻辑隐藏，但时间还处于暂停状态，就自动恢复 Time.timeScale。
         /// </summary>
         private void RestoreTimeScaleIfPopupWasHidden()
         {
@@ -260,46 +209,27 @@ namespace EchoEscape
 
             if (!popupOpen || popupPanel == null || !popupPanel.activeInHierarchy)
             {
+                // 面板不再可见时，不能继续让游戏保持暂停。
                 popupOpen = false;
                 RestoreTimeScaleIfNeeded();
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Called when the popup manager is disabled.
-        /// It restores Time.timeScale if the popup had paused the game.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 对象被禁用时调用。这里通常恢复时间缩放或清理 UI 状态，避免暂停残留。
         /// </summary>
         private void OnDisable()
         {
             RestoreTimeScaleIfNeeded();
         }
-
         /// <summary>
-        /// Description:
-        /// Called when the popup manager is destroyed.
-        /// It restores Time.timeScale as a safety cleanup.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 对象被销毁时调用。这里通常恢复全局状态或清除引用，避免切场景后残留影响。
         /// </summary>
         private void OnDestroy()
         {
             RestoreTimeScaleIfNeeded();
         }
-
         /// <summary>
-        /// Description:
-        /// Restores gameplay time if this popup paused it.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 恢复弹窗打开前的 Time.timeScale。关闭弹窗、禁用对象或销毁对象时都会调用。
         /// </summary>
         private void RestoreTimeScaleIfNeeded()
         {
@@ -308,18 +238,13 @@ namespace EchoEscape
                 return;
             }
 
+            // 如果之前的 timeScale 异常或为 0，就恢复到正常速度 1。
             Time.timeScale = previousTimeScale > 0f ? previousTimeScale : 1.0f;
             previousTimeScale = 1.0f;
             hasPausedTime = false;
         }
-
         /// <summary>
-        /// Description:
-        /// Applies the forest fantasy frame style to the popup UI.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
         /// </summary>
         private void ApplyPopupVisualStyle()
         {
@@ -349,19 +274,14 @@ namespace EchoEscape
             StyleBodyText();
             StyleCloseHintText();
         }
-
         /// <summary>
-        /// Description:
-        /// Creates decorative frame objects if the popup has not been styled yet.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 确保弹窗装饰层已经创建。它会添加森林背景、金色边框、宝石和藤蔓装饰。
         /// </summary>
         private void EnsurePopupDecoration()
         {
             if (popupPanel.transform.Find(DecorRootName) != null)
             {
+                // 装饰只创建一次，避免每次弹窗都叠加一层边框。
                 return;
             }
 
@@ -401,14 +321,8 @@ namespace EchoEscape
             CreateVineCluster("BottomLeftVines", decorRoot, new Vector2(0f, 0f), new Vector2(70f, 44f), false, 0.72f);
             CreateVineCluster("BottomRightVines", decorRoot, new Vector2(1f, 0f), new Vector2(-70f, 44f), true, 0.72f);
         }
-
         /// <summary>
-        /// Description:
-        /// Styles the title text to match the fantasy introduction panel.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 设置弹窗标题文本样式，包括字体、颜色、阴影和位置。
         /// </summary>
         private void StyleTitleText()
         {
@@ -438,14 +352,8 @@ namespace EchoEscape
                 rect.sizeDelta = new Vector2(430f, 48f);
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Styles the body text for large readable tutorial instructions.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 设置弹窗正文文本样式，包括富文本、换行、字体大小和阴影。
         /// </summary>
         private void StyleBodyText()
         {
@@ -476,14 +384,8 @@ namespace EchoEscape
                 rect.sizeDelta = new Vector2(600f, 156f);
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Styles the close hint text in the lower-right corner.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 设置右下角关闭提示文字，告诉玩家按 C 关闭弹窗。
         /// </summary>
         private void StyleCloseHintText()
         {
@@ -517,15 +419,10 @@ namespace EchoEscape
                 rect.sizeDelta = new Vector2(280f, 32f);
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Applies the shared popup pixel font when the project font is available.
-        /// Inputs:
-        /// text - text object to style
-        /// Returns:
-        /// void (no return)
+        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
         /// </summary>
+        /// <param name="text">text 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void ApplyPopupFont(Text text)
         {
             Font popupFont = Resources.Load<Font>(PopupFontResourcePath);
@@ -534,17 +431,12 @@ namespace EchoEscape
                 text.font = popupFont;
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Adds a shadow component to a Text object if one is not already present.
-        /// Inputs:
-        /// text - text object to style
-        /// color - shadow color
-        /// distance - shadow offset
-        /// Returns:
-        /// void (no return)
+        /// 给 UI 文本添加阴影，让浅色文字在暗色森林背景上更清楚。
         /// </summary>
+        /// <param name="text">text 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <param name="distance">distance 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void AddTextShadow(Text text, Color color, Vector2 distance)
         {
             Shadow shadow = text.GetComponent<Shadow>();
@@ -556,15 +448,11 @@ namespace EchoEscape
             shadow.effectColor = color;
             shadow.effectDistance = distance;
         }
-
         /// <summary>
-        /// Description:
-        /// Finds a child Text under the popup panel by GameObject name.
-        /// Inputs:
-        /// objectName - child object name to find
-        /// Returns:
-        /// Text - found text component, or null
+        /// 在场景对象或子物体中查找需要的组件，供后续逻辑使用。
         /// </summary>
+        /// <param name="objectName">要创建或查找的 GameObject 名称。</param>
+        /// <returns>返回创建或找到的 UI Text 组件。</returns>
         private Text FindPopupText(string objectName)
         {
             Text[] texts = popupPanel.GetComponentsInChildren<Text>(true);
@@ -578,15 +466,10 @@ namespace EchoEscape
 
             return null;
         }
-
         /// <summary>
-        /// Description:
-        /// Loads a forest background as a UI sprite.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// Sprite - loaded or generated forest sprite, or null
+        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
         /// </summary>
+        /// <returns>返回加载或生成的 Sprite；资源不存在时可能返回 null。</returns>
         private static Sprite LoadForestBackdropSprite()
         {
             Texture2D texture = Resources.Load<Texture2D>(ForestBackdropResourcePath);
@@ -599,22 +482,18 @@ namespace EchoEscape
             texture.wrapMode = TextureWrapMode.Clamp;
             return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates a stretched decorative Image.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// sprite - optional image sprite
-        /// color - image color
-        /// anchorMin - lower anchor
-        /// anchorMax - upper anchor
-        /// offsetMin - lower offset
-        /// offsetMax - upper offset
-        /// Returns:
-        /// Image - created UI image
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="sprite">要显示的 Sprite 图片。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <param name="anchorMin">anchorMin 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchorMax">anchorMax 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="offsetMin">offsetMin 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="offsetMax">offsetMax 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <returns>返回创建或找到的 UI Image 组件。</returns>
         private static Image CreateStretchDecorImage(string name, Transform parent, Sprite sprite, Color color, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
         {
             GameObject imageObject = new GameObject(name);
@@ -632,20 +511,16 @@ namespace EchoEscape
             rect.offsetMax = offsetMax;
             return image;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one rectangular decorative UI element.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - UI position
-        /// size - UI size
-        /// color - image color
-        /// Returns:
-        /// Image - created image
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <returns>返回创建或找到的 UI Image 组件。</returns>
         private static Image CreateDecorRect(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, Vector2 size, Color color)
         {
             GameObject rectObject = new GameObject(name);
@@ -663,18 +538,14 @@ namespace EchoEscape
             rect.sizeDelta = size;
             return image;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates a square corner ornament.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - UI position
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="scale">scale 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void CreateCornerOrnament(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, float scale)
         {
             CreateDecorRect(name + "_GoldSquare", parent, anchor, anchoredPosition, new Vector2(46f, 46f) * scale, FrameGoldColor);
@@ -682,19 +553,14 @@ namespace EchoEscape
             Image center = CreateDecorRect(name + "_GreenInset", parent, anchor, anchoredPosition, new Vector2(16f, 16f) * scale, FrameGreenColor);
             center.rectTransform.rotation = Quaternion.Euler(0f, 0f, 45f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates a green gem decoration.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - UI position
-        /// size - gem size
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void CreateGem(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, float size)
         {
             Image outer = CreateDecorRect(name + "_Outer", parent, anchor, anchoredPosition, new Vector2(size, size), FrameGoldColor);
@@ -703,19 +569,15 @@ namespace EchoEscape
             Image inner = CreateDecorRect(name + "_Inner", parent, anchor, anchoredPosition, new Vector2(size * 0.56f, size * 0.56f), GemGreenColor);
             inner.rectTransform.rotation = Quaternion.Euler(0f, 0f, 45f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates simple vine-like green accents near the popup corners.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - base UI position
-        /// mirror - true to mirror the cluster horizontally
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="mirror">mirror 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="scale">scale 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void CreateVineCluster(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, bool mirror, float scale)
         {
             float direction = mirror ? -1f : 1f;

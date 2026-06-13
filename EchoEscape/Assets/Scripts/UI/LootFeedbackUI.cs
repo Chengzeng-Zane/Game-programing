@@ -8,12 +8,10 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// Shows short loot pickup feedback and a small persistent loot summary.
+    /// 脚本总览：战利品和死亡反馈 UI。它负责告诉玩家获得了什么、当前还没带走什么、已经安全结算什么、死亡时丢失什么。
+    /// 玩法逻辑：开宝箱或拾取后显示获得提示并加入 pending；到达出口后显示 secured；死亡时显示 lost loot。它还会维护左上角 HUD，让玩家随时知道自己的 loot 风险。
+    /// 协作关系：EchoEscapeGameManager 在获得、死亡、通关时调用；GoalZone 第三关结尾会等待 loot 提示先出现。
     /// </summary>
-    /// <remarks>
-    /// EchoEscapeGameManager owns this component and calls it when pending or secured loot changes.
-    /// The UI is built at runtime so generated tutorial scenes keep the same feedback after rebuilding.
-    /// </remarks>
     public class LootFeedbackUI : MonoBehaviour
     {
         private const string Level2SceneName = "Level2_LootTutorial";
@@ -40,26 +38,18 @@ namespace EchoEscape
         private Image pendingItemIconImage;
         private Coroutine hideRoutine;
         private static Sprite pendingSlotSprite;
-
         /// <summary>
-        /// Description:
-        /// Called when the component is created.
-        /// It builds the loot UI once and starts with the popup hidden.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
         /// </summary>
         private void Awake()
         {
             EnsureUi();
             HidePopup();
         }
-
         /// <summary>
-        /// Displays the short loot pickup popup.
+        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
         /// </summary>
-        /// <param name="loot">Loot item found by the player.</param>
+        /// <param name="loot">单个战利品数据，包含物品名、稀有度和权重。</param>
         public void ShowLootFound(LootDefinition loot)
         {
             EnsureUi();
@@ -80,11 +70,10 @@ namespace EchoEscape
             hideRoutine = StartCoroutine(HidePopupAfterDelay());
             Debug.Log("Loot feedback UI shown.");
         }
-
         /// <summary>
-        /// Displays the loot secured popup.
+        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
         /// </summary>
-        /// <param name="securedLoot">Loot items just secured at the exit.</param>
+        /// <param name="securedLoot">已经成功带到出口并结算的 loot 列表。</param>
         public void ShowLootSecured(IReadOnlyList<LootDefinition> securedLoot)
         {
             EnsureUi();
@@ -107,11 +96,10 @@ namespace EchoEscape
 
             hideRoutine = StartCoroutine(HidePopupAfterDelay());
         }
-
         /// <summary>
-        /// Displays the death popup, including any pending loot lost before the scene reloads.
+        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
         /// </summary>
-        /// <param name="lostLoot">Pending loot that was cleared by death.</param>
+        /// <param name="lostLoot">玩家死亡时丢失的 pending loot 列表。</param>
         public void ShowDeath(IReadOnlyList<LootDefinition> lostLoot)
         {
             EnsureUi();
@@ -131,12 +119,11 @@ namespace EchoEscape
                 hideRoutine = null;
             }
         }
-
         /// <summary>
-        /// Refreshes the persistent current and secured loot summary.
+        /// 重新读取当前数据并更新显示或玩法状态。
         /// </summary>
-        /// <param name="pendingLoot">Loot currently at risk.</param>
-        /// <param name="securedLoot">Loot already banked by reaching the exit.</param>
+        /// <param name="pendingLoot">当前已经获得但还没带到出口的 loot 列表。</param>
+        /// <param name="securedLoot">已经成功带到出口并结算的 loot 列表。</param>
         public void RefreshLootState(IReadOnlyList<LootDefinition> pendingLoot, IReadOnlyList<LootDefinition> securedLoot)
         {
             EnsureUi();
@@ -154,28 +141,17 @@ namespace EchoEscape
             pendingItemIconImage.enabled = currentLoot.icon != null;
             pendingLootHud.SetActive(true);
         }
-
         /// <summary>
-        /// Description:
-        /// Waits for a short realtime delay, then hides the loot popup.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// IEnumerator - Unity coroutine steps for hiding the popup
+        /// 隐藏对应 UI 或视觉状态，通常在提示结束、关闭弹窗或清理流程时调用。
         /// </summary>
+        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
         private IEnumerator HidePopupAfterDelay()
         {
             yield return new WaitForSecondsRealtime(displaySeconds);
             HidePopup();
         }
-
         /// <summary>
-        /// Description:
-        /// Hides the popup immediately.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 隐藏对应 UI 或视觉状态，通常在提示结束、关闭弹窗或清理流程时调用。
         /// </summary>
         private void HidePopup()
         {
@@ -186,22 +162,18 @@ namespace EchoEscape
 
             hideRoutine = null;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates the runtime loot Canvas and panels if they do not exist yet.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// void (no return)
+        /// 确保 loot HUD 和弹窗 UI 已经创建。GameManager 第一次刷新 loot 状态时会触发它。
         /// </summary>
         private void EnsureUi()
         {
             if (popupPanel != null)
             {
+                // 已创建过 UI 时直接复用，不重复生成 Canvas。
                 return;
             }
 
+            // loot UI 使用独立 Canvas，排序高于普通 HUD，低于剧情/教程关键弹窗。
             GameObject canvasObject = new GameObject("LootFeedbackUI");
             canvasObject.transform.SetParent(transform, false);
 
@@ -217,15 +189,10 @@ namespace EchoEscape
             CreatePendingLootHud(canvasObject.transform);
             CreatePopupPanel(canvasObject.transform);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates the top-left pending loot HUD.
-        /// Inputs:
-        /// parent - Canvas transform that owns the panel
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
         private void CreatePendingLootHud(Transform parent)
         {
             pendingLootHud = new GameObject("PendingLootHud");
@@ -252,15 +219,10 @@ namespace EchoEscape
 
             pendingLootHud.SetActive(false);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates the temporary popup panel used for loot found and death messages.
-        /// Inputs:
-        /// parent - Canvas transform that owns the panel
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
         private void CreatePopupPanel(Transform parent)
         {
             if (ShouldUseOrnateLootPopup())
@@ -297,15 +259,10 @@ namespace EchoEscape
             bodyRect.anchoredPosition = new Vector2(34f, -454f);
             bodyRect.sizeDelta = new Vector2(372f, 54f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates the larger ornate loot popup preview used in gameplay levels.
-        /// Inputs:
-        /// parent - Canvas transform that owns the panel
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
         private void CreateOrnatePopupPanel(Transform parent)
         {
             popupPanel = CreatePanel("LootPopupPanel_OrnatePreview", parent, OrnatePanelColor);
@@ -384,15 +341,10 @@ namespace EchoEscape
             bodyRect.anchoredPosition = new Vector2(0f, -462f);
             bodyRect.sizeDelta = new Vector2(400f, 54f);
         }
-
         /// <summary>
-        /// Description:
-        /// Checks whether the active scene should use the ornate loot and death popup.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// bool - true in Level2 and Level3
+        /// 根据当前游戏状态判断是否应该执行某个流程。
         /// </summary>
+        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
         private static bool ShouldUseOrnateLootPopup()
         {
             string activeSceneName = SceneManager.GetActiveScene().name;
@@ -400,17 +352,13 @@ namespace EchoEscape
                 activeSceneName == Level2SceneName ||
                 activeSceneName == Level3SceneName;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one tinted UI panel.
-        /// Inputs:
-        /// name - GameObject name
-        /// parent - parent transform
-        /// color - panel background color
-        /// Returns:
-        /// GameObject - created panel object
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <returns>返回创建或找到的 GameObject，方便调用方继续添加组件或设置位置。</returns>
         private static GameObject CreatePanel(string name, Transform parent, Color color)
         {
             GameObject panel = new GameObject(name);
@@ -423,15 +371,10 @@ namespace EchoEscape
 
             return panel;
         }
-
         /// <summary>
-        /// Description:
-        /// Builds a decorative gold and green frame around the ornate loot popup.
-        /// Inputs:
-        /// parent - popup panel transform
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
         private static void CreateOrnateFrame(Transform parent)
         {
             GameObject decorRootObject = new GameObject("OrnateLootFrame");
@@ -464,15 +407,10 @@ namespace EchoEscape
             CreateVineCluster("BottomLeftVines", decorRoot, new Vector2(0f, 0f), new Vector2(62f, 44f), false, 0.65f);
             CreateVineCluster("BottomRightVines", decorRoot, new Vector2(1f, 0f), new Vector2(-62f, 44f), true, 0.65f);
         }
-
         /// <summary>
-        /// Description:
-        /// Adds a small border to the status badge.
-        /// Inputs:
-        /// parent - badge transform
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
         private static void CreateBadgeBorder(Transform parent)
         {
             CreateDecorRect("BadgeTop", parent, new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(184f, 2f), OrnateGreenColor);
@@ -480,20 +418,16 @@ namespace EchoEscape
             CreateGem("BadgeLeftGem", parent, new Vector2(0f, 0.5f), new Vector2(18f, 0f), 8f);
             CreateGem("BadgeRightGem", parent, new Vector2(1f, 0.5f), new Vector2(-18f, 0f), 8f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one rectangular UI decoration.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - UI position
-        /// size - UI size
-        /// color - image color
-        /// Returns:
-        /// Image - created image
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <returns>返回创建或找到的 UI Image 组件。</returns>
         private static Image CreateDecorRect(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, Vector2 size, Color color)
         {
             GameObject rectObject = new GameObject(name);
@@ -511,19 +445,14 @@ namespace EchoEscape
             image.raycastTarget = false;
             return image;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one corner ornament for the ornate popup frame.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - UI position
-        /// scale - ornament scale
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="scale">scale 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void CreateCornerOrnament(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, float scale)
         {
             CreateDecorRect(name + "_GoldSquare", parent, anchor, anchoredPosition, new Vector2(40f, 40f) * scale, OrnateGoldColor);
@@ -531,19 +460,14 @@ namespace EchoEscape
             Image center = CreateDecorRect(name + "_GreenInset", parent, anchor, anchoredPosition, new Vector2(14f, 14f) * scale, OrnateGreenColor);
             center.rectTransform.rotation = Quaternion.Euler(0f, 0f, 45f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates a small diamond gem.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - UI position
-        /// size - gem size
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void CreateGem(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, float size)
         {
             Image outer = CreateDecorRect(name + "_Outer", parent, anchor, anchoredPosition, new Vector2(size, size), OrnateGoldColor);
@@ -552,20 +476,15 @@ namespace EchoEscape
             Image inner = CreateDecorRect(name + "_Inner", parent, anchor, anchoredPosition, new Vector2(size * 0.5f, size * 0.5f), OrnateGemColor);
             inner.rectTransform.rotation = Quaternion.Euler(0f, 0f, 45f);
         }
-
         /// <summary>
-        /// Description:
-        /// Creates small vine-like accents on the ornate popup.
-        /// Inputs:
-        /// name - object name
-        /// parent - parent transform
-        /// anchor - anchor point
-        /// anchoredPosition - base position
-        /// mirror - true to mirror horizontally
-        /// scale - size multiplier
-        /// Returns:
-        /// void (no return)
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="mirror">mirror 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="scale">scale 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void CreateVineCluster(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, bool mirror, float scale)
         {
             float direction = mirror ? -1f : 1f;
@@ -573,16 +492,12 @@ namespace EchoEscape
             CreateDecorRect(name + "_LeafA", parent, anchor, anchoredPosition + new Vector2(16f * direction, 12f) * scale, new Vector2(24f, 8f) * scale, new Color(0.2f, 0.55f, 0.16f, 0.82f));
             CreateDecorRect(name + "_LeafB", parent, anchor, anchoredPosition + new Vector2(26f * direction, -5f) * scale, new Vector2(22f, 8f) * scale, new Color(0.16f, 0.48f, 0.14f, 0.82f));
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one UI Image element.
-        /// Inputs:
-        /// name - GameObject name
-        /// parent - parent transform
-        /// Returns:
-        /// Image - created UI Image component
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <returns>返回创建或找到的 UI Image 组件。</returns>
         private static Image CreateImage(string name, Transform parent)
         {
             GameObject imageObject = new GameObject(name);
@@ -599,15 +514,10 @@ namespace EchoEscape
             image.enabled = false;
             return image;
         }
-
         /// <summary>
-        /// Description:
-        /// Loads the pending loot HUD background sprite from the project asset folder.
-        /// Inputs:
-        /// none
-        /// Returns:
-        /// Sprite - loaded pending slot sprite, or null if missing
+        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
         /// </summary>
+        /// <returns>返回加载或生成的 Sprite；资源不存在时可能返回 null。</returns>
         private static Sprite LoadPendingSlotSprite()
         {
             if (pendingSlotSprite != null)
@@ -637,20 +547,16 @@ namespace EchoEscape
             pendingSlotSprite.name = "PendingLootSlot";
             return pendingSlotSprite;
         }
-
         /// <summary>
-        /// Description:
-        /// Creates one UI Text element.
-        /// Inputs:
-        /// name - GameObject name
-        /// parent - parent transform
-        /// text - initial text value
-        /// fontSize - text size
-        /// fontStyle - bold or normal style
-        /// color - text color
-        /// Returns:
-        /// Text - created UI Text component
+        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
         /// </summary>
+        /// <param name="name">对象名称或资源名称。</param>
+        /// <param name="parent">新创建对象要挂到的父节点。</param>
+        /// <param name="text">text 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="fontSize">fontSize 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="fontStyle">fontStyle 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <returns>返回创建或找到的 UI Text 组件。</returns>
         private static Text CreateText(string name, Transform parent, string text, int fontSize, FontStyle fontStyle, Color color)
         {
             GameObject textObject = new GameObject(name);
@@ -673,15 +579,10 @@ namespace EchoEscape
             uiText.raycastTarget = false;
             return uiText;
         }
-
         /// <summary>
-        /// Description:
-        /// Applies the shared pixel font when available.
-        /// Inputs:
-        /// text - text component to style
-        /// Returns:
-        /// void (no return)
+        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
         /// </summary>
+        /// <param name="text">text 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void ApplyPopupFont(Text text)
         {
             if (text == null)
@@ -695,17 +596,12 @@ namespace EchoEscape
                 text.font = popupFont;
             }
         }
-
         /// <summary>
-        /// Description:
-        /// Adds a small shadow to improve readability.
-        /// Inputs:
-        /// text - text component to style
-        /// color - shadow color
-        /// distance - shadow offset
-        /// Returns:
-        /// void (no return)
+        /// 给 UI 文本添加阴影，让 loot 弹窗在森林背景上更清晰。
         /// </summary>
+        /// <param name="text">text 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+        /// <param name="distance">distance 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private static void AddTextShadow(Text text, Color color, Vector2 distance)
         {
             if (text == null)
@@ -716,6 +612,7 @@ namespace EchoEscape
             Shadow shadow = text.GetComponent<Shadow>();
             if (shadow == null)
             {
+                // 已有阴影就复用，没有才添加，避免重复 Shadow 组件叠加。
                 shadow = text.gameObject.AddComponent<Shadow>();
             }
 
@@ -723,15 +620,11 @@ namespace EchoEscape
             shadow.effectDistance = distance;
             shadow.useGraphicAlpha = true;
         }
-
         /// <summary>
-        /// Description:
-        /// Converts loot entries into compact UI text.
-        /// Inputs:
-        /// loot - loot list to format
-        /// Returns:
-        /// string - readable loot labels, or "none"
+        /// 把数据整理成适合玩家阅读或 UI 显示的文字。
         /// </summary>
+        /// <param name="loot">单个战利品数据，包含物品名、稀有度和权重。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string FormatLoot(IReadOnlyList<LootDefinition> loot)
         {
             if (loot == null || loot.Count == 0)
@@ -747,7 +640,10 @@ namespace EchoEscape
 
             return string.Join(", ", labels);
         }
-
+        /// <summary>
+        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+        /// </summary>
+        /// <param name="icon">icon 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
         private void ApplyPopupIcon(Sprite icon)
         {
             if (popupIconImage == null)
@@ -758,7 +654,11 @@ namespace EchoEscape
             popupIconImage.sprite = icon;
             popupIconImage.enabled = icon != null;
         }
-
+        /// <summary>
+        /// 把单个 LootDefinition 转成玩家可读的显示文字。收藏物不重复显示 [Collectible]。
+        /// </summary>
+        /// <param name="loot">单个战利品数据，包含物品名、稀有度和权重。</param>
+        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
         private static string GetLootLabel(LootDefinition loot)
         {
             if (string.IsNullOrWhiteSpace(loot.rarity) || loot.rarity == "Collectible")
