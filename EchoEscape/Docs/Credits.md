@@ -7,6 +7,7 @@ This file records the external resources, licences, and AI assistance used in Ec
 - Main declaration: `EchoEscape/Docs/Credits.md`
 - Brackeys local licence file: `EchoEscape/Assets/Resources/BrackeysPlatformer/LICENSE & CREDITS.txt`
 - Lukya Forge source and licence evidence: the original `Ancient Forest 1.6` download page and local `License.txt` from the downloaded asset pack.
+- Personal menu recording evidence: original local violin recording file used for the Main Menu music. The recording/performance is my own work, while the underlying song composition is not my own.
 - Repository-level licence: not added. The project contains third-party assets under different permissions, so applying one MIT/CC0 licence to the whole repository would be misleading.
 
 ## External Resources
@@ -57,11 +58,24 @@ This file records the external resources, licences, and AI assistance used in Ec
 - Source: downloaded as `Dark Forest 1.0.zip` from the same Lukya Forge itch.io download page as `FREE: Ancient Forest 1.6`
 - Licence or permission: treated as Lukya Forge asset-pack content from that same download/source page; keep the itch.io page screenshot/download record and local package as evidence before public release
 - What it provided: dark forest background layers and forest soundtrack files
-- What I used unchanged: background images and the selected dark forest music track
+- What I used unchanged: background images and the selected dark forest music track for playable levels
 - What I modified: background placement, brightness/visibility, scene scaling, Unity import settings, and music integration
 - What I created myself: scene composition, camera/background placement, audio playback logic, and level-specific use
-- Where it appears in my game: main menu and Level 1 to Level 3 forest backgrounds, plus shared background music
+- Where it appears in my game: main menu and Level 1 to Level 3 forest backgrounds, plus playable level background music
 - How it is credited: this file and final report/portfolio asset declaration
+
+### 5. Personal Violin Recording of Half Moon Serenade
+
+- Name of resource: personal violin recording of *Half Moon Serenade*
+- Type: audio / own recorded performance / menu background music
+- Source: recorded by me for this project
+- Licence or permission: the violin performance and recording are my own work; the original song composition is not my own and is declared here for transparency. This use is for coursework demonstration, and wider public/commercial distribution would require checking the underlying song rights.
+- What it provided: a personal atmospheric music track for the Main Menu
+- What I used unchanged: my recorded violin audio performance
+- What I modified: imported the recording into Unity and used it as the Main Menu background music
+- What I created myself: the violin performance, the recording, and the Unity menu integration
+- Where it appears in my game: Main Menu background music
+- How it is credited: this file, README audio credits summary, final report, and professionalism portfolio external resources / AI declaration
 
 ## AI Assistance Declaration
 

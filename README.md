@@ -6,7 +6,7 @@ Echo Escape is a 2D Unity platform puzzle game built for the Game Programming mo
 
 The project is now a playable three-level prototype:
 
-- `MainMenu` - pixel-art start menu with controls, credits, quit, and shared background music.
+- `MainMenu` - pixel-art start menu with How To Play, credits, quit, and a personal violin menu recording.
 - `Level1_Tutorial` - introduces movement, tutorial popups, pressure plates, Echo recording/replay, Gravity Flip, hazards, and portal flow.
 - `Level2_LootTutorial` - teaches treasure chests, pending loot, enemy danger, river hazards, and loot loss on death.
 - `Level3_RiskReward` - expands the route with risk-reward traversal, Magic Barrier / button logic, Gravity Flip void death zones, river hazards, final loot banking, and ending dialogue.
@@ -23,7 +23,7 @@ The project is now a playable three-level prototype:
 - Unified death flow with death feedback, loot loss feedback, and current-scene reload.
 - Story intro popups that are skipped after death reloads.
 - Level 3 ending sequence that shows secured loot feedback before the final wizard message.
-- Shared background music and level sound effects.
+- Level background music, menu music, and event sound effects.
 
 ## Controls
 
@@ -36,6 +36,12 @@ The project is now a playable three-level prototype:
 - Continue Story / Close Tutorial Popup: `C`
 - Gravity Flip Up: Up Arrow
 - Gravity Flip Down: Down Arrow
+
+## Audio Credits Summary
+
+- Playable level background music: external dark forest music resources from the Lukya Forge forest asset packs, used to support the mysterious forest adventure atmosphere.
+- Main menu background music: my own violin performance and recording of *Half Moon Serenade*. The performance and recording were created by me, but the original song composition is not my own work and is credited as such for coursework transparency.
+- Sound effects: a mixture of external asset sounds and project-integrated audio feedback for jumping, recording, Echo replay, chest opening, obtaining loot, taking damage, dying, and completing a level.
 
 ## Unity Project
 
