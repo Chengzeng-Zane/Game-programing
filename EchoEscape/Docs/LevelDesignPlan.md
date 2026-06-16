@@ -1,102 +1,176 @@
 # Echo Escape Level Design Plan
 
-## Current Scope
+This document describes the final level structure of Echo Escape and how each level teaches or tests the main systems. The game is designed as a short three-level vertical slice rather than a large complete game.
 
-These levels are prototype map layouts only. They are built to support a small playable vertical slice later, but the current work does not implement recording, ghost replay, random loot, inventory, enemy AI, saving, menu flow, or complex UI.
+## Final Build Order
 
-Use the Unity menu item `Echo Escape > Build Prototype Levels` to rebuild the level layout scenes.
+1. `MainMenu`
+2. `Level 1 - The First Echo`
+3. `Level 2 - Relics of the Forest`
+4. `Level 3 - Escape from the Silent Forest`
 
-## Level1_Tutorial
+The scene `Level 1 - Graybox Prototype` is kept separately as development evidence. It shows how Level 1 worked before final pixel art, backgrounds, story UI, and polish were added.
 
-Purpose: teach basic movement and jumping in a simple left-to-right route.
+## Main Menu
 
-Route:
+Purpose: introduce the game identity and let the player start, read controls, view credits, or quit.
 
-- The player starts on the far left at the `PlayerStart placeholder`.
-- A forest pixel-art background fills the camera view.
-- A flat start runway gives room to test movement.
-- Larger grass platform sections form a readable platformer route.
-- Several `PlatformBlock` objects create a short jump practice sequence.
-- A small pit contains a `DeathZone` trigger placeholder.
-- A higher platform after the pit leads toward the right-side `Exit placeholder`.
-- Three small question-mark markers show the intended movement, jump, and exit teaching points without large on-screen instructions.
+Main elements:
 
-No doors, pressure plates, chests, enemies, or puzzle blockers are used in this level.
+- Forest-themed pixel UI.
+- Title presentation: `FOREST VAULT: ECHO`.
+- Buttons: Start Game, How To Play, Quit.
+- How To Play panel explaining movement, jump, recording, replay, chest interaction, attack, and Gravity Flip.
+- Menu music using a personally recorded violin performance of *Half Moon Serenade*, with guitar accompaniment credited.
 
-Visual assets used:
+Design reason:
 
-- `Assets/Art/Backgrounds/pure-pixel-forest.png` for the forest background.
-- `Assets/Resources/BrackeysPlatformer/Sprites/platforms.png` as the source for generated grass platform tiles.
-- `Assets/Resources/BrackeysPlatformer/Sprites/coin.png` for small question marker and exit placeholder visuals.
-- `Assets/Resources/BrackeysPlatformer/Sprites/fruit.png` for the player start marker.
+The menu keeps the controls visible before the player enters the first level. This supports the live presentation and makes the build easier to understand without external explanation.
 
-Pixel-art import settings to check in Unity:
+## Level 1 - The First Echo
 
-- Sprite Mode should be `Single` for the generated Level1 tile sprites.
-- Filter Mode should be `Point (no filter)`.
-- Compression should be off or low enough that the pixel art stays crisp.
-- Generated tile sprites use `16` Pixels Per Unit; the forest background uses `100` Pixels Per Unit.
+Purpose: teach the core Echo mechanic and introduce Gravity Flip safely.
 
-## Level2_EchoPuzzleIntro
+Player experience:
 
-Purpose: prepare the first future Echo/Ghost puzzle layout without implementing the mechanic yet.
+- The player starts on a simple platform with enough space to test movement and jumping.
+- Tutorial question markers introduce controls without large permanent text blocking gameplay.
+- The first Echo puzzle asks the player to record a route and replay it so the Echo can hold a pressure plate.
+- The door opens when the pressure plate is held, showing that the Echo affects gameplay.
+- Gravity Flip introduces inverted movement and upper-platform traversal.
+- Gravity Flip void zones punish walking out of the valid flipped route, using the same death/restart flow as normal hazards.
+- The exit moves the player into Level 2.
 
-Route:
+Important objects and systems:
 
-- The player starts on the left in a recording preparation space.
-- A `PressurePlatePlaceholder` is placed near the main path and labelled `Future Echo stands here`.
-- A `DoorPlaceholder` blocks the route and is labelled `Door opens when pressure plate is held`.
-- The exit is placed on the right side beyond the door.
-- A small observation ledge marks the central puzzle area visually.
+- `PlayerStart`
+- `TutorialPopupTrigger`
+- `ActionRecorder`
+- `EchoReplayController`
+- `PressurePlate`
+- `Door`
+- `GravityFlipController`
+- `GravityFlipVoidKillZone`
+- `HazardZone`
+- `GoalZone`
 
-Future intent: the player will eventually record an Echo route, place the Echo on the pressure plate, and pass through the door. At this stage, the plate and door are only physical placeholders and do not open or react.
+Design reason:
 
-## Level3_RiskReward
+Level 1 starts with low risk because the player needs to learn the controls and the Echo idea. The pressure plate puzzle is simple on purpose: it proves the core mechanic before adding loot, enemies, and higher risk.
 
-Purpose: prepare the future chest risk-reward route.
+## Level 2 - Relics of the Forest
 
-Route:
+Purpose: teach loot, enemy danger, combat, and pending-loot risk.
 
-- The player starts on the left and reaches a clear path split.
-- The safe upper/main route uses `PlatformBlock` objects and leads toward the exit.
-- The risky lower branch uses lower platforms, `HazardPlaceholder` markers, and a `DeathZone`.
-- A `ChestPlaceholder` sits on the lower branch.
-- A return platform guides the player back toward the main route and exit.
+Player experience:
 
-Future intent: the player can choose between reaching the exit safely or risking the lower branch to collect chest rewards. At this stage, the chest does not drop items and hazards do not apply gameplay effects.
+- The player enters a darker forest route with chest rewards.
+- Chests contain collectible relics chosen through weighted loot selection.
+- Loot starts as pending, meaning it is visible but not safely secured yet.
+- The Cursed Ghost / slime enemy creates direct danger.
+- The player can attack with `J` and defeat enemies.
+- River or fall hazards show that dying after collecting loot can lose the pending reward.
+- Reaching the exit secures the loot and moves to Level 3.
 
-## Placeholder Objects
+Important objects and systems:
 
-- `PlayerStart` marks where a player spawn script should later position the player.
-- `Exit` marks the future level completion trigger.
-- `DoorPlaceholder` marks a future door blocker.
-- `PressurePlatePlaceholder` marks a future trigger that can be held by the player or Echo.
-- `ChestPlaceholder` marks a future interactable reward chest.
-- `HazardPlaceholder` marks future damage or death hazards.
-- `DeathZone` marks future fall/death trigger areas.
-- `GroundBlock` is solid ground.
-- `PlatformBlock` is a solid jump platform.
-- `Background Placeholder` gives each scene a simple readable backdrop.
+- `Chest`
+- `CollectibleDatabase`
+- `CollectibleItem`
+- `LootFeedbackUI`
+- `EnemyController`
+- `EnemyTargeting`
+- `EnemyMovement`
+- `EnemyAttack`
+- `EnemyHealth`
+- `EnemyAnimationController`
+- `PlayerAttack`
+- `HazardZone`
+- `GoalZone`
 
-## Not Implemented Yet
+Design reason:
 
-- Player spawning from `PlayerStart`.
-- Exit completion logic.
-- Recording player actions.
-- Echo/Ghost clone replay.
-- Door opening from pressure plates.
-- Chest interaction and random rewards.
-- Inventory or secured loot state.
-- Hazard damage/death behavior.
-- Level transition or save systems.
+Level 2 changes the player's goal from simply reaching an exit to making a risk-reward decision. The player learns that treasure matters, but also that treasure is not safe until the level is completed.
 
-## Next Gameplay Scripts
+## Level 3 - Escape from the Silent Forest
 
-Suggested next scripts after the map layouts are reviewed:
+Purpose: combine the main mechanics into the final challenge.
 
-- `PlayerSpawnPoint` or a lightweight scene bootstrapper to place the player at `PlayerStart`.
-- `LevelExit` to detect reaching `Exit`.
-- `DeathZoneTrigger` and `HazardTrigger` for restart/death behavior.
-- `DoorController` and `PressurePlateTrigger` for the first Echo puzzle.
-- Recording and Echo replay scripts after the Level2 layout is approved.
-- `ChestInteractable` and reward-carrying scripts after the Level3 layout is approved.
+Player experience:
+
+- The player must use movement, Echo planning, Gravity Flip, button logic, hazard avoidance, and loot collection in one route.
+- The level includes a Magic Barrier / button section where correct interaction opens progress.
+- The upper Gravity Flip route has void death coverage so falling out of the intended route causes a proper death and restart.
+- The player can collect final loot before escaping.
+- The final flow first shows loot feedback, then plays the wizard ending dialogue.
+- Completing the level returns to the main menu.
+
+Important objects and systems:
+
+- `GravityFlipController`
+- `GravityFlipVoidKillZone`
+- `PressurePlate`
+- `Door`
+- `Chest`
+- `LootFeedbackUI`
+- `HazardZone`
+- `GoalZone`
+- `LevelIntroSequence`
+- `EchoEscapeGameManager`
+
+Design reason:
+
+Level 3 works as the final vertical-slice proof. It does not introduce a completely new core rule; instead, it tests whether the player can combine previously learned systems under more pressure.
+
+## Level Intro and Story Flow
+
+Each gameplay level can show an intro sequence before control returns to the player. These story panels frame the game as a magical forest escape guided by the Echo Wizard.
+
+Important rule:
+
+- On first entry, the intro can play.
+- After death and scene reload, the intro is skipped so the player does not repeat story text every time they fail.
+
+This keeps the story useful during first-time play but avoids slowing down repeated attempts.
+
+## Death and Restart Flow
+
+Death should be consistent across hazards:
+
+- Normal hazards use `HazardZone`.
+- Gravity Flip off-route hazards use `GravityFlipVoidKillZone`.
+- Enemy attacks call the same game manager death flow.
+- The game shows death feedback, handles pending loot loss, plays player death feedback where available, and reloads the current scene.
+
+This avoids separate death behaviours that would confuse the player.
+
+## Loot Design
+
+The current game uses fixed chest placement with weighted collectible selection.
+
+Reason:
+
+- Fixed chest placement makes level design easier to control.
+- Weighted collectible selection still gives variety and rarity.
+- This replaced the early random chest spawn idea because random placement made testing and balancing less predictable.
+
+## Visual Design
+
+The final levels use:
+
+- Dark forest background art.
+- Ancient Forest tiles and props.
+- Ruby player sprites.
+- Echo tinting to show the copy clearly.
+- Pixel UI panels and large readable text.
+- Hidden or transparent death zones where placeholder red visuals would look unfinished.
+
+The aim is to keep the level readable while giving it a consistent forest-adventure mood.
+
+## Known Level Limitations
+
+- The game is a vertical slice, so levels are short.
+- Only one Echo replay is supported at a time.
+- Enemy AI is simple and designed for demonstration rather than complex combat.
+- Loot is not saved permanently outside the current game run.
+- The graybox prototype scene is for evidence, not final player-facing content.

@@ -7,9 +7,9 @@ Echo Escape is a 2D Unity platform puzzle game built for the Game Programming mo
 The project is now a playable three-level prototype:
 
 - `MainMenu` - pixel-art start menu with How To Play, credits, quit, and a personal violin menu recording.
-- `Level1_Tutorial` - introduces movement, tutorial popups, pressure plates, Echo recording/replay, Gravity Flip, hazards, and portal flow.
-- `Level2_LootTutorial` - teaches treasure chests, pending loot, enemy danger, river hazards, and loot loss on death.
-- `Level3_RiskReward` - expands the route with risk-reward traversal, Magic Barrier / button logic, Gravity Flip void death zones, river hazards, final loot banking, and ending dialogue.
+- `Level 1 - The First Echo` - introduces movement, tutorial popups, pressure plates, Echo recording/replay, Gravity Flip, hazards, and portal flow.
+- `Level 2 - Relics of the Forest` - teaches treasure chests, pending loot, enemy danger, river hazards, and loot loss on death.
+- `Level 3 - Escape from the Silent Forest` - expands the route with risk-reward traversal, Magic Barrier / button logic, Gravity Flip void death zones, river hazards, final loot banking, and ending dialogue.
 
 ## Core Mechanics
 
@@ -49,9 +49,9 @@ The project is now a playable three-level prototype:
 - Main Unity project folder: `EchoEscape/`
 - Main menu scene: `EchoEscape/Assets/Scenes/MainMenu.unity`
 - Gameplay scenes:
-  - `EchoEscape/Assets/Scenes/Level1_Tutorial.unity`
-  - `EchoEscape/Assets/Scenes/Level2_LootTutorial.unity`
-  - `EchoEscape/Assets/Scenes/Level3_RiskReward.unity`
+  - `EchoEscape/Assets/Scenes/Level 1 - The First Echo.unity`
+  - `EchoEscape/Assets/Scenes/Level 2 - Relics of the Forest.unity`
+  - `EchoEscape/Assets/Scenes/Level 3 - Escape from the Silent Forest.unity`
 
 ## How to Run
 
