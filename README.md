@@ -85,6 +85,17 @@ Gameplay scripts now include Chinese summary comments and function-level explana
 - death and scene reload flow
 - tutorial, intro, and ending UI flow
 
+## Portfolio Evidence
+
+Additional evidence of my own contribution and development process is organised in `PortfolioEvidence/`:
+
+- `StoryAndDesign/` - story planning and narrative design documents.
+- `LevelPlanning/` - early draft images for the menu and three levels.
+- `OwnMusic/` - my own violin menu music recording evidence.
+- `PrototypeScreenshots/` - early prototype / graybox progress screenshots.
+
+These files support the professionalism portfolio by showing planning, personal creative work, and how the project developed before the final playable version.
+
 ## Project Structure
 
 - `EchoEscape/Assets/Scenes/` - main menu and gameplay scenes.
@@ -93,6 +104,7 @@ Gameplay scripts now include Chinese summary comments and function-level explana
 - `EchoEscape/Docs/` - concept, level design, testing log, and asset credits.
 - `EchoEscape/Packages/` - Unity package manifest and lock files.
 - `EchoEscape/ProjectSettings/` - Unity project settings.
+- `PortfolioEvidence/` - story, draft level images, personal music evidence, and prototype screenshots.
 - `inclass activity/` - class activity evidence kept separate from the final game project.
 
 ## Development Progress
