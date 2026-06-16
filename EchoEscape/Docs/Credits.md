@@ -7,7 +7,7 @@ This file records the external resources, licences, and AI assistance used in Ec
 - Main declaration: `EchoEscape/Docs/Credits.md`
 - Brackeys local licence file: `EchoEscape/Assets/Resources/BrackeysPlatformer/LICENSE & CREDITS.txt`
 - Lukya Forge source and licence evidence: the original `Ancient Forest 1.6` download page and local `License.txt` from the downloaded asset pack.
-- Personal menu recording evidence: original local violin recording file used for the Main Menu music. The recording/performance is my own work, while the underlying song composition is not my own.
+- Personal menu recording evidence: original local menu music recording used for the Main Menu. The violin performance was recorded by me for this project, guitar accompaniment was provided by my classmate, and the underlying song composition is not my own.
 - Repository-level licence: not added. The project contains third-party assets under different permissions, so applying one MIT/CC0 licence to the whole repository would be misleading.
 
 ## External Resources
@@ -64,16 +64,16 @@ This file records the external resources, licences, and AI assistance used in Ec
 - Where it appears in my game: main menu and Level 1 to Level 3 forest backgrounds, plus playable level background music
 - How it is credited: this file and final report/portfolio asset declaration
 
-### 5. Personal Violin Recording of Half Moon Serenade
+### 5. Personal Violin Recording of Half Moon Serenade with Guitar Accompaniment
 
-- Name of resource: personal violin recording of *Half Moon Serenade*
-- Type: audio / own recorded performance / menu background music
-- Source: recorded by me for this project
-- Licence or permission: the violin performance and recording are my own work; the original song composition is not my own and is declared here for transparency. This use is for coursework demonstration, and wider public/commercial distribution would require checking the underlying song rights.
+- Name of resource: personal violin recording of *Half Moon Serenade* with guitar accompaniment
+- Type: audio / own recorded performance / classmate accompaniment / menu background music
+- Source: violin performance recorded by me for this project; guitar accompaniment provided by my classmate
+- Licence or permission: the violin performance and project recording are my own work, the guitar accompaniment is my classmate's contribution, and the original song composition is not my own. This use is for coursework demonstration, and wider public/commercial distribution would require checking the underlying song rights and permission for the accompaniment contribution.
 - What it provided: a personal atmospheric music track for the Main Menu
-- What I used unchanged: my recorded violin audio performance
-- What I modified: imported the recording into Unity and used it as the Main Menu background music
-- What I created myself: the violin performance, the recording, and the Unity menu integration
+- What I used unchanged: my recorded violin audio performance and the classmate-provided guitar accompaniment within the menu music recording
+- What I modified: imported the combined recording into Unity and used it as the Main Menu background music
+- What I created myself: the violin performance, the project recording/integration, and the Unity menu music setup
 - Where it appears in my game: Main Menu background music
 - How it is credited: this file, README audio credits summary, final report, and professionalism portfolio external resources / AI declaration
 

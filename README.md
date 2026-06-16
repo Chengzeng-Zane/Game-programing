@@ -40,7 +40,7 @@ The project is now a playable three-level prototype:
 ## Audio Credits Summary
 
 - Playable level background music: external dark forest music resources from the Lukya Forge forest asset packs, used to support the mysterious forest adventure atmosphere.
-- Main menu background music: my own violin performance and recording of *Half Moon Serenade*. The performance and recording were created by me, but the original song composition is not my own work and is credited as such for coursework transparency.
+- Main menu background music: my own violin performance and project recording of *Half Moon Serenade*, with guitar accompaniment provided by my classmate. The violin performance was recorded specifically for this project, but the original song composition is not my own work and the guitar accompaniment contribution is credited separately for coursework transparency.
 - Sound effects: a mixture of external asset sounds and project-integrated audio feedback for jumping, recording, Echo replay, chest opening, obtaining loot, taking damage, dying, and completing a level.
 
 ## Unity Project
