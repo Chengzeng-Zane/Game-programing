@@ -5,13 +5,13 @@ using UnityEngine.SceneManagement;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：关卡出口/传送门脚本。玩家到达出口时，它负责结算 loot、播放通关反馈，并决定是否加载下一关或播放最终结尾。
-    /// 玩法逻辑：进入触发器后先确认对象是真玩家；然后把 pending loot 结算成 secured loot；Level1/Level2 会进入下一关；Level3 会先显示获得 loot，再播放巫师结束语。
-    /// 协作关系：调用 EchoEscapeGameManager、LootFeedbackUI、LevelIntroSequence 和 SceneManager。
+/// Script overview: Level Exit/Portal script. It is responsible for settlement when the player reaches the exit loot, play through level feedback, and decide whether to load the next level or play the final ending.
+/// Gameplay logic: After entering the trigger, first confirm that the object is a real player; then pending loot settled into secured loot；Level1/Level2 Will enter the next level; Level3 will be displayed first loot, and then play the wizard's ending.
+/// Collaboration: call EchoEscapeGameManager、LootFeedbackUI、LevelIntroSequence and SceneManager。
     /// </summary>
     public class GoalZone : MonoBehaviour
     {
-        private const string Level3SceneName = "Level3_RiskReward";
+        private const string Level3SceneName = "Level 3 - Escape from the Silent Forest";
         private const string MainMenuSceneName = "MainMenu";
         private const float Level3EndingDelayAfterLoot = 2.75f;
 
@@ -26,23 +26,23 @@ namespace EchoEscape
 
         private bool hasTriggered;
         /// <summary>
-        /// 运行时设置通关后要加载的下一关名字。用于场景或代码动态配置出口。
+/// Set the name of the next level to be loaded after passing the level at runtime. Used to dynamically configure exports for scenarios or code.
         /// </summary>
-        /// <param name="sceneName">目标场景名称，用于检查 Build Settings 或加载下一关。</param>
+/// <param name="sceneName">Target scene name for inspection Build Settings Or load the next level. </param>
         public void ConfigureNextScene(string sceneName)
         {
             nextSceneName = sceneName;
             useNextBuildIndex = false;
         }
         /// <summary>
-        /// 玩家进入出口触发器时执行通关逻辑：确认玩家、结算 loot、播放反馈、加载下一关或触发结尾。
+/// When the player enters the exit trigger, the clearance logic is executed: player confirmation, settlement loot, play feedback, load the next level or trigger the ending.
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (hasTriggered || !IsPlayer(other))
             {
-                // 终点只能触发一次，而且必须是真玩家；Echo 不能替玩家通关。
+// The end point can only be triggered once, and it must be a real player; Echo Cannot clear levels for players.
                 return;
             }
 
@@ -55,18 +55,18 @@ namespace EchoEscape
 
             if (TryLoadNextScene())
             {
-                // 已经成功进入切关/结尾流程时，不再执行“只完成当前关”的备用逻辑。
+// Successfully entered the switch/At the end of the process, the backup logic of "only completing the current level" is no longer executed.
                 return;
             }
 
-            // 没配置下一关或下一关不可用时，至少让当前关按胜利流程结算。
+// When the next level is not configured or is unavailable, at least let the current level be settled according to the victory process.
             CompleteCurrentLevelOnly();
         }
         /// <summary>
-        /// 判断进入终点触发器的 Collider 是否属于真正玩家。Echo 不应该通关。
+/// determines entry into the end trigger Collider Whether it is a real player. Echo Shouldn't pass.
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool IsPlayer(Collider2D other)
         {
             return HasTag(other, "Player") ||
@@ -74,21 +74,21 @@ namespace EchoEscape
                 other.GetComponentInParent<PlayerController2D>() != null;
         }
         /// <summary>
-        /// 尝试加载配置好的下一关。如果没有可加载场景，就只完成当前关卡，不强行切换。
+/// Try to load the configured next level. If there is no loadable scene, only the current level will be completed without forced switching.
         /// </summary>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool TryLoadNextScene()
         {
             string explicitSceneName = string.IsNullOrWhiteSpace(nextSceneName) ? string.Empty : nextSceneName.Trim();
             if (!string.IsNullOrEmpty(explicitSceneName))
             {
-                // 优先使用 Inspector 明确配置的场景名，避免 Build Index 顺序变化导致进错关。
+// priority use Inspector Explicitly configure the scene name to avoid Build Index A change in sequence results in entering the wrong level.
                 return LoadSceneIfAvailable(explicitSceneName);
             }
 
             if (!useNextBuildIndex)
             {
-                // 没启用 Build Index 自动切关时，出口只负责结算当前关。
+// Not enabled Build Index When automatically switching off, the exporter is only responsible for settling the current switch.
                 return false;
             }
 
@@ -107,16 +107,16 @@ namespace EchoEscape
                 Debug.Log("Loading next scene: " + sceneName);
             }
 
-            // 通过 Build Index 自动进下一关前，同样要先把 pending loot 结算成 secured loot。
+// through Build Index Before automatically entering the next level, you must also first pending loot settled into secured loot。
             SecurePendingLootBeforeSceneLoad();
             SceneManager.LoadScene(nextIndex);
             return true;
         }
         /// <summary>
-        /// 检查 Build Settings 里是否存在目标场景，存在才调用 SceneManager.LoadScene。
+/// examine Build Settings Whether the target scene exists in it, it will be called only if it exists. SceneManager. LoadScene。
         /// </summary>
-        /// <param name="sceneName">目标场景名称，用于检查 Build Settings 或加载下一关。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="sceneName">Target scene name for inspection Build Settings Or load the next level. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool LoadSceneIfAvailable(string sceneName)
         {
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
@@ -132,25 +132,25 @@ namespace EchoEscape
 
             if (TryShowLevel3EndingBeforeSceneLoad(sceneName))
             {
-                // 第三关去主菜单前需要先显示 loot，再显示结尾剧情，所以这里交给协程。
+// The third level needs to be displayed before going to the main menu. loot, and then display the ending plot, so this is handed over to the coroutine.
                 return true;
             }
 
-            // 普通关卡切换前先结算 loot，确保进入下一关时奖励已保存。
+// Settlement before switching to normal levels lootto ensure that the reward is saved when entering the next level.
             SecurePendingLootBeforeSceneLoad();
             SceneManager.LoadScene(sceneName);
             return true;
         }
         /// <summary>
-        /// 第三关结束专用逻辑。它会先让 loot 结算 UI 出现，再播放最终剧情，保证顺序符合玩家体验。
+/// The third level ends with special logic. it will give way first loot Settlement UI appears, and then play the final plot to ensure that the sequence matches the player experience.
         /// </summary>
-        /// <param name="sceneName">目标场景名称，用于检查 Build Settings 或加载下一关。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="sceneName">Target scene name for inspection Build Settings Or load the next level. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool TryShowLevel3EndingBeforeSceneLoad(string sceneName)
         {
             if (SceneManager.GetActiveScene().name != Level3SceneName || sceneName != MainMenuSceneName)
             {
-                // 只有 Level3 -> MainMenu 才需要最终剧情，其他切关走普通逻辑。
+// only Level3 -> MainMenu Only the final plot is needed, other aspects follow ordinary logic.
                 return false;
             }
 
@@ -165,9 +165,9 @@ namespace EchoEscape
             return true;
         }
         /// <summary>
-        /// 切换场景前结算 pendingLoot，防止玩家通关后刚拿到的物品没进入 securedLoot。
+/// Settlement before switching scenes pendingLoot, to prevent the items that players just got after clearing the level from not entering. securedLoot。
         /// </summary>
-        /// <returns>返回整数结果，通常表示数量、索引或本次结算数量。</returns>
+/// <returns>Returns an integer result, usually representing the quantity, index, or quantity of this settlement. </returns>
         private int SecurePendingLootBeforeSceneLoad()
         {
             if (EchoEscapeGameManager.Instance != null)
@@ -178,37 +178,37 @@ namespace EchoEscape
             return 0;
         }
         /// <summary>
-        /// 协程：等待 loot 反馈展示一段时间，再播放第三关结尾剧情，最后进入目标场景。
+/// coroutine: wait loot The feedback is displayed for a period of time, then the ending of the third level is played, and finally the target scene is entered.
         /// </summary>
-        /// <param name="targetSceneName">targetSceneName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="introSequence">introSequence 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
+/// <param name="targetSceneName">targetSceneName Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="introSequence">introSequence Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>return Unity Coroutine, the caller will use StartCoroutine Let this process be executed in frames. </returns>
         private IEnumerator ShowLevel3EndingAfterLootFeedback(string targetSceneName, LevelIntroSequence introSequence)
         {
             int securedLootCount = SecurePendingLootBeforeSceneLoad();
             if (securedLootCount > 0)
             {
-                // 有 loot 时先给 UI 时间展示“获得了什么”，再播放巫师结束语。
+// have loot give first UI Time to show "what was gained" and then play the wizard's closing words.
                 yield return new WaitForSecondsRealtime(Level3EndingDelayAfterLoot);
             }
 
             if (introSequence != null && introSequence.ShowEndingSequence(targetSceneName))
             {
-                // LevelIntroSequence 会自己播放结尾并负责加载目标场景。
+// LevelIntroSequence It will play the ending by itself and be responsible for loading the target scene.
                 yield break;
             }
 
-            // 如果没有结尾系统或播放失败，仍然切回目标场景，避免玩家卡在终点。
+// If there is no ending system or the playback fails, it will still switch back to the target scene to avoid players getting stuck at the end.
             SceneManager.LoadScene(targetSceneName);
         }
         /// <summary>
-        /// 没有下一关可加载时，只标记当前关卡完成并播放通关反馈。
+/// When there is no next level to load, only the current level is marked as completed and the level completion feedback is played.
         /// </summary>
         private void CompleteCurrentLevelOnly()
         {
             if (EchoEscapeGameManager.Instance != null)
             {
-                // 使用 GameManager.Win 统一播放成功音效、结算 loot 和更新 HUD。
+// use GameManager. Win Unified playback of successful sound effects and settlement loot and updates HUD。
                 EchoEscapeGameManager.Instance.Win();
             }
             else
@@ -217,11 +217,11 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 安全检查 Collider 或根对象 tag，避免对象没有对应 tag 时抛 UnityException。
+/// security check Collider or root object tag, to avoid objects that do not correspond to tag time throw UnityException。
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
-        /// <param name="tagName">tagName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
+/// <param name="tagName">tagName Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool HasTag(Collider2D other, string tagName)
         {
             try

@@ -5,9 +5,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：敌人攻击组件。它负责判断玩家是否进入攻击范围、播放攻击前摇、打开攻击判定框，并在命中后杀死玩家。
-    /// 玩法逻辑：敌人不会碰到玩家就立刻死亡玩家，而是先检查距离、冷却、朝向和攻击框；攻击框激活期间如果真正玩家在敌人面前，就调用 GameManager 的统一死亡流程。Echo 会被过滤，不会触发玩家死亡。
-    /// 协作关系：SimpleEnemy 负责配置参数；EnemyTargeting 负责找玩家；EnemyAnimationController 播放攻击；EchoEscapeGameManager 处理死亡、UI 和重载。
+/// Script overview: Enemy Attack Component. It is responsible for determining whether the player has entered the attack range, playing the attack pre-roll, opening the attack determination box, and killing the player after a hit.
+/// Gameplay logic: The enemy will not kill the player immediately if it touches the player, but first checks the distance, cooldown, direction and attack box; if the real player is in front of the enemy during the activation of the attack box, call GameManager unified death process. Echo will be filtered and will not trigger player death.
+/// Collaborates with: EnemyController Responsible for configuring parameters; EnemyTargeting Responsible for finding players; EnemyAnimationController play attack; EchoEscapeGameManager dealing with death, UI and overloading.
     /// </summary>
     public class EnemyAttack : MonoBehaviour
     {
@@ -36,25 +36,25 @@ namespace EchoEscape
         private bool IsBusy => attackRoutine != null ||
             (animationController != null && animationController.IsAttackAnimating);
         /// <summary>
-        /// 接收外部脚本传入的参数，把当前组件配置成这个场景或这个敌人需要的状态。
+/// Receive the parameters passed in by the external script and configure the current component to the state required by this scene or this enemy.
         /// </summary>
-        /// <param name="enemyTargeting">enemyTargeting 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="enemyAnimation">enemyAnimation 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="boxSize">boxSize 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="boxOffset">boxOffset 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="activeDelay">activeDelay 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="activeDuration">activeDuration 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="cooldown">cooldown 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="range">range 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="leash">leash 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="homePosition">homePosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="reason">死亡原因或事件原因，用于死亡 UI、状态提示和调试日志。</param>
-        /// <param name="logs">logs 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingRightGetter">facingRightGetter 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingUpdater">facingUpdater 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingCheck">facingCheck 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="pauseCheck">pauseCheck 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="pauseCallback">pauseCallback 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="enemyTargeting">enemyTargeting Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="enemyAnimation">enemyAnimation Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="boxSize">boxSize Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="boxOffset">boxOffset Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="activeDelay">activeDelay Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="activeDuration">activeDuration Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="cooldown">cooldown Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="range">range Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="leash">leash Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="homePosition">homePosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="reason">cause of death or event, used for death UI, status prompts and debugging logs. </param>
+/// <param name="logs">logs Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingRightGetter">facingRightGetter Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingUpdater">facingUpdater Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingCheck">facingCheck Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="pauseCheck">pauseCheck Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="pauseCallback">pauseCallback Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void Configure(
             EnemyTargeting enemyTargeting,
             EnemyAnimationController enemyAnimation,
@@ -93,14 +93,14 @@ namespace EchoEscape
             pauseAfterPlayerDeath = pauseCallback;
         }
         /// <summary>
-        /// 尝试执行一个可能失败的操作；如果条件不满足，会安全退出或返回失败。
+/// Attempts to perform an operation that may fail; if the conditions are not met, exit safely or return failure.
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
         public void TryAttackCollider(Collider2D other)
         {
             if (shouldPause())
             {
-                // 玩家已经进入死亡流程时，敌人攻击系统停止，避免重复 KillPlayer。
+// When the player has entered the death process, the enemy attack system stops to avoid duplication. KillPlayer。
                 pauseAfterPlayerDeath(true);
                 return;
             }
@@ -108,43 +108,43 @@ namespace EchoEscape
             PlayerController2D player = targeting.GetPlayer(other);
             if (player == null)
             {
-                // EnemyTargeting 会过滤 Echo 和非玩家 Collider。
+// EnemyTargeting Will filter Echo and non-players Collider。
                 return;
             }
 
-            // 触碰敌人并不直接死亡，而是尝试开始一次带前摇和攻击框的攻击。
+// Touching an enemy does not kill them directly, but instead attempts to initiate an attack with a forward pan and an attack frame.
             TryStartAttack(player.transform);
         }
         /// <summary>
-        /// 尝试开始敌人攻击。它会检查是否已经在攻击、目标是否有效、是否在攻击距离/牵引范围内，以及冷却是否结束。
+/// Try to start an enemy attack. It checks whether it is already attacking, whether the target is valid, and whether it is within attack range/Within the towing range, and whether the cooling is over.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         public bool TryStartAttack(Transform target)
         {
             if (shouldPause())
             {
-                // 死亡流程中不再开新攻击，保持玩家死亡反馈干净。
+// No new attacks will be launched during the death process to keep player death feedback clean.
                 pauseAfterPlayerDeath(true);
                 return false;
             }
 
             if (IsBusy || target == null || !CanStartAttack(target) || Time.time < nextAttackTime)
             {
-                // 忙、没目标、距离不合适或冷却中，都不能开始攻击。
+// You cannot start attacking if you are busy, have no target, are at inappropriate distance, or are on cooldown.
                 return false;
             }
 
-            // 攻击前先面向玩家，让攻击框出现在正确一侧。
+// Face the player before attacking so that the attack box appears on the correct side.
             updateFacing(target.position.x - transform.position.x);
             nextAttackTime = Time.time + attackCooldown;
             attackRoutine = StartCoroutine(AttackRoutine(target));
             return true;
         }
         /// <summary>
-        /// 推进敌人的攻击动画。SimpleEnemy 每帧调用它，如果返回 true，说明这一帧攻击系统正在接管敌人状态。
+/// Advance the enemy's attack animation. EnemyController It is called every frame and if it returns true, indicating that the attack system is taking over the enemy's state in this frame.
         /// </summary>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         public bool TickAttackAnimation()
         {
             if (!IsBusy)
@@ -156,9 +156,9 @@ namespace EchoEscape
             return true;
         }
         /// <summary>
-        /// 停止当前敌人攻击。玩家死亡或敌人被击败时调用，确保攻击框立刻关闭。
+/// Stops current enemy attack. Called when the player dies or the enemy is defeated, ensuring that the attack box closes immediately.
         /// </summary>
-        /// <param name="stopRoutine">stopRoutine 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="stopRoutine">stopRoutine Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void StopAttack(bool stopRoutine = true)
         {
             AttackHitboxActive = false;
@@ -169,24 +169,24 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 敌人一次完整攻击流程：播放前摇动画，短暂开启攻击框，命中玩家后触发统一死亡流程。
+/// A complete enemy attack process: play the forward shaking animation, briefly open the attack box, and trigger a unified death process after hitting the player.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <returns>return Unity Coroutine, the caller will use StartCoroutine Let this process be executed in frames. </returns>
         private IEnumerator AttackRoutine(Transform target)
         {
-            // 先播放攻击动画，并把前摇+有效时间告诉动画系统，保证视觉覆盖整个攻击过程。
+// Play the attack animation first and shake forward+The effective time is told to the animation system to ensure visual coverage of the entire attack process.
             animationController.PlayAttack(attackActiveDelay + attackActiveDuration);
 
             if (attackActiveDelay > 0f)
             {
-                // 前摇阶段只播放动画，不造成伤害，让玩家有一点反应时间。
+// During the forward shaking phase, only the animation is played and no damage is caused, allowing the player some reaction time.
                 yield return new WaitForSeconds(attackActiveDelay);
             }
 
             if (shouldPause())
             {
-                // 如果前摇期间玩家已经死亡或敌人被暂停，就取消本次攻击。
+// If the player dies or the enemy is paused during the forward roll, the attack is canceled.
                 attackRoutine = null;
                 yield break;
             }
@@ -198,7 +198,7 @@ namespace EchoEscape
             float endTime = Time.time + Mathf.Max(0.01f, attackActiveDuration);
             while (Time.time < endTime && !shouldPause())
             {
-                // 攻击框有效期间逐帧检查，避免玩家高速移动时只检测一帧漏判。
+// The attack frame is checked frame by frame while the attack frame is valid to avoid only detecting one frame and missing a judgment when the player is moving at high speed.
                 if (!hitPlayer && TryHitPlayerInAttackBox(target, out playerIsInFront, out playerInsideHitbox))
                 {
                     hitPlayer = true;
@@ -212,25 +212,25 @@ namespace EchoEscape
             LogAttackCheck(target, playerIsInFront, playerInsideHitbox, hitPlayer);
         }
         /// <summary>
-        /// 在敌人攻击框内寻找真正玩家，并确认玩家在敌人面前；命中后调用 KillPlayer。
+/// Find the real player in the enemy's attack box and confirm that the player is in front of the enemy; called after hitting KillPlayer。
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <param name="playerIsInFront">playerIsInFront 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="playerInsideHitbox">playerInsideHitbox 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <param name="playerIsInFront">playerIsInFront Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="playerInsideHitbox">playerInsideHitbox Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool TryHitPlayerInAttackBox(Transform target, out bool playerIsInFront, out bool playerInsideHitbox)
         {
             playerIsInFront = target != null && isInFacingDirection(target.position);
             playerInsideHitbox = false;
 
-            // 敌人攻击框是一个 OverlapBox，大小和偏移来自 SimpleEnemy 的 Inspector 配置。
+// The enemy attack box is a OverlapBox, size and offset from EnemyController of Inspector configuration.
             Collider2D[] hits = Physics2D.OverlapBoxAll(AttackBoxCenter(), attackBoxSize, 0f);
             for (int i = 0; i < hits.Length; i++)
             {
                 PlayerController2D player = targeting.GetPlayer(hits[i]);
                 if (player == null)
                 {
-                    // Echo、非玩家物体和敌人自己的 Collider 都会在这里被过滤掉。
+// Echo, non-player objects, and the enemy's own Collider They will all be filtered here.
                     continue;
                 }
 
@@ -238,11 +238,11 @@ namespace EchoEscape
                 playerIsInFront = isInFacingDirection(player.transform.position);
                 if (!playerIsInFront)
                 {
-                    // 即使玩家在攻击框边缘，如果不在敌人面前，也不算命中。
+// Even if the player is at the edge of the attack box, if they are not in front of the enemy, it will not count as a hit.
                     continue;
                 }
 
-                // 命中后走统一死亡入口，不在敌人脚本里自己显示 UI 或重载场景。
+// After hitting the target, go to the unified death entrance and do not show it in the enemy script. UI Or reload the scene.
                 KillPlayer();
                 HasKilledPlayer = true;
                 pauseAfterPlayerDeath(false);
@@ -252,39 +252,39 @@ namespace EchoEscape
             return false;
         }
         /// <summary>
-        /// 判断当前条件是否允许执行某个动作，例如开箱、攻击、按按钮或切换状态。
+/// determines whether the current conditions allow an action to be performed, such as opening a box, attacking, pressing a button, or switching states.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool CanStartAttack(Transform target)
         {
             float effectiveAttackRange = Mathf.Max(0f, attackRange);
             float attackRangeSquared = effectiveAttackRange * effectiveAttackRange;
             if (((Vector2)transform.position - (Vector2)target.position).sqrMagnitude > attackRangeSquared)
             {
-                // 用平方距离避免每帧开方，性能更稳定。
+// Use square distance to avoid square root every frame, and the performance is more stable.
                 return false;
             }
 
             float effectiveLeashDistance = Mathf.Max(0f, leashDistance);
             float leashDistanceSquared = effectiveLeashDistance * effectiveLeashDistance;
-            // leash 限制敌人不能离出生点太远，防止玩家把敌人引出设计区域。
+// leash Limit enemies from being too far away from the spawn point to prevent players from drawing enemies out of the design area.
             return ((Vector2)startPosition - (Vector2)target.position).sqrMagnitude <= leashDistanceSquared;
         }
         /// <summary>
-        /// 根据敌人位置、朝向和 attackBoxOffset 计算攻击框中心点。
+/// According to the enemy's position, facing direction and attackBoxOffset Calculate the attack box center point.
         /// </summary>
-        /// <returns>返回二维坐标或尺寸。</returns>
+/// <returns>Returns 2D coordinates or dimensions. </returns>
         private Vector2 AttackBoxCenter()
         {
             bool facingRight = getFacingRight();
             float direction = facingRight ? 1f : -1f;
-            // x 偏移根据敌人朝向翻转，所以同一个 attackBoxOffset 可同时支持左右攻击。
+// x Offset flips based on enemy facing direction, so the same attackBoxOffset Can support left and right attacks at the same time.
             Vector2 offset = new Vector2(Mathf.Abs(attackBoxOffset.x) * direction, attackBoxOffset.y);
             return (Vector2)transform.position + offset;
         }
         /// <summary>
-        /// 触发玩家死亡或相关死亡流程。这个游戏里死亡应尽量走 GameManager 的统一流程。
+/// Trigger player death or related death process. In this game death should be done as soon as possible GameManager unified process.
         /// </summary>
         private void KillPlayer()
         {
@@ -299,7 +299,7 @@ namespace EchoEscape
 
             if (EchoEscapeGameManager.Instance != null)
             {
-                // GameManager 负责完整死亡流程：动画、UI、pending loot 丢失、重载当前关。
+// GameManager Responsible for the complete death process: animation, UI、pending loot Lose or reload the current level.
                 EchoEscapeGameManager.Instance.KillPlayer(deathReason);
             }
             else if (debugLogs)
@@ -308,12 +308,12 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 输出调试日志，帮助测试时确认流程有没有按预期执行。
+/// Output debugging logs to help confirm whether the process is executed as expected during testing.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <param name="playerIsInFront">playerIsInFront 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="playerInsideHitbox">playerInsideHitbox 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="hitPlayer">hitPlayer 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <param name="playerIsInFront">playerIsInFront Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="playerInsideHitbox">playerInsideHitbox Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="hitPlayer">hitPlayer Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         private void LogAttackCheck(Transform target, bool playerIsInFront, bool playerInsideHitbox, bool hitPlayer)
         {
             if (!debugLogs)

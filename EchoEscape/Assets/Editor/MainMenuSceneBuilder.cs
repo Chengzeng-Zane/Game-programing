@@ -28,7 +28,7 @@ public static class MainMenuSceneBuilder
 
         GameObject controllerObject = new GameObject("Main Menu Controller");
         MainMenuController controller = controllerObject.AddComponent<MainMenuController>();
-        controller.gameSceneName = "Level1_Tutorial";
+        controller.gameSceneName = "Level 1 - The First Echo";
 
         GameObject cameraObject = new GameObject("Main Camera");
         cameraObject.tag = "MainCamera";

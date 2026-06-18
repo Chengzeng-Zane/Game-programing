@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：玩家基础控制脚本。它负责左右移动、跳跃、朝向、落地检测、重生和开宝箱交互，是玩家操作的核心。
-    /// 玩法逻辑：Update 读取水平输入、跳跃键、Q/E Echo 录制回放键和 F 开箱键；FixedUpdate 把水平输入写入 Rigidbody2D.velocity；OnCollisionStay2D 根据碰撞法线判断是否站在当前重力方向的地面上。
-    /// 协作关系：ActionRecorder 录制玩家位置；GravityFlipController 改变重力方向；PlayerAnimationController 读取落地和朝向；CameraFollow 跟随玩家；Chest 通过 TryOpenChest 被打开。
+/// Script overview: Player Basic Control Script. It is responsible for left/right movement, jumping, facing direction, ground detection, respawn and chest opening interaction, and is the core of player control.
+/// Gameplay logic: Update reads horizontal input, jump key, Q/E Echo Record/replay key and F chest-open key; FixedUpdate writes horizontal input Rigidbody2D. velocity；OnCollisionStay2D determines whether you are standing on the ground in the current gravity direction based on the collision normal.
+/// Collaborates with: ActionRecorder records player position; GravityFlipController changes the direction of gravity; PlayerAnimationController reads landing and facing direction; CameraFollow follows the player; Chest through TryOpenChest to to be opened.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CapsuleCollider2D))]
@@ -27,7 +27,7 @@ namespace EchoEscape
         private float moveInput;
         private float groundedUntil;
         /// <summary>
-        /// 初始化玩家移动组件。这里缓存 Rigidbody2D，让后续 FixedUpdate 可以直接改速度；同时缓存 ActionRecorder，让 Q/E 录制回放输入可以调用录制系统。
+/// Initialize the player movement component. Cache here Rigidbody2D, let the follow-up FixedUpdate You can change the speed directly; cache at the same time ActionRecorder, let Q/E The record playback input can call the recording system.
         /// </summary>
         private void Awake()
         {
@@ -36,23 +36,23 @@ namespace EchoEscape
             recorder = GetComponent<ActionRecorder>();
         }
         /// <summary>
-        /// 读取玩家这一帧的操作输入。Horizontal 用于左右移动，Space 用于按当前重力方向跳跃，Q/E 分别控制 Echo 录制和回放，F 用于打开附近宝箱。这里不直接做水平物理移动，避免和 FixedUpdate 的物理步不同步。
+/// reads the player's operation input for this frame. Horizontal Used to move left and right, Space Used to jump according to the current gravity direction, Q/E Separate control Echo record and playback, F Used to open nearby treasure chests. There is no direct horizontal physical movement here to avoid conflicts with FixedUpdate The physical synchronization is not synchronized.
         /// </summary>
         private void Update()
         {
             if (Time.timeScale <= 0f)
             {
-                // 剧情介绍、教程弹窗或死亡 UI 会暂停时间；这里清掉输入，避免恢复游戏时玩家沿用上一帧方向继续滑动。
+// Plot introduction, tutorial pop-up or death UI The time will be paused; clear the input here to prevent the player from continuing to slide in the direction of the previous frame when the game is resumed.
                 moveInput = 0f;
                 return;
             }
 
-            // Horizontal 来自 Unity 输入轴，A/D 和左右方向键都能控制这个值。
+// Horizontal from Unity input shaft, A/D You can control this value with the left and right arrow keys.
             moveInput = Input.GetAxisRaw("Horizontal");
 
             if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
             {
-                // 跳跃方向跟当前重力相反，所以正常重力向上跳，反重力时会向下方平台跳。
+// The jumping direction is opposite to the current gravity, so jumping upward under normal gravity will jump toward the platform below under anti-gravity.
                 Vector2 jumpVelocity = -GravityDirection * jumpForce;
                 body.velocity = new Vector2(body.velocity.x, jumpVelocity.y);
                 EchoEscapeGameManager.Instance?.AudioService?.PlayJump();
@@ -60,28 +60,28 @@ namespace EchoEscape
 
             if (Input.GetKeyDown(KeyCode.Q) && recorder != null)
             {
-                // 录制逻辑交给 ActionRecorder；玩家控制脚本只负责把按键转发过去。
+// Recording logic is handed over to ActionRecorder; The player control script is only responsible for forwarding the keystrokes.
                 recorder.ToggleRecording();
             }
 
             if (Input.GetKeyDown(KeyCode.E) && recorder != null)
             {
-                // Echo 回放会复现刚才录制的路线，用来压按钮或配合机关。
+// Echo Playback will reproduce the route just recorded, which can be used to press buttons or cooperate with mechanisms.
                 recorder.PlayEcho();
             }
 
             if (Input.GetKeyDown(KeyCode.F))
             {
-                // F 只尝试打开附近且面向正确的宝箱，不会直接修改 loot 数据。
+// F Only attempts to open nearby treasure chests facing the correct direction, and will not modify them directly. loot data.
                 TryOpenChest();
             }
         }
         /// <summary>
-        /// 把 Update 里记录的水平输入应用到 Rigidbody2D.velocity。这样玩家左右移动由物理系统驱动，同时根据输入正负更新 FacingRight，供动画和攻击方向使用。
+/// Bundle Update The horizontal input recorded in is applied to Rigidbody2D. velocity. In this way, the player's left/right movement is driven by the physics system, and is updated according to the positive and negative input. FacingRight, for use in animations and attack directions.
         /// </summary>
         private void FixedUpdate()
         {
-            // 水平速度在 FixedUpdate 写入 Rigidbody，保证移动和 Unity 物理步长一致。
+// The horizontal speed is FixedUpdate writes Rigidbody, guaranteed to move and Unity The physical step size is consistent.
             body.velocity = new Vector2(moveInput * moveSpeed, body.velocity.y);
 
             if (moveInput > 0.05f)
@@ -94,26 +94,26 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 持续检查玩家是否接触可站立表面。它会比较碰撞法线和当前重力反方向，所以正常重力和反重力都能正确判断“脚下”是哪一边。
+/// Continuously checks if players are touching a standable surface. It will compare the collision normal with the current opposite direction of gravity, so both normal gravity and anti-gravity can correctly determine which side is "underfoot".
         /// </summary>
-        /// <param name="collision">Unity 传入的碰撞信息，里面包含接触点和法线，用来判断玩家是否站在地面或平台上。</param>
+/// <param name="collision">Unity The incoming collision information, which includes contact points and normals, is used to determine whether the player is standing on the ground or a platform. </param>
         private void OnCollisionStay2D(Collision2D collision)
         {
             for (int i = 0; i < collision.contactCount; i++)
             {
-                // 碰撞法线和“重力反方向”越接近，说明玩家越可能踩在当前重力方向对应的地面上。
+// The closer the collision normal is to the "reverse direction of gravity", the more likely the player is to step on the ground corresponding to the current direction of gravity.
                 if (Vector2.Dot(collision.GetContact(i).normal, -GravityDirection) > 0.45f)
                 {
-                    // 给落地状态保留 0.12 秒缓冲，减少跳跃、动画和重力翻转检测的边缘抖动。
+// Reserved for landing state 0. 12 Seconds buffering to reduce edge jitter on jumps, animations, and gravity flip detection.
                     groundedUntil = Time.time + 0.12f;
                     return;
                 }
             }
         }
         /// <summary>
-        /// 把玩家放回指定重生点，并清空速度。重生时还会重置 GravityFlipController，保证玩家不会以反重力或旋转状态继续死亡循环。
+/// Return the player to the designated spawn point and clear the speed. Will be reset when reborn GravityFlipController, ensuring that players will not continue the death loop in an anti-gravity or spinning state.
         /// </summary>
-        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
+/// <param name="position">Target world coordinates, often used for respawn, spawning objects or recording Echo frame. </param>
         public void Respawn(Vector3 position)
         {
             transform.position = position;
@@ -121,31 +121,31 @@ namespace EchoEscape
             GravityFlipController gravityFlip = GetComponent<GravityFlipController>();
             if (gravityFlip != null)
             {
-                // 死亡重生必须恢复正常重力，否则玩家可能倒挂着出生并立刻再次掉入死亡区。
+// Respawn after death must return to normal gravity, otherwise the player may spawn upside down and immediately fall into the death zone again.
                 gravityFlip.ResetGravityState();
             }
             else
             {
-                // 没挂 GravityFlipController 的测试场景也要至少恢复普通 gravityScale 和旋转。
+// Not hung up GravityFlipController The test scenario should also be restored to at least normal gravityScale and rotation.
                 body.gravityScale = Mathf.Abs(body.gravityScale);
                 transform.rotation = Quaternion.identity;
             }
         }
         public Vector2 GravityDirection => body != null && body.gravityScale < 0f ? Vector2.up : Vector2.down;
         /// <summary>
-        /// 返回玩家最近是否接触过地面。使用 groundedUntil 做一个很短的缓冲，让跳跃和动画判断不会因为物理帧间隔产生抖动。
+/// Returns whether the player has recently touched the ground. use groundedUntil Make a very short buffer so that jumping and animation judgments will not jitter due to physical frame intervals.
         /// </summary>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         public bool IsGrounded()
         {
             return Time.time <= groundedUntil;
         }
         /// <summary>
-        /// 玩家按 F 时调用。它会搜索交互半径内所有宝箱，过滤掉不能交互的宝箱，然后打开距离最近的一个。
+/// player press F when called. It searches all treasure chests within the interaction radius, filters out those that cannot be interacted with, and then opens the closest one.
         /// </summary>
         private void TryOpenChest()
         {
-            // 用圆形范围搜索，能兼容宝箱 Collider 或视觉大小不同的情况。
+// Use circular range search, compatible with treasure chests Collider Or the visual size is different.
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, interactRadius);
             Chest nearestChest = null;
             float nearestDistance = float.MaxValue;
@@ -155,14 +155,14 @@ namespace EchoEscape
                 Chest chest = hit.GetComponent<Chest>();
                 if (chest == null || chest.IsOpened || chest.IsOpening || !CanInteractWithChest(chest))
                 {
-                    // 跳过非宝箱、已打开宝箱、正在播放开箱动画的宝箱，以及玩家没面向的宝箱。
+// Skips non-treasure chests, treasure chests that have been opened, treasure chests with unboxing animations playing, and treasure chests that the player is not facing.
                     continue;
                 }
 
                 float distance = Vector2.Distance(transform.position, chest.transform.position);
                 if (distance < nearestDistance)
                 {
-                    // 如果范围里有多个宝箱，只打开最近的一个，避免一次按键领取多个奖励。
+// If there are multiple treasure chests in range, only open the nearest one to avoid receiving multiple rewards with one button press.
                     nearestDistance = distance;
                     nearestChest = chest;
                 }
@@ -174,26 +174,26 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 判断玩家是否真的能打开某个宝箱。它会检查宝箱是否存在、是否已经打开、垂直距离是否合理，以及玩家是否面向宝箱方向。
+/// determines whether the player can actually open a certain treasure chest. It checks whether the treasure chest exists, whether it has been opened, whether the vertical distance is reasonable, and whether the player is facing the direction of the treasure chest.
         /// </summary>
-        /// <param name="chest">chest 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="chest">chest Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool CanInteractWithChest(Chest chest)
         {
             Vector2 toChest = chest.transform.position - transform.position;
             if (Mathf.Abs(toChest.y) > chestVerticalTolerance)
             {
-                // 垂直距离太大时不允许开箱，避免玩家隔着上下平台误触发。
+// Unboxing is not allowed when the vertical distance is too large to prevent players from accidentally triggering across the upper and lower platforms.
                 return false;
             }
 
             if (Mathf.Abs(toChest.x) <= chestFacingTolerance)
             {
-                // 宝箱几乎在玩家正中间时，不强制要求朝向，避免贴近宝箱时手感太严格。
+// When the treasure chest is almost in the middle of the player, the facing direction is not mandatory to avoid feeling too strict when getting close to the treasure chest.
                 return true;
             }
 
-            // 宝箱在玩家左边就必须面朝左，宝箱在右边就必须面朝右。
+// If the treasure chest is on the left side of the player, it must face left, and if the treasure chest is on the right, it must face right.
             return FacingRight ? toChest.x > 0f : toChest.x < 0f;
         }
     }

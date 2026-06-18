@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：教学问号的动画脚本。它让问号提示牌轻微上下浮动，提示玩家这里有教学内容。
-    /// 玩法逻辑：运行时记录问号初始位置，然后用正弦函数在 Update 中改变 Y 坐标。
-    /// 协作关系：通常和 TutorialPopupTrigger 挂在同一个问号物体上。
+/// Script overview: Animation script for teaching question marks. It makes the question mark prompt card float slightly up and down, reminding the player that there is teaching content here.
+/// Game logic: record the initial position of the question mark during runtime, and then use the sine function to Update medium change Y coordinate.
+/// Collaboration: usually with TutorialPopupTrigger Hanging on the same question mark object.
     /// </summary>
     public class AnimatedQuestionMarker : MonoBehaviour
     {
@@ -16,7 +16,7 @@ namespace EchoEscape
         private int currentFrameIndex;
         private float frameTimer;
         /// <summary>
-        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
+/// Unity Automatically called when creating an object. This is where components are usually cached, resources are loaded, and the script's internal state is prepared.
         /// </summary>
         private void Awake()
         {
@@ -26,7 +26,7 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// Unity 每帧调用。这里处理输入、计时器、UI 状态或非物理的实时刷新。
+/// Unity Called every frame. This handles input, timers, UI Real-time refresh of state or non-physics.
         /// </summary>
         private void Update()
         {

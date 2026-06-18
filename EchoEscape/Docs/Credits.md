@@ -1,11 +1,11 @@
 # Echo Escape Credits and External Resource Declaration
 
-This file records the external resources, licences, and AI assistance used in Echo Escape. It is intended to support the final report, professionalism portfolio, and README credits section.
+This file records the external resources, licences, and AI assistance used in Echo Escape. It is intended to support the final report, professionalism portfolio, and any repository-level credits summary.
 
 ## Where Licence Evidence Is Stored
 
-- Main declaration: `EchoEscape/Docs/Credits.md`
-- Brackeys local licence file: `EchoEscape/Assets/Resources/BrackeysPlatformer/LICENSE & CREDITS.txt`
+- Main declaration: `Docs/Credits.md`
+- Brackeys local licence file: `Assets/Resources/BrackeysPlatformer/LICENSE & CREDITS.txt`
 - Lukya Forge source and licence evidence: the original `Ancient Forest 1.6` download page and local `License.txt` from the downloaded asset pack.
 - Personal menu recording evidence: original local menu music recording used for the Main Menu. The violin performance was recorded by me for this project, guitar accompaniment was provided by my classmate, and the underlying song composition is not my own.
 - Repository-level licence: not added. The project contains third-party assets under different permissions, so applying one MIT/CC0 licence to the whole repository would be misleading.
@@ -49,7 +49,7 @@ This file records the external resources, licences, and AI assistance used in Ec
 - What I modified: imported and sliced resources for Unity use, selected frames for animations, adjusted scale/position/sorting, and integrated sprites into gameplay objects
 - What I created myself: player controller, animation controller logic, enemy component scripts, combat rules, loot rules, and level scripting
 - Where it appears in my game: player character, Echo visual, enemies, chests, buttons, platforms, and level art
-- How it is credited: this file, README credits reference, and final report/portfolio asset declaration
+- How it is credited: this file and final report/portfolio asset declaration
 
 ### 4. Dark Forest 1.0 by Lukya Forge
 
@@ -61,7 +61,7 @@ This file records the external resources, licences, and AI assistance used in Ec
 - What I used unchanged: background images and the selected dark forest music track for playable levels
 - What I modified: background placement, brightness/visibility, scene scaling, Unity import settings, and music integration
 - What I created myself: scene composition, camera/background placement, audio playback logic, and level-specific use
-- Where it appears in my game: main menu and Level 1 to Level 3 forest backgrounds, plus playable level background music
+- Where it appears in my game: Level 1 to Level 3 forest backgrounds and playable-level background music
 - How it is credited: this file and final report/portfolio asset declaration
 
 ### 5. Personal Violin Recording of Half Moon Serenade with Guitar Accompaniment
@@ -75,20 +75,20 @@ This file records the external resources, licences, and AI assistance used in Ec
 - What I modified: imported the combined recording into Unity and used it as the Main Menu background music
 - What I created myself: the violin performance, the project recording/integration, and the Unity menu music setup
 - Where it appears in my game: Main Menu background music
-- How it is credited: this file, README audio credits summary, final report, and professionalism portfolio external resources / AI declaration
+- How it is credited: this file, final report, and professionalism portfolio external resources / AI declaration
 
 ## AI Assistance Declaration
 
 ### OpenAI ChatGPT / Codex
 
 - Tool used: OpenAI ChatGPT / Codex
-- What I asked: help with Unity C# debugging, scene setup, README/documentation, script comments, Kanban wording, gameplay polish, UI feedback, and build checks
+- What I asked: help with Unity C# debugging, scene setup, documentation, script comments, Kanban wording, gameplay polish, UI feedback, and build checks
 - What output I used: code suggestions, debugging explanations, documentation drafts, task wording, and implementation guidance
 - What I changed: reviewed and adapted generated suggestions to fit the Echo Escape project, scene objects, scripts, and gameplay requirements
 - How I tested it: Unity play mode checks where possible, C# compilation with `dotnet build`, scene inspection, and gameplay testing of movement, Echo replay, loot, death, portals, and UI
 - What I understand: how the main systems interact, including player movement, Echo recording/replay, gravity flip, enemy behavior, chest loot, death/restart flow, and UI feedback
 - What I still do not fully understand: some Unity editor serialization details and external asset licence details should still be checked carefully before public commercial release
-- Where it appears in the project: script comments, selected code structure improvements, README/documentation, and some gameplay/UI polish
+- Where it appears in the project: script comments, selected code structure improvements, documentation, and some gameplay/UI polish
 
 ## Original Work / Own Implementation
 

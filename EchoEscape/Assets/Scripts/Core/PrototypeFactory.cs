@@ -3,22 +3,22 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：运行时原型对象工厂，用代码快速创建平台、墙、触发器视觉等基础 GameObject。
-    /// 玩法逻辑：早期关卡或自动搭建流程需要快速生成方块对象；这个工具会创建 Sprite/Mesh 外观、材质和 2D 碰撞体，并处理 Unity 默认 3D Collider 的清理。
-    /// 协作关系：主要服务灰盒关卡搭建和原型视觉，不参与玩家移动、loot 或死亡判定规则。
+/// Script overview: Runtime prototype object factory, quickly create platforms, walls, trigger vision and other basics using code GameObject。
+/// Gameplay logic: Early levels or automatic construction processes need to quickly generate block objects; this tool will create Sprite/Mesh Appearance, material and 2D Collider and handle Unity default 3D Collider of cleaning.
+/// Collaborates with: Mainly serving gray box level construction and prototype vision, and does not participate in player movement, loot or death determination rules.
     /// </summary>
     public static class PrototypeFactory
     {
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <param name="solid">solid 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <returns>返回创建或找到的 GameObject，方便调用方继续添加组件或设置位置。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="position">Target world coordinates, often used for respawn, spawning objects or recording Echo frame. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <param name="solid">solid Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <returns>Returns a created or found GameObjectto facilitate the caller to continue adding components or setting locations. </returns>
         public static GameObject CreateBlock(string name, Vector2 position, Vector2 size, Color color, bool solid, Transform parent = null)
         {
             GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -30,8 +30,8 @@ namespace EchoEscape
             Collider collider3D = block.GetComponent<Collider>();
             if (collider3D != null)
             {
-                // Unity 默认方块会自带 3D 碰撞体，这里先删掉。
-                // 本项目是 2D 平台游戏，后面会重新添加 2D 碰撞体。
+// Unity The default block will come with 3D The collision body is deleted here first.
+// This project is 2D Platform game, will be added later 2D Collider.
                 Object.DestroyImmediate(collider3D);
             }
 
@@ -44,10 +44,10 @@ namespace EchoEscape
             return block;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <returns>返回创建好的材质，可用于 Sprite 或 Mesh 显示。</returns>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <returns>Returns the created material, which can be used for Sprite or Mesh show. </returns>
         public static Material CreateMaterial(Color color)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
@@ -66,23 +66,23 @@ namespace EchoEscape
             return material;
         }
         /// <summary>
-        /// 给目标对象和它的 Sprite 子物体统一染色。门、宝箱 fallback 和原型色块反馈会用到。
+/// Give the target object and its Sprite Sub-objects are uniformly colored. door, treasure chest fallback and prototype color block feedback will be used.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
         public static void Tint(GameObject target, Color color)
         {
             MeshRenderer renderer = target.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                // 灰盒 Mesh 使用 Material 颜色。
+// gray box Mesh use Material color.
                 renderer.sharedMaterial = CreateMaterial(color);
             }
 
             SpriteRenderer[] spriteRenderers = target.GetComponentsInChildren<SpriteRenderer>(true);
             foreach (SpriteRenderer spriteRenderer in spriteRenderers)
             {
-                // 像素视觉子物体使用 SpriteRenderer.color。
+// Pixel vision sub-object usage SpriteRenderer. color。
                 spriteRenderer.color = color;
             }
         }

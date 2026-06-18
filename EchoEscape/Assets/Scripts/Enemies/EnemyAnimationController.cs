@@ -4,9 +4,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：敌人动画组件，负责敌人的待机漂浮、攻击和死亡动画帧。
-    /// 玩法逻辑：敌人行为被拆成移动、攻击、生命和动画几块；这个脚本只管理视觉状态，外部告诉它播放 Idle、Attack 或 Death，它再按帧率推进 Sprite。
-    /// 协作关系：SimpleEnemy 初始化它；EnemyAttack 调用攻击动画；EnemyHealth 调用死亡动画。
+/// Script overview: Enemy animation component, responsible for the enemy's standby floating, attack and death animation frames.
+/// Gameplay logic: Enemy behavior is split into movement, attack, life and animation; this script only manages the visual state, and the outside tells it to play Idle、Attack or Death, it then advances according to the frame rate Sprite。
+/// Collaborates with: EnemyController initialize it; EnemyAttack Call attack animation; EnemyHealth Call the death animation.
     /// </summary>
     public class EnemyAnimationController : MonoBehaviour
     {
@@ -35,19 +35,19 @@ namespace EchoEscape
         public bool HasDeathAnimation => visualRenderer != null && deathFrames.Length > 0;
         public float DeathDuration => deathFrames.Length / Mathf.Max(1f, deathFramesPerSecond);
         /// <summary>
-        /// 接收外部脚本传入的参数，把当前组件配置成这个场景或这个敌人需要的状态。
+/// Receive the parameters passed in by the external script and configure the current component to the state required by this scene or this enemy.
         /// </summary>
-        /// <param name="renderer">renderer 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="defaultFacesRight">defaultFacesRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingRight">facingRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="idleFramesPath">idleFramesPath 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="fallbackIdleFramesPath">fallbackIdleFramesPath 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="attackFramesPath">attackFramesPath 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="deathFramesPath">deathFramesPath 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="idleFps">idleFps 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="attackFps">attackFps 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="deathFps">deathFps 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="attackDuration">attackDuration 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="renderer">renderer Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="defaultFacesRight">defaultFacesRight Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingRight">facingRight Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="idleFramesPath">idleFramesPath Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="fallbackIdleFramesPath">fallbackIdleFramesPath Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="attackFramesPath">attackFramesPath Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="deathFramesPath">deathFramesPath Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="idleFps">idleFps Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="attackFps">attackFps Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="deathFps">deathFps Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="attackDuration">attackDuration Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void Configure(
             SpriteRenderer renderer,
             bool defaultFacesRight,
@@ -80,50 +80,50 @@ namespace EchoEscape
             PlayIdle();
         }
         /// <summary>
-        /// 设置敌人面朝方向。不同素材默认朝向可能不同，所以用 spriteDefaultFacesRight 做一次转换。
+/// Sets the direction the enemy is facing. The default facing direction of different materials may be different, so use spriteDefaultFacesRight Make a conversion.
         /// </summary>
-        /// <param name="facingRight">facingRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="facingRight">facingRight Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void SetFacing(bool facingRight)
         {
             if (visualRenderer != null)
             {
-                // 如果素材默认朝右，面朝右时不翻转；如果素材默认朝左，逻辑要反过来。
+// If the material is facing right by default, it will not be flipped when facing right; if the material is facing left by default, the logic should be reversed.
                 visualRenderer.flipX = spriteDefaultFacesRight ? !facingRight : facingRight;
             }
         }
         /// <summary>
-        /// 切回敌人待机/漂浮动画。没有追击、攻击或死亡时使用。
+/// Switch back to enemy standby/Floating animation. Used when not pursuing, attacking or dying.
         /// </summary>
         public void PlayIdle()
         {
             SetVisualState(VisualState.Idle);
         }
         /// <summary>
-        /// 播放敌人攻击动画，并保证至少覆盖攻击前摇和攻击框有效时间。
+/// Play the enemy's attack animation and ensure that it at least covers the attack forward swing and attack frame effective time.
         /// </summary>
-        /// <param name="minimumDuration">minimumDuration 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="minimumDuration">minimumDuration Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void PlayAttack(float minimumDuration)
         {
             if (attackFrames.Length == 0)
             {
-                // 没有攻击帧时不报错，敌人攻击逻辑仍然可以继续运行。
+// No error will be reported when there is no attack frame, and the enemy attack logic can still continue to run.
                 return;
             }
 
             float frameDuration = attackFrames.Length / Mathf.Max(1f, attackFramesPerSecond);
-            // 取三者最大值，避免攻击框还有效时动画已经切回 idle。
+// Take the maximum value of the three to prevent the animation from switching back when the attack frame is still valid. idle。
             attackAnimationTimer = Mathf.Max(attackAnimationDuration, Mathf.Max(minimumDuration, frameDuration));
             SetVisualState(VisualState.Attack);
         }
         /// <summary>
-        /// 播放敌人死亡动画。真正关闭对象的计时由 EnemyHealth 控制。
+/// Play the enemy death animation. The timing of actually closing the object is given by EnemyHealth control.
         /// </summary>
         public void PlayDeath()
         {
             SetVisualState(VisualState.Death);
         }
         /// <summary>
-        /// 推进敌人待机动画。SimpleEnemy 在敌人没有攻击、死亡或追击特殊状态时调用。
+/// Advance enemy standby animation. EnemyController Called when the enemy does not have attack, death or pursuit special status.
         /// </summary>
         public void TickIdle()
         {
@@ -131,13 +131,13 @@ namespace EchoEscape
             AdvanceFrame(idleFramesPerSecond, true);
         }
         /// <summary>
-        /// 推进敌人攻击动画，并倒计时攻击动画剩余时间。
+/// Advances the enemy's attack animation and counts down the remaining time of the attack animation.
         /// </summary>
         public void TickAttack()
         {
             if (attackAnimationTimer <= 0f)
             {
-                // 攻击动画时间结束后，让 SimpleEnemy 下一帧可以回到移动/待机逻辑。
+// After the attack animation time ends, let EnemyController Next frame you can go back to moving/Standby logic.
                 return;
             }
 
@@ -146,7 +146,7 @@ namespace EchoEscape
             AdvanceFrame(attackFramesPerSecond, false);
         }
         /// <summary>
-        /// 推进敌人死亡动画。死亡动画不循环，最后由 EnemyHealth 关闭对象。
+/// Advance enemy death animation. The death animation does not loop and ends with EnemyHealth Close the object.
         /// </summary>
         public void TickDeath()
         {
@@ -154,9 +154,9 @@ namespace EchoEscape
             AdvanceFrame(deathFramesPerSecond, false);
         }
         /// <summary>
-        /// 切换敌人当前视觉状态，并选择对应的帧数组。
+/// Switch the enemy's current visual state and select the corresponding frame array.
         /// </summary>
-        /// <param name="nextState">要切换到的新动画或逻辑状态。</param>
+/// <param name="nextState">The new animation or logic state to switch to. </param>
         private void SetVisualState(VisualState nextState)
         {
             if (visualState == nextState && currentFrames != null && currentFrames.Length > 0)
@@ -172,16 +172,16 @@ namespace EchoEscape
                 _ => idleFrames
             };
 
-            // 每次切换状态都从第一帧开始播，避免从上一个状态的帧索引继承导致错帧。
+// Each time the state is switched, the broadcast starts from the first frame to avoid frame errors caused by inheritance from the frame index of the previous state.
             currentFrameIndex = 0;
             frameTimer = 0f;
             ApplyCurrentFrame();
         }
         /// <summary>
-        /// 推进动画帧或流程计时，让动画按帧率继续播放。
+/// Advance animation frames or process timing so the animation continues to play at the frame rate.
         /// </summary>
-        /// <param name="framesPerSecond">动画播放速度，每秒显示多少帧。</param>
-        /// <param name="loop">true 表示动画循环播放，false 表示播到最后一帧停住。</param>
+/// <param name="framesPerSecond">Animation playback speed, how many frames are displayed per second. </param>
+/// <param name="loop">true Indicates that the animation plays in a loop, false Indicates that the playback will stop at the last frame. </param>
         private void AdvanceFrame(float framesPerSecond, bool loop)
         {
             if (visualRenderer == null || currentFrames == null || currentFrames.Length <= 1)
@@ -193,7 +193,7 @@ namespace EchoEscape
             float frameDuration = 1f / Mathf.Max(1f, framesPerSecond);
             while (frameTimer >= frameDuration)
             {
-                // while 可以在低帧率时补帧，保证动画速度接近设定 FPS。
+// while Frames can be supplemented when the frame rate is low to ensure that the animation speed is close to the setting FPS。
                 frameTimer -= frameDuration;
                 currentFrameIndex = loop
                     ? (currentFrameIndex + 1) % currentFrames.Length
@@ -202,7 +202,7 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+/// Apply the calculated state to the object, UI, animation or renderer to keep visuals and logic in sync.
         /// </summary>
         private void ApplyCurrentFrame()
         {
@@ -212,10 +212,10 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
+/// from Resources Or load the required resources from the incoming data and convert it into an object that can be used directly by the script.
         /// </summary>
-        /// <param name="resourcePath">Resources 目录下的资源路径，不包含扩展名。</param>
-        /// <returns>返回一组 Sprite 动画帧；资源不存在时可能是空数组。</returns>
+/// <param name="resourcePath">Resources The resource path in the directory, excluding the extension. </param>
+/// <returns>Return a set Sprite Animation frames; may be an empty array if the resource does not exist. </returns>
         private static Sprite[] LoadFrames(string resourcePath)
         {
             if (string.IsNullOrWhiteSpace(resourcePath))
@@ -224,7 +224,7 @@ namespace EchoEscape
             }
 
             Sprite[] frames = Resources.LoadAll<Sprite>(resourcePath);
-            // 统一按帧名排序，避免 Resources.LoadAll 顺序导致动画播放错乱。
+// Sort by frame name uniformly to avoid Resources. LoadAll The order causes the animation to play out of order.
             Array.Sort(frames, (left, right) => string.Compare(left.name, right.name, StringComparison.Ordinal));
             return frames;
         }

@@ -5,9 +5,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：Ruby 玩家角色动画控制器。它根据玩家移动状态播放待机、跑步、跳跃、攻击和死亡动画。
-    /// 玩法逻辑：Update 根据 Rigidbody2D 速度和 PlayerController2D.IsGrounded 判断当前动作；攻击时 PlayerAttack 调用 PlayAttack 临时锁定攻击帧；死亡时 GameManager 调用 PlayDeath 锁住普通动画，保证死亡视觉不会被待机/跑步覆盖。
-    /// 协作关系：读取 Rigidbody2D 和 PlayerController2D；被 PlayerAttack 和 EchoEscapeGameManager 调用。它只控制视觉，不改变移动或伤害。
+/// Script overview: Ruby Player character animation controller. It plays standby, running, jumping, attack and death animations based on the player's movement status.
+/// Gameplay logic: Update according to Rigidbody2D speed and PlayerController2D. IsGrounded determines the current action; when attacking PlayerAttack call PlayAttack Temporarily locks attack frame; upon death GameManager call PlayDeath Lock normal animation to ensure that death vision will not be on standby/Running coverage.
+/// Collaboration: reads Rigidbody2D and PlayerController2D; quilt PlayerAttack and EchoEscapeGameManager call. It only controls vision and does not change movement or damage.
     /// </summary>
     public class PlayerAnimationController : MonoBehaviour
     {
@@ -53,7 +53,7 @@ namespace EchoEscape
             Death
         }
         /// <summary>
-        /// 编辑器中参数变化时调用。这里用于限制 Inspector 参数范围，避免运行时出现非法设置。
+/// Called when parameters change in the editor. used here to limit Inspector Parameter range to avoid illegal settings during runtime.
         /// </summary>
         private void OnValidate()
         {
@@ -74,20 +74,20 @@ namespace EchoEscape
 
             if (animator != null)
             {
-                // 当前角色动画由脚本逐帧换 Sprite 控制，禁用 Animator 防止它覆盖脚本选中的帧。
+// The current character animation is changed frame by frame by the script Sprite control, disable Animator Prevents it from overwriting frames selected by the script.
                 animator.enabled = false;
             }
 
             Sprite[] previewIdleFrames = LoadFrames(IdlePath);
             if (spriteRenderer != null && previewIdleFrames.Length > 0)
             {
-                // 编辑器里直接预览指定 idle 帧，避免场景视图显示成不合适的抬脚姿势。
+// Preview and specify directly in the editor idle frame to prevent the scene view from displaying inappropriate foot-raising postures.
                 int targetFrameIndex = Mathf.Clamp(idleHoldFrameIndex, 0, previewIdleFrames.Length - 1);
                 spriteRenderer.sprite = previewIdleFrames[targetFrameIndex];
             }
         }
         /// <summary>
-        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
+/// Unity Automatically called when creating an object. This is where components are usually cached, resources are loaded, and the script's internal state is prepared.
         /// </summary>
         private void Awake()
         {
@@ -103,7 +103,7 @@ namespace EchoEscape
 
             if (animator != null)
             {
-                // 运行时同样禁用 Animator，保证 Ruby 的帧动画完全由本脚本控制。
+// Also disabled at runtime Animator, ensure Ruby The frame animation is completely controlled by this script.
                 animator.enabled = false;
             }
 
@@ -122,11 +122,11 @@ namespace EchoEscape
             jumpFrames = LoadFrames(JumpPath);
             attackFrames = LoadFrames(AttackPath);
             deathFrames = LoadFrames(DeathPath);
-            // 初始显示 idle；SetState 会进一步调用 HoldIdleFrame 固定到更自然的站立帧。
+// initial display idle；SetState will be called further HoldIdleFrame Fixed to a more natural standing frame.
             SetState(VisualState.Idle);
         }
         /// <summary>
-        /// Unity 每帧调用。这里处理输入、计时器、UI 状态或非物理的实时刷新。
+/// Unity Called every frame. This handles input, timers, UI Real-time refresh of state or non-physics.
         /// </summary>
         private void Update()
         {
@@ -137,7 +137,7 @@ namespace EchoEscape
 
             if (animationLocked)
             {
-                // 死亡动画会锁住普通动画，避免下一帧又被 idle/run 覆盖。
+// The death animation will lock the normal animation to prevent the next frame from being idle/run cover.
                 return;
             }
 
@@ -151,7 +151,7 @@ namespace EchoEscape
 
             if (attackTimer > 0f && attackFrames.Length > 0)
             {
-                // 攻击期间优先显示攻击动画，不根据移动速度切回跑步或待机。
+// During the attack, the attack animation is given priority and does not switch back to running or standby according to the movement speed.
                 attackTimer -= Time.deltaTime;
                 SetState(VisualState.Attack);
                 UpdateFacing(velocity, horizontalSpeed);
@@ -165,7 +165,7 @@ namespace EchoEscape
                 : Mathf.Abs(velocity.y) <= airborneVelocityThreshold;
             bool isJumping = !isGrounded;
 
-            // 状态优先级：跳跃 > 跑步 > 待机。这样空中移动不会错误显示跑步帧。
+// Status Priority: Jump > running > Standby. This way mid-air movement will not incorrectly display running frames.
             if (isJumping)
             {
                 SetState(VisualState.Jump);
@@ -177,7 +177,7 @@ namespace EchoEscape
             else
             {
                 SetState(VisualState.Idle);
-                // 待机不循环完整 idle 表，固定到自然站立帧，避免角色静止时像在走路。
+// Standby does not cycle completely idle table, fixed to a natural standing frame to avoid the character appearing to be walking when stationary.
                 HoldIdleFrame();
             }
 
@@ -185,14 +185,14 @@ namespace EchoEscape
 
             if (currentState != VisualState.Idle)
             {
-                // idle 固定帧不推进；run/jump/attack/death 才按帧率播放。
+// idle Fixed frames are not advanced; run/jump/attack/death Only play according to the frame rate.
                 AdvanceFrame();
             }
 
             UpdateAnimatorParameters(horizontalSpeed, isGrounded, velocity.y);
         }
         /// <summary>
-        /// 播放玩家攻击动画。PlayerAttack 命中逻辑独立处理，本函数只负责视觉上挥剑。
+/// Play player attack animation. PlayerAttack The hit logic is processed independently, and this function is only responsible for visually swinging the sword.
         /// </summary>
         public void PlayAttack()
         {
@@ -207,15 +207,15 @@ namespace EchoEscape
             }
 
             float fullClipDuration = attackFrames.Length / Mathf.Max(1f, attackFramesPerSecond);
-            // 攻击至少持续 attackDuration，也至少播完素材本身长度，避免动画被提前截断。
+// The attack lasts at least attackDuration, and at least the length of the material itself will be played to prevent the animation from being cut off in advance.
             attackTimer = Mathf.Max(attackDuration, fullClipDuration);
             SetState(VisualState.Attack);
         }
         /// <summary>
-        /// 播放玩家死亡动画并锁定普通动画状态。GameManager 会根据返回时长决定何时显示死亡 UI 和重载关卡。
+/// Play the player death animation and lock the normal animation state. GameManager When the death is displayed will be determined based on the return duration. UI and reload levels.
         /// </summary>
-        /// <param name="deathSource">deathSource 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回浮点数结果，通常表示时间、距离、速度或动画时长。</returns>
+/// <param name="deathSource">deathSource Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Returns a floating point result, typically representing time, distance, speed, or animation duration. </returns>
         public float PlayDeath(string deathSource = "death")
         {
             if (spriteRenderer == null)
@@ -233,14 +233,14 @@ namespace EchoEscape
 
             if (deathRoutine != null)
             {
-                // 如果短时间内重复调用死亡，先停掉旧协程，避免两个死亡动画同时推进帧。
+// If death is called repeatedly in a short period of time, stop the old coroutine first to prevent two death animations from advancing frames at the same time.
                 StopCoroutine(deathRoutine);
                 deathRoutine = null;
             }
 
             if (animator != null && animator.enabled)
             {
-                // 防止 Animator 在死亡动画期间继续覆盖 SpriteRenderer。
+// prevent Animator Continue coverage during death animation SpriteRenderer。
                 animator.enabled = false;
             }
 
@@ -248,7 +248,7 @@ namespace EchoEscape
 
             if (deathFrames == null || deathFrames.Length == 0)
             {
-                // 死亡素材缺失时不让流程报错，用 idle 帧兜底，GameManager 仍会继续重载关卡。
+// To prevent the process from reporting an error when the death material is missing, use idle The frame is hidden, GameManager Level reloading will still continue.
                 ForceIdleFrame();
                 Debug.LogWarning(
                     $"[PlayerDeathVisual] Death sprites missing at Resources/{DeathPath}; " +
@@ -277,7 +277,7 @@ namespace EchoEscape
             return duration;
         }
         /// <summary>
-        /// 强制显示第一帧待机图。它是死亡素材缺失或恢复显示时的安全兜底。
+/// Force display of the first frame standby image. It's a safe haven when death footage is missing or restored.
         /// </summary>
         private void ForceIdleFrame()
         {
@@ -293,7 +293,7 @@ namespace EchoEscape
             ApplyCurrentFrame();
         }
         /// <summary>
-        /// 待机时固定到指定 idle 帧，避免完整 idle 序列里不适合静止展示的过渡帧循环出现。
+/// Fixed to specified when in standby idle frame, avoid complete idle Transition frames in the sequence that are not suitable for static presentation appear repeatedly.
         /// </summary>
         private void HoldIdleFrame()
         {
@@ -305,7 +305,7 @@ namespace EchoEscape
             int targetFrameIndex = Mathf.Clamp(idleHoldFrameIndex, 0, idleFrames.Length - 1);
             if (currentFrames != idleFrames || currentFrameIndex == targetFrameIndex)
             {
-                // 已经不是 idle 或已经在目标帧时，不重复刷新 Sprite。
+// No longer idle Or when it is already in the target frame, it will not be refreshed repeatedly. Sprite。
                 return;
             }
 
@@ -314,9 +314,9 @@ namespace EchoEscape
             ApplyCurrentFrame();
         }
         /// <summary>
-        /// 切换当前动画状态，并把 currentFrames 指向对应素材数组。
+/// Switch the current animation state and put currentFrames Points to the corresponding material array.
         /// </summary>
-        /// <param name="nextState">要切换到的新动画或逻辑状态。</param>
+/// <param name="nextState">The new animation or logic state to switch to. </param>
         private void SetState(VisualState nextState)
         {
             if (currentState == nextState && currentFrames != null)
@@ -340,14 +340,14 @@ namespace EchoEscape
 
             if (nextState == VisualState.Idle)
             {
-                // 进入待机状态后立刻固定自然站立帧。
+// Immediately after entering standby mode, the natural standing frame is fixed.
                 HoldIdleFrame();
             }
         }
         /// <summary>
-        /// 推进动画帧或流程计时，让动画按帧率继续播放。
+/// Advance animation frames or process timing so the animation continues to play at the frame rate.
         /// </summary>
-        /// <param name="loop">true 表示动画循环播放，false 表示播到最后一帧停住。</param>
+/// <param name="loop">true Indicates that the animation plays in a loop, false Indicates that the playback will stop at the last frame. </param>
         private void AdvanceFrame(bool loop = true)
         {
             if (currentFrames == null || currentFrames.Length <= 1)
@@ -368,7 +368,7 @@ namespace EchoEscape
             float frameDuration = 1f / Mathf.Max(1f, framesPerSecond);
             while (frameTimer >= frameDuration)
             {
-                // 用 while 而不是 if，保证低帧率卡顿时动画能补足跳过的帧。
+// use while instead of if, to ensure that the animation can make up for the skipped frames when the frame rate is low.
                 frameTimer -= frameDuration;
                 currentFrameIndex = loop
                     ? (currentFrameIndex + 1) % currentFrames.Length
@@ -377,10 +377,10 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 判断动画系统是否应该认为玩家落地。优先用 PlayerController2D 的真实落地检测，没有时才用速度兜底。
+/// Determines whether the animation system should consider the player to have landed. priority PlayerController2D Real ground detection, only use speed to get the bottom line if not available.
         /// </summary>
-        /// <param name="velocity">velocity 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="velocity">velocity Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool IsGrounded(Vector2 velocity)
         {
             return playerController != null
@@ -388,25 +388,30 @@ namespace EchoEscape
                 : Mathf.Abs(velocity.y) <= airborneVelocityThreshold;
         }
         /// <summary>
-        /// 根据移动方向或 PlayerController2D.FacingRight 翻转 Ruby 精灵。
+/// Depending on the direction of movement or PlayerController2D. FacingRight flip Ruby Elf.
         /// </summary>
-        /// <param name="velocity">velocity 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="horizontalSpeed">horizontalSpeed 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="velocity">velocity Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="horizontalSpeed">horizontalSpeed Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         private void UpdateFacing(Vector2 velocity, float horizontalSpeed)
         {
+            bool isGravityFlipped = body != null && body.gravityScale < 0f;
+
             if (horizontalSpeed > horizontalRunThreshold)
             {
-                // 有明显水平移动时按速度方向朝向。
-                spriteRenderer.flipX = velocity.x < 0f;
+// When there is obvious horizontal movement, first move in the direction of world speed.
+// Anti-gravity Player The root object will rotate 180 The local left and right of the elf will be opposite to the left and right of the world, so it needs to be inverted here.
+                bool shouldFlip = velocity.x < 0f;
+                spriteRenderer.flipX = isGravityFlipped ? !shouldFlip : shouldFlip;
             }
             else if (playerController != null)
             {
-                // 静止时沿用玩家最后输入朝向，避免停下后角色突然转回默认方向。
-                spriteRenderer.flipX = !playerController.FacingRight;
+// When stationary, the last direction input by the player is used; when anti-gravity is used, the left and right reversal caused by the rotation of the root object is also offset.
+                bool shouldFlip = !playerController.FacingRight;
+                spriteRenderer.flipX = isGravityFlipped ? !shouldFlip : shouldFlip;
             }
         }
         /// <summary>
-        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+/// Apply the calculated state to the object, UI, animation or renderer to keep visuals and logic in sync.
         /// </summary>
         private void ApplyCurrentFrame()
         {
@@ -416,10 +421,10 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 用 unscaled time 播放死亡帧。死亡流程可能暂停时间，所以不能依赖普通 Time.deltaTime。
+/// use unscaled time Play the death frame. The death process may pause for time, so you cannot rely on ordinary Time. deltaTime。
         /// </summary>
-        /// <param name="duration">等待或播放持续时间。</param>
-        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
+/// <param name="duration">Wait or play duration. </param>
+/// <returns>return Unity Coroutine, the caller will use StartCoroutine Let this process be executed in frames. </returns>
         private IEnumerator PlayDeathSequence(float duration)
         {
             if (deathFrames == null || deathFrames.Length == 0)
@@ -437,7 +442,7 @@ namespace EchoEscape
                 frameTimer += Time.unscaledDeltaTime;
                 while (frameTimer >= frameDuration && currentFrameIndex < deathFrames.Length - 1)
                 {
-                    // 死亡动画不循环，帧推进到最后一张后停住等待 GameManager 重载。
+// The death animation does not loop. The frame advances to the last frame and stops waiting. GameManager Overload.
                     frameTimer -= frameDuration;
                     currentFrameIndex++;
                     ApplyCurrentFrame();
@@ -451,16 +456,16 @@ namespace EchoEscape
             deathRoutine = null;
         }
         /// <summary>
-        /// 如果角色还保留 Animator Controller，就把移动、落地和反重力参数同步进去。当前主要逻辑仍由脚本换帧控制。
+/// If the role remains Animator Controller, and synchronize the movement, landing and anti-gravity parameters. The current main logic is still controlled by script frame changing.
         /// </summary>
-        /// <param name="speed">水平速度，用于设置 Animator 参数。</param>
-        /// <param name="isGrounded">玩家或 Echo 是否落地，用于动画状态判断。</param>
-        /// <param name="verticalVelocity">竖直速度，用于跳跃/下落动画参数。</param>
+/// <param name="speed">Horizontal speed, used to set Animator parameter. </param>
+/// <param name="isGrounded">player or Echo Whether it has landed is used to determine the animation status. </param>
+/// <param name="verticalVelocity">Vertical speed, used for jumping/Fall animation parameters. </param>
         private void UpdateAnimatorParameters(float speed, bool isGrounded, float verticalVelocity)
         {
             if (animator == null || animator.runtimeAnimatorController == null)
             {
-                // 大多数场景已经禁用 Animator；没有 Controller 时直接跳过，不影响脚本帧动画。
+// Most scenes have been disabled Animator; No Controller Skip directly without affecting the script frame animation.
                 return;
             }
 
@@ -470,10 +475,10 @@ namespace EchoEscape
             SetAnimatorBool("IsGravityFlipped", body != null && body.gravityScale < 0f);
         }
         /// <summary>
-        /// 安全设置 Animator float 参数。只有参数存在时才设置，避免 Controller 缺参数报错。
+/// Security settings Animator float parameter. Set only when the parameter exists to avoid Controller Missing parameters error.
         /// </summary>
-        /// <param name="parameterName">Animator 参数名称。</param>
-        /// <param name="value">要设置的新参数值。</param>
+/// <param name="parameterName">Animator Parameter name. </param>
+/// <param name="value">The new parameter value to set. </param>
         private void SetAnimatorFloat(string parameterName, float value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Float))
@@ -482,10 +487,10 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 安全设置 Animator bool 参数。只有参数存在时才设置，避免 Controller 缺参数报错。
+/// Security settings Animator bool parameter. Set only when the parameter exists to avoid Controller Missing parameters error.
         /// </summary>
-        /// <param name="parameterName">Animator 参数名称。</param>
-        /// <param name="value">要设置的新参数值。</param>
+/// <param name="parameterName">Animator Parameter name. </param>
+/// <param name="value">The new parameter value to set. </param>
         private void SetAnimatorBool(string parameterName, bool value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Bool))
@@ -494,11 +499,11 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 检查 Animator Controller 是否真的包含某个参数。这样换 Controller 或删参数时脚本不会报错。
+/// examine Animator Controller Whether a certain parameter is really included. changes this Controller Or the script will not report an error when deleting parameters.
         /// </summary>
-        /// <param name="parameterName">Animator 参数名称。</param>
-        /// <param name="type">期望的 Animator 参数类型。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="parameterName">Animator Parameter name. </param>
+/// <param name="type">expected Animator Parameter type. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool HasAnimatorParameter(string parameterName, AnimatorControllerParameterType type)
         {
             AnimatorControllerParameter[] parameters = animator.parameters;
@@ -514,14 +519,14 @@ namespace EchoEscape
             return false;
         }
         /// <summary>
-        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
+/// from Resources Or load the required resources from the incoming data and convert it into an object that can be used directly by the script.
         /// </summary>
-        /// <param name="resourcePath">Resources 目录下的资源路径，不包含扩展名。</param>
-        /// <returns>返回一组 Sprite 动画帧；资源不存在时可能是空数组。</returns>
+/// <param name="resourcePath">Resources The resource path in the directory, excluding the extension. </param>
+/// <returns>Return a set Sprite Animation frames; may be an empty array if the resource does not exist. </returns>
         private static Sprite[] LoadFrames(string resourcePath)
         {
             Sprite[] frames = Resources.LoadAll<Sprite>(resourcePath);
-            // Resources.LoadAll 返回顺序不稳定，排序后才能按素材帧名稳定播放动画。
+// Resources. LoadAll The return order is unstable. Only after sorting can the animation be played stably by the material frame name.
             Array.Sort(frames, (left, right) => string.Compare(left.name, right.name, StringComparison.Ordinal));
             return frames;
         }

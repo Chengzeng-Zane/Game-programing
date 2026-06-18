@@ -9,7 +9,7 @@ This document describes the final level structure of Echo Escape and how each le
 3. `Level 2 - Relics of the Forest`
 4. `Level 3 - Escape from the Silent Forest`
 
-The scene `Level 1 - Graybox Prototype` is kept separately as development evidence. It shows how Level 1 worked before final pixel art, backgrounds, story UI, and polish were added.
+The early Level 1 graybox version is kept as portfolio evidence through screenshots and planning material. The temporary graybox Unity scene has been removed from the final project so the scene list stays focused on the playable game.
 
 ## Main Menu
 
@@ -173,4 +173,4 @@ The aim is to keep the level readable while giving it a consistent forest-advent
 - Only one Echo replay is supported at a time.
 - Enemy AI is simple and designed for demonstration rather than complex combat.
 - Loot is not saved permanently outside the current game run.
-- The graybox prototype scene is for evidence, not final player-facing content.
+- Graybox evidence is kept outside the final playable scene list through screenshots/planning material.

@@ -23,10 +23,10 @@ public static class EchoEscapeLevelBuilder
     private const string SpritesPath = "Assets/Sprites";
 
     private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
-    private const string Level1ScenePath = "Assets/Scenes/Level1_Tutorial.unity";
-    private const string Level2ScenePath = "Assets/Scenes/Level2_LootTutorial.unity";
-    private const string Level3ScenePath = "Assets/Scenes/Level3_RiskReward.unity";
-    private const string Level2SceneName = "Level2_LootTutorial";
+    private const string Level1ScenePath = "Assets/Scenes/Level 1 - The First Echo.unity";
+    private const string Level2ScenePath = "Assets/Scenes/Level 2 - Relics of the Forest.unity";
+    private const string Level3ScenePath = "Assets/Scenes/Level 3 - Escape from the Silent Forest.unity";
+    private const string Level2SceneName = "Level 2 - Relics of the Forest";
 
     private const string PlaceholderSpritePath = SpritesPath + "/placeholder_square.png";
 
@@ -63,10 +63,10 @@ public static class EchoEscapeLevelBuilder
     }
 
     /// <summary>
-    /// Command-line entry point for validating the official Level1_Tutorial scene.
+    /// Command-line entry point for validating the official Level 1 - The First Echo scene.
     /// </summary>
     /// <remarks>
-    /// Level1_Tutorial is now an art-authored scene, so this command does not overwrite it.
+    /// Level 1 - The First Echo is now an art-authored scene, so this command does not overwrite it.
     /// </remarks>
     public static void BuildLevel1TutorialFromCommandLine()
     {
@@ -77,35 +77,35 @@ public static class EchoEscapeLevelBuilder
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Official Level1_Tutorial scene checked and preserved.");
+        Debug.Log("Official Level 1 - The First Echo scene checked and preserved.");
     }
 
     /// <summary>
-    /// Confirms the official art-authored Level1_Tutorial scene exists before build settings are updated.
+    /// Confirms the official art-authored Level 1 - The First Echo scene exists before build settings are updated.
     /// </summary>
     /// <remarks>
     /// The old procedural Level1 builder is intentionally no longer invoked for the official first level,
-    /// because it would overwrite the dark forest Ruby character version stored in Level1_Tutorial.unity.
+    /// because it would overwrite the dark forest Ruby character version stored in Level 1 - The First Echo.unity.
     /// </remarks>
     private static void EnsureOfficialLevel1SceneExists()
     {
         if (!File.Exists(ToDiskPath(Level1ScenePath)))
         {
-            Debug.LogError("Official Level1_Tutorial scene is missing. Restore Assets/Scenes/Level1_Tutorial.unity before building prototype levels.");
+            Debug.LogError("Official Level 1 - The First Echo scene is missing. Restore Assets/Scenes/Level 1 - The First Echo.unity before building prototype levels.");
         }
     }
 
     /// <summary>
-    /// Confirms the official art-authored Level2_LootTutorial scene exists before build settings are updated.
+    /// Confirms the official art-authored Level 2 - Relics of the Forest scene exists before build settings are updated.
     /// </summary>
     /// <remarks>
-    /// Level2_LootTutorial is now an art-authored scene, so the old procedural Level2 bootstrap is no longer invoked.
+    /// Level 2 - Relics of the Forest is now an art-authored scene, so the old procedural Level2 bootstrap is no longer invoked.
     /// </remarks>
     private static void EnsureOfficialLevel2SceneExists()
     {
         if (!File.Exists(ToDiskPath(Level2ScenePath)))
         {
-            Debug.LogError("Official Level2_LootTutorial scene is missing. Restore Assets/Scenes/Level2_LootTutorial.unity before building prototype levels.");
+            Debug.LogError("Official Level 2 - Relics of the Forest scene is missing. Restore Assets/Scenes/Level 2 - Relics of the Forest.unity before building prototype levels.");
         }
     }
 
@@ -211,13 +211,13 @@ public static class EchoEscapeLevelBuilder
     }
 
     /// <summary>
-    /// Creates the Level1_Tutorial scene with movement, jump, record, Echo, pressure plate, door, and exit objects.
+    /// Creates the Level 1 - The First Echo scene with movement, jump, record, Echo, pressure plate, door, and exit objects.
     /// </summary>
     private static void BuildLevel1Tutorial()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        Transform root = CreateRoot("Level1_Tutorial_CleanStart");
+        Transform root = CreateRoot("Level 1 - The First Echo_CleanStart");
         CreateLight();
         CreateGroundAndJumpPractice(root);
         CreateRecordPuzzleArea(root);

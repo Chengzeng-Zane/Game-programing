@@ -6,9 +6,9 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：主菜单控制器。它在运行时搭建主菜单场景，包括背景装饰、标题、开始按钮、设置面板、退出按钮和事件系统。
-    /// 玩法逻辑：Start Game 会检查目标场景是否存在于 Build Settings，重置新一局宝箱领取状态，然后加载第一关。菜单音乐通过 BackgroundMusic 保持和关卡统一。
-    /// 协作关系：SceneManager 负责场景切换；BackgroundMusic 负责音乐；EchoEscapeGameManager.ResetChestClaimsForNewRun 负责新游戏状态。
+/// Script overview: Main Menu Controller. It builds the main menu scene at runtime, including background decoration, title, start button, settings panel, exit button and event system.
+/// Gameplay logic: Start Game Will check whether the target scene exists in Build Settings, reset the treasure chest collection status for the new round, and then load the first level. menu music pass BackgroundMusic Keep it consistent with the level.
+/// Collaborates with: SceneManager Responsible for scene switching; BackgroundMusic Responsible for music; EchoEscapeGameManager. ResetChestClaimsForNewRun Responsible for the new game state.
     /// </summary>
     public class MainMenuController : MonoBehaviour
     {
@@ -27,47 +27,47 @@ namespace EchoEscape
         private Font menuFont;
         private GameObject settingsRoot;
         /// <summary>
-        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
+/// Unity Automatically called when creating an object. This is where components are usually cached, resources are loaded, and the script's internal state is prepared.
         /// </summary>
         private void Awake()
         {
-            // 主菜单完全运行时搭建；先加载像素字体，再创建相机、背景、Canvas 和音乐。
+// The main menu is built when it is fully running; first load the pixel font, then create the camera, background, Canvas and music.
             menuFont = Resources.Load<Font>("BrackeysPlatformer/Fonts/PixelOperator8-Bold");
 
             EnsureCamera();
             BuildWorld();
             BuildCanvas();
-            BackgroundMusic.EnsurePlaying();
+            BackgroundMusic.EnsurePlaying("main_menu_music", 0.32f);
         }
         /// <summary>
-        /// Unity 每帧调用。这里处理输入、计时器、UI 状态或非物理的实时刷新。
+/// Unity Called every frame. This handles input, timers, UI Real-time refresh of state or non-physics.
         /// </summary>
         private void Update()
         {
             if (settingsRoot != null && settingsRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
             {
-                // 设置面板打开时按 Esc 关闭，符合普通菜单操作习惯。
+// When the settings panel opens, press Esc Close, consistent with normal menu operation habits.
                 HideSettings();
             }
         }
         /// <summary>
-        /// 开始新游戏。它会确认第一关在 Build Settings 里，重置新一局宝箱领取记录，然后加载目标关卡。
+/// Start a new game. It will confirm that the first level is in Build Settings Here, reset the treasure chest collection record for a new game, and then load the target level.
         /// </summary>
         public void StartGame()
         {
             if (string.IsNullOrWhiteSpace(gameSceneName) || !SceneExistsInBuild(gameSceneName))
             {
-                // 场景没配置好时只警告，不让按钮把游戏切到无效场景。
+// It only warns when the scene is not configured properly, and does not allow the button to switch the game to an invalid scene.
                 Debug.LogWarning("Gameplay scene is not ready yet.");
                 return;
             }
 
-            // 新游戏要清空“本轮已拿过宝箱”的静态状态，否则重进游戏拿不到宝箱。
+// The new game must clear the static state of "the treasure chest has been taken in this round", otherwise you will not be able to get the treasure chest when you re-enter the game.
             EchoEscapeGameManager.ResetChestClaimsForNewRun();
             SceneManager.LoadScene(gameSceneName);
         }
         /// <summary>
-        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
+/// Show correspondence UI or visual status, usually used for pop-up windows, loot Hints, death prompts or settlement feedback.
         /// </summary>
         public void ShowSettings()
         {
@@ -77,7 +77,7 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 隐藏对应 UI 或视觉状态，通常在提示结束、关闭弹窗或清理流程时调用。
+/// Hide correspondence UI Or visual state, usually called when the prompt ends, the pop-up window is closed, or the process is cleaned up.
         /// </summary>
         public void HideSettings()
         {
@@ -87,14 +87,14 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 关闭门、面板或通路，恢复阻挡或隐藏状态。
+/// Close a door, panel or passage to restore it to a blocked or hidden state.
         /// </summary>
         public void CloseModal()
         {
             HideSettings();
         }
         /// <summary>
-        /// 退出游戏。编辑器中停止 Play Mode，正式打包后调用 Application.Quit。
+/// Exit the game. Stop in editor Play Mode, called after formal packaging Application. Quit。
         /// </summary>
         public void QuitGame()
         {
@@ -106,14 +106,14 @@ namespace EchoEscape
 #endif
         }
         /// <summary>
-        /// 确保主菜单有相机和 AudioListener。场景没手动放相机时会自动创建。
+/// Make sure the main menu has Camera and AudioListener. The scene is created automatically when the camera is not manually placed.
         /// </summary>
         private void EnsureCamera()
         {
             Camera camera = Camera.main;
             if (camera == null)
             {
-                // 主菜单场景允许空场景启动，脚本会补 Main Camera。
+// The main menu scene allows empty scenes to be started, and the script will fill in the Main Camera。
                 GameObject cameraObject = new GameObject("Main Camera");
                 cameraObject.tag = "MainCamera";
                 camera = cameraObject.AddComponent<Camera>();
@@ -126,20 +126,20 @@ namespace EchoEscape
 
             if (FindObjectOfType<AudioListener>() == null)
             {
-                // 音乐和按钮音效需要 AudioListener 才能被听到。
+// Music and button sound effects required AudioListener To be heard.
                 camera.gameObject.AddComponent<AudioListener>();
             }
         }
         /// <summary>
-        /// 检查目标场景名是否存在于 Build Settings，避免 Start Game 加载不存在的场景。
+/// Check if the target scene name exists in Build Settings, avoid Start Game Loading a scene that doesn't exist.
         /// </summary>
-        /// <param name="sceneName">目标场景名称，用于检查 Build Settings 或加载下一关。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="sceneName">Target scene name for inspection Build Settings Or load the next level. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private bool SceneExistsInBuild(string sceneName)
         {
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
-                // Build Settings 里保存的是完整路径，这里取文件名和配置的场景名比较。
+// Build Settings What is saved here is the complete path. Here, the file name is compared with the configured scene name.
                 string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
                 string sceneFileName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
                 if (sceneFileName == sceneName)
@@ -151,7 +151,7 @@ namespace EchoEscape
             return false;
         }
         /// <summary>
-        /// 组装一组运行时对象或 UI 元素，用来形成完整菜单、面板或视觉结构。
+/// Assemble a set of runtime objects or UI Elements used to form a complete menu, panel, or visual structure.
         /// </summary>
         private void BuildWorld()
         {
@@ -169,7 +169,7 @@ namespace EchoEscape
             CreateSprite("Central Ruin Mark", PixelArtLibrary.DoorTile, new Vector2(0f, -0.9f), new Vector3(4.65f, 4.65f, 1f), -2, worldRoot.transform, new Color(0.82f, 0.74f, 0.48f, 0.2f));
         }
         /// <summary>
-        /// 组装一组运行时对象或 UI 元素，用来形成完整菜单、面板或视觉结构。
+/// Assemble a set of runtime objects or UI Elements used to form a complete menu, panel, or visual structure.
         /// </summary>
         private void BuildCanvas()
         {
@@ -193,15 +193,15 @@ namespace EchoEscape
             CreateDivider("Title Gold Divider", heroPanel.transform, new Vector2(0.5f, 1f), new Vector2(0f, -214f), new Vector2(390f, 4f), gold);
 
             CreateButton("Start Game Button", heroPanel.transform, "START GAME", new Vector2(0.5f, 1f), new Vector2(0f, -272f), StartGame, new Vector2(330f, 62f));
-            CreateButton("Settings Button", heroPanel.transform, "SETTINGS", new Vector2(0.5f, 1f), new Vector2(0f, -350f), ShowSettings, new Vector2(330f, 58f));
+            CreateButton("How To Play Button", heroPanel.transform, "HOW TO PLAY", new Vector2(0.5f, 1f), new Vector2(0f, -350f), ShowSettings, new Vector2(330f, 58f));
             CreateButton("Quit Button", heroPanel.transform, "QUIT", new Vector2(0.5f, 1f), new Vector2(0f, -422f), QuitGame, new Vector2(330f, 58f));
 
             BuildSettingsPanel(canvasTransform);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <returns>返回创建好的 Canvas。</returns>
+/// <returns>Return the created Canvas。</returns>
         private Canvas CreateCanvas()
         {
             GameObject canvasObject = new GameObject("Main Menu Canvas");
@@ -217,12 +217,12 @@ namespace EchoEscape
             return canvas;
         }
         /// <summary>
-        /// 组装一组运行时对象或 UI 元素，用来形成完整菜单、面板或视觉结构。
+/// Assemble a set of runtime objects or UI Elements used to form a complete menu, panel, or visual structure.
         /// </summary>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
         private void BuildSettingsPanel(Transform parent)
         {
-            settingsRoot = new GameObject("Settings Panel");
+            settingsRoot = new GameObject("How To Play Panel");
             settingsRoot.transform.SetParent(parent, false);
 
             Image blocker = settingsRoot.AddComponent<Image>();
@@ -234,9 +234,9 @@ namespace EchoEscape
             blockerRect.offsetMin = Vector2.zero;
             blockerRect.offsetMax = Vector2.zero;
 
-            GameObject panel = CreateFramedPanel("Settings Content Panel", settingsRoot.transform, new Color(0.035f, 0.075f, 0.065f, 0.98f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620f, 470f), new Color(0.96f, 0.68f, 0.25f, 0.9f));
-            CreateText("Settings Title", panel.transform, "CONTROLS", 40, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(520f, 70f));
-            CreateDivider("Settings Divider", panel.transform, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(470f, 3f), new Color(1f, 0.78f, 0.3f, 0.9f));
+            GameObject panel = CreateFramedPanel("How To Play Content Panel", settingsRoot.transform, new Color(0.035f, 0.075f, 0.065f, 0.98f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(660f, 470f), new Color(0.96f, 0.68f, 0.25f, 0.9f));
+            CreateText("How To Play Title", panel.transform, "HOW TO PLAY", 40, textLight, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(560f, 70f));
+            CreateDivider("How To Play Divider", panel.transform, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(510f, 3f), new Color(1f, 0.78f, 0.3f, 0.9f));
 
             Text controls = CreateText(
                 "Controls List",
@@ -247,13 +247,13 @@ namespace EchoEscape
                 "Replay Echo: E\n" +
                 "Open Chest: F\n" +
                 "Attack: J\n" +
-                "Gravity Flip: Up / Down",
+                "Gravity Flip: Up/Down",
                 24,
                 textMuted,
                 TextAnchor.UpperLeft,
                 new Vector2(0.5f, 0.5f),
                 new Vector2(0f, -18f),
-                new Vector2(440f, 230f));
+                new Vector2(500f, 230f));
             controls.lineSpacing = 1.2f;
             controls.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -261,30 +261,30 @@ namespace EchoEscape
             settingsRoot.SetActive(false);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="label">label 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="action">action 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回创建好的 UI Button 组件。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="label">label Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="action">action Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Return the created UI Button components. </returns>
         private Button CreateButton(string name, Transform parent, string label, Vector2 anchor, Vector2 anchoredPosition, UnityEngine.Events.UnityAction action)
         {
             return CreateButton(name, parent, label, anchor, anchoredPosition, action, new Vector2(300f, 58f));
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="label">label 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="action">action 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回创建好的 UI Button 组件。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="label">label Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="action">action Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Return the created UI Button components. </returns>
         private Button CreateButton(string name, Transform parent, string label, Vector2 anchor, Vector2 anchoredPosition, UnityEngine.Events.UnityAction action, Vector2 size)
         {
             GameObject buttonObject = CreatePanel(name, parent, buttonNormal, anchor, anchoredPosition, size);
@@ -317,16 +317,16 @@ namespace EchoEscape
             return button;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="outlineColor">outlineColor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回创建或找到的 GameObject，方便调用方继续添加组件或设置位置。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="outlineColor">outlineColor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Returns a created or found GameObjectto facilitate the caller to continue adding components or setting locations. </returns>
         private GameObject CreateFramedPanel(string name, Transform parent, Color color, Vector2 anchor, Vector2 anchoredPosition, Vector2 size, Color outlineColor)
         {
             GameObject panel = CreatePanel(name, parent, color, anchor, anchoredPosition, size);
@@ -347,14 +347,14 @@ namespace EchoEscape
             return panel;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
         private void CreateDivider(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition, Vector2 size, Color color)
         {
             GameObject divider = CreatePanel(name, parent, color, anchor, anchoredPosition, size);
@@ -363,12 +363,12 @@ namespace EchoEscape
             shadow.effectDistance = new Vector2(0f, -2f);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         private void CreateCornerAccent(string name, Transform parent, Vector2 anchor, Vector2 anchoredPosition)
         {
             GameObject accent = CreatePanel(name, parent, runeGold, anchor, anchoredPosition, new Vector2(16f, 16f));
@@ -376,15 +376,15 @@ namespace EchoEscape
             rect.rotation = Quaternion.Euler(0f, 0f, 45f);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回创建或找到的 GameObject，方便调用方继续添加组件或设置位置。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Returns a created or found GameObjectto facilitate the caller to continue adding components or setting locations. </returns>
         private GameObject CreatePanel(string name, Transform parent, Color color, Vector2 anchor, Vector2 anchoredPosition, Vector2 size)
         {
             GameObject panel = new GameObject(name);
@@ -403,18 +403,18 @@ namespace EchoEscape
             return panel;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="value">要设置的新参数值。</param>
-        /// <param name="fontSize">fontSize 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <param name="alignment">alignment 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchor">anchor 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="anchoredPosition">anchoredPosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回创建或找到的 UI Text 组件。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="value">The new parameter value to set. </param>
+/// <param name="fontSize">fontSize Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <param name="alignment">alignment Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchor">anchor Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="anchoredPosition">anchoredPosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Returns a created or found UI Text components. </returns>
         private Text CreateText(string name, Transform parent, string value, int fontSize, Color color, TextAnchor alignment, Vector2 anchor, Vector2 anchoredPosition, Vector2 size)
         {
             GameObject textObject = new GameObject(name);
@@ -439,16 +439,16 @@ namespace EchoEscape
             return text;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="sprite">要显示的 Sprite 图片。</param>
-        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
-        /// <param name="size">size 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="sortingOrder">sortingOrder 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <returns>返回 SpriteRenderer 类型结果，供调用方继续判断或使用。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="sprite">to be displayed Sprite picture. </param>
+/// <param name="position">Target world coordinates, often used for respawn, spawning objects or recording Echo frame. </param>
+/// <param name="size">size Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="sortingOrder">sortingOrder Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <returns>return SpriteRenderer Type result for the caller to continue to judge or use. </returns>
         private SpriteRenderer CreateTiledSprite(string name, Sprite sprite, Vector2 position, Vector2 size, int sortingOrder, Transform parent, Color color)
         {
             SpriteRenderer renderer = CreateSprite(name, sprite, position, Vector3.one, sortingOrder, parent, color);
@@ -458,16 +458,16 @@ namespace EchoEscape
             return renderer;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="name">对象名称或资源名称。</param>
-        /// <param name="sprite">要显示的 Sprite 图片。</param>
-        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
-        /// <param name="scale">scale 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="sortingOrder">sortingOrder 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <returns>返回 SpriteRenderer 类型结果，供调用方继续判断或使用。</returns>
+/// <param name="name">Object name or resource name. </param>
+/// <param name="sprite">to be displayed Sprite picture. </param>
+/// <param name="position">Target world coordinates, often used for respawn, spawning objects or recording Echo frame. </param>
+/// <param name="scale">scale Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="sortingOrder">sortingOrder Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <returns>return SpriteRenderer Type result for the caller to continue to judge or use. </returns>
         private SpriteRenderer CreateSprite(string name, Sprite sprite, Vector2 position, Vector3 scale, int sortingOrder, Transform parent, Color color)
         {
             GameObject spriteObject = new GameObject(name);
@@ -482,13 +482,13 @@ namespace EchoEscape
             return renderer;
         }
         /// <summary>
-        /// 确保场景有 EventSystem。没有它，按钮无法响应鼠标点击和键盘导航。
+/// Make sure the scene has EventSystem. Without it, buttons fail to respond to mouse clicks and keyboard navigation.
         /// </summary>
         private void EnsureEventSystem()
         {
             if (FindObjectOfType<EventSystem>() != null)
             {
-                // 已有 EventSystem 时复用，避免多个 EventSystem 抢输入。
+// Already EventSystem time reuse to avoid multiple EventSystem Grab input.
                 return;
             }
 

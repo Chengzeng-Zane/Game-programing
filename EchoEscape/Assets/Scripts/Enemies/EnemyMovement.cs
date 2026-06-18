@@ -4,9 +4,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：敌人移动组件。它决定敌人是巡逻、追玩家、靠近攻击，还是回到出生点。
-    /// 玩法逻辑：敌人只在 detectionRange 内追踪玩家，并受 leashDistance 限制，防止一路追出设计区域；如果没看到玩家，敌人会巡逻或回家。
-    /// 协作关系：SimpleEnemy 每帧调用 Tick；EnemyTargeting 提供目标；EnemyAttack 在距离足够近时接管攻击。
+/// Script overview: Enemy Movement Component. It determines whether the enemy patrols, chases the player, attacks in close proximity, or returns to the spawn point.
+/// Gameplay logic: The enemy is only detectionRange Track players internally and be subject to leashDistance Limit to prevent chasing all the way out of the design area; if the player is not seen, the enemy will patrol or go home.
+/// Collaborates with: EnemyController Called every frame Tick；EnemyTargeting provide goals; EnemyAttack Take over the attack when close enough.
     /// </summary>
     public class EnemyMovement : MonoBehaviour
     {
@@ -29,20 +29,20 @@ namespace EchoEscape
         private Vector3 startPosition;
         private Action<float> updateFacing;
         /// <summary>
-        /// 接收外部脚本传入的参数，把当前组件配置成这个场景或这个敌人需要的状态。
+/// Receive the parameters passed in by the external script and configure the current component to the state required by this scene or this enemy.
         /// </summary>
-        /// <param name="patrolEnabled">patrolEnabled 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="patrolSpeedValue">patrolSpeedValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="patrolDistanceValue">patrolDistanceValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="chaseEnabled">chaseEnabled 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="detectionRangeValue">detectionRangeValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="attackRangeValue">attackRangeValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="chaseSpeedValue">chaseSpeedValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="returnSpeedValue">returnSpeedValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="verticalChaseValue">verticalChaseValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="leashDistanceValue">leashDistanceValue 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="homePosition">homePosition 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingCallback">facingCallback 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="patrolEnabled">patrolEnabled Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="patrolSpeedValue">patrolSpeedValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="patrolDistanceValue">patrolDistanceValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="chaseEnabled">chaseEnabled Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="detectionRangeValue">detectionRangeValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="attackRangeValue">attackRangeValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="chaseSpeedValue">chaseSpeedValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="returnSpeedValue">returnSpeedValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="verticalChaseValue">verticalChaseValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="leashDistanceValue">leashDistanceValue Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="homePosition">homePosition Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingCallback">facingCallback Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void Configure(
             bool patrolEnabled,
             float patrolSpeedValue,
@@ -71,10 +71,10 @@ namespace EchoEscape
             updateFacing = facingCallback;
         }
         /// <summary>
-        /// 每帧决定敌人的行动：玩家在侦测范围和牵引范围内就追击，足够近就返回 Attack 决策；否则巡逻或回到出生点。
+/// Each frame determines the enemy's action: the player pursues within the detection range and pulling range, and returns when close enough. Attack Decision; otherwise patrol or return to spawn point.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <returns>返回敌人这一帧的移动决策，告诉 SimpleEnemy 后续应该攻击、追击、巡逻还是待机。</returns>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <returns>Returns the enemy's movement decision for this frame, telling EnemyController Should the follow-up be attack, pursuit, patrol or standby. </returns>
         public Decision Tick(Transform target)
         {
             if (chasePlayer && target != null)
@@ -84,16 +84,16 @@ namespace EchoEscape
 
                 if (distanceToPlayer <= detectionRange && withinLeash)
                 {
-                    // 只有玩家既在感知范围内又没超出 leash，敌人才会追，避免追出关卡设计区域。
+// Only the player is within the sensing range but not beyond it leash, the enemy will chase you and avoid chasing you out of the level design area.
                     updateFacing(target.position.x - transform.position.x);
 
                     if (distanceToPlayer <= attackRange)
                     {
-                        // 进入攻击距离后不继续移动，交给 EnemyAttack 做前摇和攻击框检测。
+// Do not continue to move after entering attack range, hand over to EnemyAttack Do forward swing and attack frame detection.
                         return Decision.Attack;
                     }
 
-                    // 还没够到玩家时继续追击。
+// Continue to pursue the player before it reaches it.
                     ChasePlayer(target);
                     return Decision.None;
                 }
@@ -101,58 +101,58 @@ namespace EchoEscape
 
             if (patrol)
             {
-                // 没看到玩家时按正弦曲线在出生点附近巡逻。
+// When no player is seen, press the sine curve to patrol near the spawn point.
                 Patrol();
             }
             else
             {
-                // 不巡逻的敌人会慢慢回到出生点，防止被引走后永久偏离位置。
+// Enemies not patrolling will slowly return to their spawn point to prevent them from permanently deviating from their position after being lured away.
                 ReturnTowardStart();
             }
 
             return Decision.None;
         }
         /// <summary>
-        /// 按正弦曲线在出生点左右移动，让敌人形成简单巡逻路线。
+/// Move left and right around the spawn point according to a sinusoidal curve, allowing the enemy to form a simple patrol route.
         /// </summary>
         private void Patrol()
         {
-            // Sin 的输出在 -1 到 1 之间，乘 patrolDistance 后就是左右最大偏移。
+// Sin The output of -1 arrive 1 between, multiply patrolDistance The last is the maximum left and right offset.
             float offset = Mathf.Sin(Time.time * patrolSpeed) * patrolDistance;
             transform.position = new Vector3(startPosition.x + offset, startPosition.y, startPosition.z);
         }
         /// <summary>
-        /// 朝玩家移动。水平追击为主，verticalChaseStrength 只给一点垂直跟随，避免敌人上下乱飞。
+/// Moves towards the player. Mainly horizontal pursuit, verticalChaseStrength Only give a little vertical follow-up to prevent enemies from flying up and down.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
         private void ChasePlayer(Transform target)
         {
             Vector3 toPlayer = target.position - transform.position;
-            // 垂直方向削弱，敌人主要沿地面追玩家，视觉上更稳定。
+// The vertical direction is weakened. Enemies mainly chase players along the ground, making it visually more stable.
             Vector3 direction = new Vector3(toPlayer.x, toPlayer.y * verticalChaseStrength, 0f);
             if (direction.sqrMagnitude <= 0.0001f)
             {
                 return;
             }
 
-            // normalized 保证速度恒定，不会因为玩家距离远就瞬间移动更快。
+// normalized The speed is guaranteed to be constant, and the player will not move faster instantly just because the player is far away.
             transform.position += direction.normalized * chaseSpeed * Time.deltaTime;
             updateFacing(direction.x);
         }
         /// <summary>
-        /// 没有玩家目标时回到出生点，恢复关卡初始布置。
+/// When there is no player target, return to the spawn point and restore the initial layout of the level.
         /// </summary>
         private void ReturnTowardStart()
         {
             if (Vector2.Distance(transform.position, startPosition) <= 0.03f)
             {
-                // 非常接近出生点时直接对齐，避免因为小数误差来回抖动。
+// Align directly when very close to the spawn point to avoid jittering back and forth due to decimal errors.
                 transform.position = startPosition;
                 return;
             }
 
             Vector3 direction = startPosition - transform.position;
-            // 回家速度单独配置，通常比追击慢，让敌人行为更自然。
+// Home speed is configured separately and is generally slower than pursuit, allowing enemies to behave more naturally.
             transform.position += direction.normalized * returnSpeed * Time.deltaTime;
             updateFacing(direction.x);
         }

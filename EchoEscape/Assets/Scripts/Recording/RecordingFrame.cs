@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：Echo 录制的一帧数据。它记录玩家在某个物理帧的位置、时间、朝向和重力状态。
-    /// 玩法逻辑：ActionRecorder 连续保存很多 RecordingFrame，EchoReplayController 再按顺序读取，就能还原玩家刚才的路线。
-    /// 协作关系：ActionRecorder 写入；EchoReplayController 和 EchoAnimationController 读取。
+/// Script overview: Echo One frame of recorded data. It records the player's position, time, facing direction, and gravity state at a certain physics frame.
+/// Gameplay logic: ActionRecorder Save a lot in a row RecordingFrame，EchoReplayController Reading them in sequence will restore the player's previous route.
+/// Collaborates with: ActionRecorder write; EchoReplayController and EchoAnimationController Read.
     /// </summary>
     public struct RecordingFrame
     {
@@ -14,25 +14,25 @@ namespace EchoEscape
         public bool facingRight;
         public bool isGravityFlipped;
         /// <summary>
-        /// 构造函数：创建这个数据对象，并把传入的字段保存起来，方便其他脚本用统一格式读取。
+/// Constructor: Create this data object and save the incoming fields so that other scripts can read them in a unified format.
         /// </summary>
-        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
-        /// <param name="time">time 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="this(position">this(position 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="time">time 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingRight">facingRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="false">false 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="position">Target world coordinates, often used for respawn, spawning objects or recording Echo frame. </param>
+/// <param name="time">time Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="this(position">this(position Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="time">time Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingRight">facingRight Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="false">false Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public RecordingFrame(Vector3 position, float time, bool facingRight)
             : this(position, time, facingRight, false)
         {
         }
         /// <summary>
-        /// 构造函数：创建这个数据对象，并把传入的字段保存起来，方便其他脚本用统一格式读取。
+/// Constructor: Create this data object and save the incoming fields so that other scripts can read them in a unified format.
         /// </summary>
-        /// <param name="position">目标世界坐标，常用于重生、生成对象或记录 Echo 帧。</param>
-        /// <param name="time">time 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="facingRight">facingRight 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="isGravityFlipped">isGravityFlipped 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="position">Target world coordinates, often used for respawn, spawning objects or recording Echo frame. </param>
+/// <param name="time">time Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="facingRight">facingRight Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="isGravityFlipped">isGravityFlipped Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public RecordingFrame(Vector3 position, float time, bool facingRight, bool isGravityFlipped)
         {
             this.position = position;

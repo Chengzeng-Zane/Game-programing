@@ -3,22 +3,22 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：原型关卡视觉替换器。早期关卡对象通常是简单色块，这个脚本会给地面、平台、玩家等对象添加像素风 SpriteRenderer，让灰盒关卡看起来像正式关卡。
-    /// 玩法逻辑：它只替换或隐藏视觉，不改 BoxCollider2D、Trigger 和 Rigidbody2D，所以平台站立、死亡区、宝箱交互等玩法不会因为换图而改变。
-    /// 协作关系：由 EchoEscapeGameManager 在关卡开始时调用；依赖 PixelArtLibrary 读取平台和角色素材。
+/// Script overview: Prototype Level Visual Replacer. Early level objects are usually simple color blocks. This script will add pixel style to the ground, platform, players and other objects. SpriteRenderer, making gray box levels look like official levels.
+/// Gameplay logic: It only replaces or hides the visual, not changes BoxCollider2D、Trigger and Rigidbody2D, so the gameplay such as platform standing, death zone, chest interaction, etc. will not change due to changing the picture.
+/// Collaboration: by EchoEscapeGameManager Called at the start of the level; depends on PixelArtLibrary Load platform and character materials.
     /// </summary>
     public class PrototypeVisualSkinner : MonoBehaviour
     {
         private const string PixelVisualName = "Pixel Art Visual";
         /// <summary>
-        /// Unity 在第一帧前调用。这里通常连接场景对象，启动初始 UI、教程或关卡流程。
+/// Unity Called before the first frame. Here the scene object is usually connected to start the initial UI, tutorial or level process.
         /// </summary>
         private void Start()
         {
             SkinAll();
         }
         /// <summary>
-        /// 对场景里的角色和关卡色块统一应用像素风视觉。它只改显示，不改 Collider。
+/// Uniformly apply pixel style visuals to the characters and level color blocks in the scene. It only changes the display, not the Collider。
         /// </summary>
         public void SkinAll()
         {
@@ -26,7 +26,7 @@ namespace EchoEscape
             SkinLevelBlocks();
         }
         /// <summary>
-        /// 给玩家补充备用像素视觉；如果已经有正式 PlayerAnimationController，就关闭备用视觉。
+/// Adds alternate pixel vision to players; if there is already an official PlayerAnimationController, turn off backup vision.
         /// </summary>
         private void SkinCharacters()
         {
@@ -38,7 +38,7 @@ namespace EchoEscape
 
             if (player.GetComponentInChildren<PlayerAnimationController>(true) != null)
             {
-                // 正式 Ruby 动画存在时，不能再显示 fallback 像素角色，否则会双影重叠。
+// formal Ruby When the animation exists, it cannot be displayed again. fallback Pixel characters, otherwise double shadows will overlap.
                 PixelCharacterVisual existingFallbackVisual = player.GetComponent<PixelCharacterVisual>();
                 if (existingFallbackVisual != null)
                 {
@@ -51,15 +51,15 @@ namespace EchoEscape
 
             if (player.GetComponent<PixelCharacterVisual>() == null)
             {
-                // 旧灰盒场景没有正式动画时，自动加一个备用像素角色，保证玩家不是方块。
+// When there is no official animation in the old gray box scene, a backup pixel character is automatically added to ensure that the player is not a block.
                 PixelCharacterVisual fallbackVisual = player.gameObject.AddComponent<PixelCharacterVisual>();
                 fallbackVisual.SetStyle(false, Color.white);
             }
         }
         /// <summary>
-        /// 隐藏对应 UI 或视觉状态，通常在提示结束、关闭弹窗或清理流程时调用。
+/// Hide correspondence UI Or visual state, usually called when the prompt ends, the pop-up window is closed, or the process is cleaned up.
         /// </summary>
-        /// <param name="playerTransform">玩家根对象 Transform。</param>
+/// <param name="playerTransform">player root object Transform。</param>
         private void HideFallbackCharacterSprite(Transform playerTransform)
         {
             if (playerTransform == null)
@@ -80,7 +80,7 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 遍历场景里的灰盒 MeshRenderer，根据对象名字替换成对应像素 Sprite。
+/// Traverse the gray boxes in the scene MeshRenderer, replace it with the corresponding pixel according to the object name Sprite。
         /// </summary>
         private void SkinLevelBlocks()
         {
@@ -90,12 +90,12 @@ namespace EchoEscape
                 GameObject target = renderer.gameObject;
                 if (target.GetComponent<BoxCollider2D>() == null)
                 {
-                    // 只处理有关卡碰撞的色块，避免误改纯装饰 Mesh。
+// Only process color blocks related to card collision to avoid accidentally changing pure decoration Mesh。
                     continue;
                 }
 
                 string lowerName = target.name.ToLowerInvariant();
-                // 这里依赖对象命名：Ground/Platform/Door/Chest 等会映射到不同 Sprite。
+// This relies on object naming: Ground/Platform/Door/Chest It will be mapped to different Sprite。
                 if (lowerName.Contains("ground") || lowerName.Contains("ledge") || lowerName.Contains("platform"))
                 {
                     ReplaceWithSprite(target, PixelArtLibrary.GroundTile, true, new Color(1f, 1f, 1f));
@@ -123,24 +123,24 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 隐藏原本的灰盒 MeshRenderer，并创建或更新子物体 Pixel Art Visual 来显示像素 Sprite。
+/// Hide original gray box MeshRenderer, and create or update sub-objects Pixel Art Visual to display pixels Sprite。
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <param name="sprite">要显示的 Sprite 图片。</param>
-        /// <param name="tiled">tiled 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <param name="sprite">to be displayed Sprite picture. </param>
+/// <param name="tiled">tiled Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
         private void ReplaceWithSprite(GameObject target, Sprite sprite, bool tiled, Color color)
         {
             if (sprite == null)
             {
-                // 素材缺失时不改原对象，避免关卡变成不可见。
+// When the material is missing, the original object is not changed to prevent the level from becoming invisible.
                 return;
             }
 
             MeshRenderer meshRenderer = target.GetComponent<MeshRenderer>();
             if (meshRenderer != null)
             {
-                // 只隐藏视觉，不删除对象，Collider 和脚本仍留在原物体上。
+// Only hides the visual, does not delete the object, Collider and the script remains on the original object.
                 meshRenderer.enabled = false;
             }
 
@@ -153,7 +153,7 @@ namespace EchoEscape
             Transform visualTransform = target.transform.Find(PixelVisualName);
             if (visualTransform == null)
             {
-                // 子物体承载像素图，根物体继续保留碰撞和玩法脚本。
+// The child object carries the pixel map, and the root object continues to retain collision and gameplay scripts.
                 GameObject visualObject = new GameObject(PixelVisualName);
                 visualTransform = visualObject.transform;
                 visualTransform.SetParent(target.transform, false);
@@ -174,7 +174,7 @@ namespace EchoEscape
 
             if (tiled)
             {
-                // 平台/地面需要平铺贴图，尺寸直接跟 BoxCollider2D 对齐。
+// platform/The ground needs to be tiled and mapped, and the size is directly related to BoxCollider2D Alignment.
                 spriteRenderer.drawMode = SpriteDrawMode.Tiled;
                 spriteRenderer.tileMode = SpriteTileMode.Continuous;
 
@@ -188,15 +188,15 @@ namespace EchoEscape
             }
             else
             {
-                // 门、宝箱、出口等非平台对象按 Collider 尺寸缩放一张 Sprite。
+// Click on non-platform objects such as doors, treasure chests, and exits Collider Scale one size Sprite。
                 FitSpriteToCollider(target, visualTransform, spriteRenderer);
             }
         }
         /// <summary>
-        /// 根据对象名字决定 SpriteRenderer 排序层级，让宝箱、按钮、门显示在平台前面。
+/// Determined based on object name SpriteRenderer Sort the levels so that treasure chests, buttons, and doors appear in front of the platform.
         /// </summary>
-        /// <param name="objectName">要创建或查找的 GameObject 名称。</param>
-        /// <returns>返回整数结果，通常表示数量、索引或本次结算数量。</returns>
+/// <param name="objectName">to create or find GameObject name. </param>
+/// <returns>Returns an integer result, usually representing the quantity, index, or quantity of this settlement. </returns>
         private int SortingOrderFor(string objectName)
         {
             string lowerName = objectName.ToLowerInvariant();
@@ -213,24 +213,24 @@ namespace EchoEscape
             return 0;
         }
         /// <summary>
-        /// 将非平铺 Sprite 缩放到 BoxCollider2D 的大小，让视觉和交互范围对齐。
+/// will not tile Sprite zoom to BoxCollider2D The size aligns the visual and interactive scope.
         /// </summary>
-        /// <param name="target">目标 Transform 或 GameObject，函数会读取它的位置、组件或状态。</param>
-        /// <param name="visualTransform">visualTransform 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="spriteRenderer">spriteRenderer 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="target">Target Transform or GameObject, the function reads its position, component, or state. </param>
+/// <param name="visualTransform">visualTransform Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="spriteRenderer">spriteRenderer Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         private void FitSpriteToCollider(GameObject target, Transform visualTransform, SpriteRenderer spriteRenderer)
         {
             BoxCollider2D box = target.GetComponent<BoxCollider2D>();
             if (box == null || spriteRenderer.sprite == null)
             {
-                // 没有 Collider 或 Sprite 时无法计算缩放比例。
+// No Collider or Sprite The scaling factor cannot be calculated.
                 return;
             }
 
             Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
             if (spriteSize.x <= 0f || spriteSize.y <= 0f)
             {
-                // 防止除以 0。
+// Prevent division by 0。
                 return;
             }
 

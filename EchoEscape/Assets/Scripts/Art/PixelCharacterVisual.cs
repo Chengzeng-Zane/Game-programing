@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：早期备用角色视觉脚本，用于给玩家或 Echo 快速生成一个像素角色 SpriteRenderer。现在主角更完整的动画由 PlayerAnimationController 负责，但这个脚本仍可作为旧场景或 Echo 视觉的 fallback。
-    /// 玩法逻辑：脚本根据 Rigidbody2D 速度判断角色是在待机还是奔跑，并自动隐藏旧的火柴人线条视觉，保证角色显示更接近最终像素风格。
-    /// 协作关系：PrototypeVisualSkinner 可以给角色自动补上它；PixelArtLibrary 提供待机和跑步帧；它只影响显示，不改变移动、攻击或碰撞。
+/// Script overview: Early alternate character visual scripts to give players or Echo Quickly generate a pixel character SpriteRenderer. The main character is now more fully animated by PlayerAnimationController responsible, but this script can still be used as an old scene or Echo visual fallback。
+/// Gameplay logic: script based Rigidbody2D The speed determines whether the character is idle or running, and automatically hides the old stickman line visual to ensure that the character display is closer to the final pixel style.
+/// Collaborates with: PrototypeVisualSkinner It can be automatically added to the character; PixelArtLibrary Provides idle and running frames; it only affects display and does not change movement, attack, or collision.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public class PixelCharacterVisual : MonoBehaviour
@@ -24,7 +24,7 @@ namespace EchoEscape
         private float animationTimer;
         private int frameIndex;
         /// <summary>
-        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
+/// Unity Automatically called when creating an object. This is where components are usually cached, resources are loaded, and the script's internal state is prepared.
         /// </summary>
         private void Awake()
         {
@@ -35,21 +35,21 @@ namespace EchoEscape
             lastPosition = transform.position;
         }
         /// <summary>
-        /// 设置这个备用视觉是玩家还是 Echo，并应用对应颜色。旧场景或 fallback 视觉会调用它。
+/// Set this alternate vision to be the player or Echo, and apply the corresponding color. old scene or fallback Vision calls it.
         /// </summary>
-        /// <param name="echoVisual">echoVisual 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="visualTint">visualTint 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="echoVisual">echoVisual Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="visualTint">visualTint Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void SetStyle(bool echoVisual, Color visualTint)
         {
             isEcho = echoVisual;
             tint = visualTint;
-            // 切换成像素 Sprite 后隐藏旧的 LineRenderer 火柴人，避免两套视觉重叠。
+// switch to pixels Sprite Hide old after LineRenderer Stickman, avoid visual overlap between the two sets.
             HideStickFigureLines();
             BuildSprite();
             ApplyStyle();
         }
         /// <summary>
-        /// Unity 在 Update 之后调用。这里常用于相机或视觉同步，确保读到的是本帧最终状态。
+/// Unity exist Update Called afterwards. This is often used for camera or visual synchronization to ensure that the final state of this frame is read.
         /// </summary>
         private void LateUpdate()
         {
@@ -64,15 +64,17 @@ namespace EchoEscape
 
             if (body != null && body.bodyType != RigidbodyType2D.Kinematic)
             {
-                // 玩家本体使用 Rigidbody 速度更准确；Echo 这类 Kinematic 对象用位置差估算速度。
+// Player body use Rigidbody Speed ​​is more accurate; Echo This type Kinematic Objects use position differences to estimate velocity.
                 visualVelocity = body.velocity;
             }
 
             bool moving = Mathf.Abs(visualVelocity.x) > 0.08f;
             if (Mathf.Abs(visualVelocity.x) > 0.05f)
             {
-                // 根据水平速度翻转 Sprite，视觉朝向和移动方向一致。
-                spriteRenderer.flipX = visualVelocity.x < 0f;
+// flip based on horizontal speed Sprite, the visual facing direction is consistent with the moving direction.
+                bool isGravityFlipped = body != null && body.gravityScale < 0f;
+                bool shouldFlip = visualVelocity.x < 0f;
+                spriteRenderer.flipX = isGravityFlipped ? !shouldFlip : shouldFlip;
             }
 
             Sprite[] frames = moving ? PixelArtLibrary.KnightRunFrames : PixelArtLibrary.KnightIdleFrames;
@@ -82,7 +84,7 @@ namespace EchoEscape
             lastPosition = position;
         }
         /// <summary>
-        /// 组装一组运行时对象或 UI 元素，用来形成完整菜单、面板或视觉结构。
+/// Assemble a set of runtime objects or UI Elements used to form a complete menu, panel, or visual structure.
         /// </summary>
         private void BuildSprite()
         {
@@ -118,7 +120,7 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+/// Apply the calculated state to the object, UI, animation or renderer to keep visuals and logic in sync.
         /// </summary>
         private void ApplyStyle()
         {
@@ -133,12 +135,12 @@ namespace EchoEscape
             spriteRenderer.sortingOrder = isEcho ? 7 : 8;
         }
         /// <summary>
-        /// 播放备用像素角色动画。key 变化时从第一帧重新开始，同一动画则按帧率循环。
+/// Play alternate pixel character animation. key When changing, it restarts from the first frame, and the same animation loops according to the frame rate.
         /// </summary>
-        /// <param name="key">缓存 Sprite 时使用的唯一 key，避免重复切图。</param>
-        /// <param name="frames">frames 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="framesPerSecond">动画播放速度，每秒显示多少帧。</param>
-        /// <param name="deltaTime">当前帧经过的时间，用来推进动画计时。</param>
+/// <param name="key">cache Sprite the only one used when key, to avoid repeated cutting. </param>
+/// <param name="frames">frames Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="framesPerSecond">Animation playback speed, how many frames are displayed per second. </param>
+/// <param name="deltaTime">The elapsed time of the current frame, used to advance animation timing. </param>
         private void PlayAnimation(string key, Sprite[] frames, float framesPerSecond, float deltaTime)
         {
             if (frames == null || frames.Length == 0)
@@ -148,7 +150,7 @@ namespace EchoEscape
 
             if (animationKey != key)
             {
-                // 动画状态切换时重置帧索引，避免从上一段动画的中间帧开始。
+// Reset the frame index when the animation state switches to avoid starting from the middle frame of the previous animation.
                 animationKey = key;
                 frameIndex = 0;
                 animationTimer = 0f;
@@ -160,7 +162,7 @@ namespace EchoEscape
             float frameDuration = 1f / Mathf.Max(1f, framesPerSecond);
             while (animationTimer >= frameDuration)
             {
-                // 循环播放 idle/run 帧，作为早期备用角色动画。
+// Loop play idle/run Frames, as early backup character animations.
                 animationTimer -= frameDuration;
                 frameIndex = (frameIndex + 1) % frames.Length;
             }
@@ -168,14 +170,14 @@ namespace EchoEscape
             spriteRenderer.sprite = frames[frameIndex];
         }
         /// <summary>
-        /// 隐藏对应 UI 或视觉状态，通常在提示结束、关闭弹窗或清理流程时调用。
+/// Hide correspondence UI Or visual state, usually called when the prompt ends, the pop-up window is closed, or the process is cleaned up.
         /// </summary>
         private void HideStickFigureLines()
         {
             LineRenderer[] lineRenderers = GetComponentsInChildren<LineRenderer>(true);
             foreach (LineRenderer lineRenderer in lineRenderers)
             {
-                // 旧火柴人由 LineRenderer 组成，像素角色启用后它们只需要隐藏。
+// old stickman made of LineRenderer Composed, they just need to be hidden after the pixel character is enabled.
                 lineRenderer.enabled = false;
             }
         }

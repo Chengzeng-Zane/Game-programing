@@ -4,9 +4,10 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：Echo 的动画控制器。它让 Echo 回放时看起来像玩家的灵魂复制体，而不是静态方块。
-    /// 玩法逻辑：EchoReplayController 每帧把 RecordingFrame 传进来；脚本根据当前帧和上一帧的位置差判断 Echo 是待机、跑步、跳跃还是攻击，并同步反重力状态到 Animator 参数。
-    /// 协作关系：由 EchoReplayController 驱动；使用和 PlayerAnimationController 相同的 Ruby 素材。
+/// Echo Visual animation controller for clones.
+/// EchoReplayController Each frame RecordingFrame Pass in, this script selects according to the position change and gravity state during recording idle、run or jump image.
+/// it only controls EchoVisual of SpriteRenderer, facing direction, transparent blue appearance and anti-gravity upside down display, and does not participate in real movement, button triggering or death logic.
+/// Echo The real position of EchoReplayController control, Echo The button is pressed EchoReplay on the root object BoxCollider2D trigger。
     /// </summary>
     public class EchoAnimationController : MonoBehaviour
     {
@@ -16,10 +17,11 @@ namespace EchoEscape
         [SerializeField] private float idleFramesPerSecond = 8f;
         [SerializeField] private float runFramesPerSecond = 12f;
         [SerializeField] private float jumpFramesPerSecond = 10f;
-        [SerializeField] private float horizontalRunThreshold = 0.08f;
+        [SerializeField] private float horizontalRunThreshold = 0.35f;
         [SerializeField] private float verticalJumpThreshold = 0.18f;
-        [SerializeField] private Vector3 normalVisualOffset = new Vector3(0f, -0.58f, -0.03f);
-        [SerializeField] private Vector3 flippedVisualOffset = new Vector3(0f, 0.58f, -0.03f);
+        [SerializeField] private Vector3 normalVisualOffset = new Vector3(0f, -0.31f, -0.03f);
+        [SerializeField] private Vector3 flippedVisualOffset = new Vector3(0f, 0.31f, -0.03f);
+        [SerializeField] private int idleHoldFrameIndex = 4;
 
         private const string IdlePath = "Ancient Forest 1.6/Ruby V4 - Demo/Idle/ruby_idle-Sheet";
         private const string RunPath = "Ancient Forest 1.6/Ruby V4 - Demo/Run/run-Sheet";
@@ -39,8 +41,11 @@ namespace EchoEscape
             Run,
             Jump
         }
+
         /// <summary>
-        /// Unity 创建对象时自动调用。这里通常缓存组件、加载资源，并把脚本内部状态准备好。
+/// Unity create EchoVisual when called.
+/// Cache here SpriteRenderer and Animator, disable Animator, load Ruby of idle/run/jump Sprite frame, and display the natural standing frame first.
+/// Disable Animator is to prevent Animator Override script manually selected Sprite, otherwise Echo May display incorrect posture.
         /// </summary>
         private void Awake()
         {
@@ -54,6 +59,11 @@ namespace EchoEscape
                 animator = GetComponent<Animator>();
             }
 
+            if (animator != null)
+            {
+                animator.enabled = false;
+            }
+
             idleFrames = LoadFrames(IdlePath);
             runFrames = LoadFrames(RunPath);
             jumpFrames = LoadFrames(JumpPath);
@@ -64,30 +74,56 @@ namespace EchoEscape
             }
 
             SetState(VisualState.Idle);
+            HoldIdleFrame();
         }
+
         /// <summary>
-        /// Unity 每帧调用。这里处理输入、计时器、UI 状态或非物理的实时刷新。
+/// ActionRecorder create Echo is called when EchoVisual Position and scale aligned to current player PlayerVisual。
+/// enter normalOffset is the local offset at normal gravity, visualScale yes PlayerVisual local scaling.
+/// When anti-gravity, it will automatically Y Negate the offset and let it hang upside down Echo Still close to the corresponding platform surface.
+        /// </summary>
+/// <param name="normalOffset">Under normal gravity EchoVisual relatively EchoReplay The local offset of the root object. </param>
+/// <param name="visualScale">EchoVisual The local scaling used, usually from the player PlayerVisual。</param>
+        public void ConfigureVisualTransform(Vector3 normalOffset, Vector3 visualScale)
+        {
+            normalVisualOffset = normalOffset;
+            flippedVisualOffset = new Vector3(normalOffset.x, -normalOffset.y, normalOffset.z);
+            transform.localPosition = normalVisualOffset;
+            transform.localScale = visualScale;
+        }
+
+        /// <summary>
+/// Unity Called every frame.
+/// only run and jump Need to advance animation normally; idle Fixed at the natural standing frame to avoid looping into unnatural transition poses when the clone is stationary.
         /// </summary>
         private void Update()
         {
+            if (currentState == VisualState.Idle)
+            {
+                HoldIdleFrame();
+                return;
+            }
+
             AdvanceFrame();
         }
+
         /// <summary>
-        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+/// EchoReplayController Called every playback physics frame.
+/// This function uses the position difference between the current frame and the previous frame to calculate Echo moving speed, select run、jump or idle, and synchronize the facing direction and anti-gravity upside down display.
+/// enter frame is the current recording frame, previousFrame is the previous frame, finished express Echo Whether the last frame has been reached.
         /// </summary>
-        /// <param name="frame">当前 Echo 录制或回放帧。</param>
-        /// <param name="previousFrame">上一帧 Echo 数据，用来比较移动方向、速度和状态变化。</param>
-        /// <param name="finished">finished 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="frame">current Echo Playback frame, including position, time, facing direction and gravity flip state. </param>
+/// <param name="previousFrame">Previous frame Echo Data used to calculate movement speed. </param>
+/// <param name="finished">for true time means Echo Playback has been completed, it should stop at the last position and display idle。</param>
         public void ApplyFrame(RecordingFrame frame, RecordingFrame previousFrame, bool finished)
         {
-            // 用当前帧和上一帧的位置差估算 Echo 速度，再决定显示 idle/run/jump。
             float frameTime = Mathf.Max(0.0001f, frame.time - previousFrame.time);
             Vector2 velocity = ((Vector2)frame.position - (Vector2)previousFrame.position) / frameTime;
 
             if (finished)
             {
-                // 回放结束后 Echo 停在最后位置压机关，所以视觉也固定成 idle。
                 SetState(VisualState.Idle);
+                HoldIdleFrame();
             }
             else if (Mathf.Abs(velocity.y) > verticalJumpThreshold)
             {
@@ -100,24 +136,26 @@ namespace EchoEscape
             else
             {
                 SetState(VisualState.Idle);
+                HoldIdleFrame();
             }
 
             if (spriteRenderer != null)
             {
-                // Echo 使用玩家同一套素材，但用半透明青色区分本体和回放。
-                spriteRenderer.flipX = !frame.facingRight;
+                bool shouldFlip = !frame.facingRight;
+                spriteRenderer.flipX = frame.isGravityFlipped ? !shouldFlip : shouldFlip;
                 spriteRenderer.color = echoTint;
             }
 
-            // 录制帧里保存了重力状态，所以 Echo 可以显示倒挂时的视觉偏移和旋转。
             transform.localPosition = frame.isGravityFlipped ? flippedVisualOffset : normalVisualOffset;
             transform.localRotation = Quaternion.Euler(0f, 0f, frame.isGravityFlipped ? 180f : 0f);
             UpdateAnimatorParameters(Mathf.Abs(velocity.x), Mathf.Abs(velocity.y) <= verticalJumpThreshold, velocity.y, frame.isGravityFlipped);
         }
+
         /// <summary>
-        /// 切换 Echo 当前动画状态，并选择对应的玩家动画帧数组。
+/// switch Echo the current animation state and put currentFrames Point to the corresponding Ruby Array of sprite frames.
+/// enter nextState is the target animation state; the function has no return value, and the result is directly reflected in SpriteRenderer superior.
         /// </summary>
-        /// <param name="nextState">要切换到的新动画或逻辑状态。</param>
+/// <param name="nextState">The new animation state to switch to. </param>
         private void SetState(VisualState nextState)
         {
             if (currentState == nextState && currentFrames != null)
@@ -136,9 +174,38 @@ namespace EchoEscape
             currentFrameIndex = 0;
             frameTimer = 0f;
             ApplyCurrentFrame();
+
+            if (nextState == VisualState.Idle)
+            {
+                HoldIdleFrame();
+            }
         }
+
         /// <summary>
-        /// 推进动画帧或流程计时，让动画按帧率继续播放。
+/// Echo Fixed to the same natural standing frame as the player when idle.
+/// so Echo It will not loop to when still or after playback is completed. idle Transition frames in a sequence that look bloated, suspended, or walking.
+        /// </summary>
+        private void HoldIdleFrame()
+        {
+            if (idleFrames == null || idleFrames.Length == 0)
+            {
+                return;
+            }
+
+            int targetFrameIndex = Mathf.Clamp(idleHoldFrameIndex, 0, idleFrames.Length - 1);
+            if (currentFrames != idleFrames || currentFrameIndex == targetFrameIndex)
+            {
+                return;
+            }
+
+            currentFrameIndex = targetFrameIndex;
+            frameTimer = 0f;
+            ApplyCurrentFrame();
+        }
+
+        /// <summary>
+/// Advance by the frame rate of the current animation state run or jump animation.
+/// idle Don't loop through this because idle already by HoldIdleFrame Fixed to natural standing frame.
         /// </summary>
         private void AdvanceFrame()
         {
@@ -163,8 +230,10 @@ namespace EchoEscape
                 ApplyCurrentFrame();
             }
         }
+
         /// <summary>
-        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+/// Bundle currentFrameIndex pointed Sprite apply to SpriteRenderer。
+/// If the material is empty, skip it directly to avoid Echo Null reference error when generating.
         /// </summary>
         private void ApplyCurrentFrame()
         {
@@ -173,18 +242,19 @@ namespace EchoEscape
                 spriteRenderer.sprite = currentFrames[Mathf.Clamp(currentFrameIndex, 0, currentFrames.Length - 1)];
             }
         }
+
         /// <summary>
-        /// 如果 Echo 视觉上还有 Animator，就同步速度、落地和反重力参数；没有 Animator 时直接跳过。
+/// if EchoVisual reserved on Animator Controller, to synchronize speed, landing and anti-gravity parameters.
+/// at present Animator It is disabled by default, and the main animation is controlled by this script's frame change; this function is reserved for re-enabling it in the future. Animator There is no need to rewrite the interface.
         /// </summary>
-        /// <param name="speed">水平速度，用于设置 Animator 参数。</param>
-        /// <param name="isGrounded">玩家或 Echo 是否落地，用于动画状态判断。</param>
-        /// <param name="verticalVelocity">竖直速度，用于跳跃/下落动画参数。</param>
-        /// <param name="isGravityFlipped">isGravityFlipped 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="speed">Horizontal speed, used to set Animator of Speed parameter. </param>
+/// <param name="isGrounded">Whether it is close to the landing state, used to set Animator of IsGrounded parameter. </param>
+/// <param name="verticalVelocity">Vertical speed, used to set Animator of VerticalVelocity parameter. </param>
+/// <param name="isGravityFlipped">Whether it is in anti-gravity state, used to set Animator of IsGravityFlipped parameter. </param>
         private void UpdateAnimatorParameters(float speed, bool isGrounded, float verticalVelocity, bool isGravityFlipped)
         {
-            if (animator == null || animator.runtimeAnimatorController == null)
+            if (animator == null || !animator.enabled || animator.runtimeAnimatorController == null)
             {
-                // 当前主要用脚本换 Sprite，Animator 缺失不影响 Echo 回放。
                 return;
             }
 
@@ -193,11 +263,12 @@ namespace EchoEscape
             SetAnimatorFloat("VerticalVelocity", verticalVelocity);
             SetAnimatorBool("IsGravityFlipped", isGravityFlipped);
         }
+
         /// <summary>
-        /// 安全设置 Animator float 参数。只有参数存在时才设置，避免 Controller 不匹配时报错。
+/// Security settings Animator float parameter. Set only when the parameter exists to avoid Animator Controller If there is no match, an error will occur.
         /// </summary>
-        /// <param name="parameterName">Animator 参数名称。</param>
-        /// <param name="value">要设置的新参数值。</param>
+/// <param name="parameterName">Animator Parameter name. </param>
+/// <param name="value">to be written float value. </param>
         private void SetAnimatorFloat(string parameterName, float value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Float))
@@ -205,11 +276,12 @@ namespace EchoEscape
                 animator.SetFloat(parameterName, value);
             }
         }
+
         /// <summary>
-        /// 安全设置 Animator bool 参数。只有参数存在时才设置，避免 Controller 不匹配时报错。
+/// Security settings Animator bool parameter. Set only when the parameter exists to avoid Animator Controller If there is no match, an error will occur.
         /// </summary>
-        /// <param name="parameterName">Animator 参数名称。</param>
-        /// <param name="value">要设置的新参数值。</param>
+/// <param name="parameterName">Animator Parameter name. </param>
+/// <param name="value">to be written bool value. </param>
         private void SetAnimatorBool(string parameterName, bool value)
         {
             if (HasAnimatorParameter(parameterName, AnimatorControllerParameterType.Bool))
@@ -217,12 +289,14 @@ namespace EchoEscape
                 animator.SetBool(parameterName, value);
             }
         }
+
         /// <summary>
-        /// 检查 Animator Controller 是否包含指定参数，避免直接 SetFloat/SetBool 时抛错。
+/// examine Animator Controller Whether to include specified parameters.
+/// enter parameterName is the parameter name, type is the expected type; returns true Indicates that this parameter can be safely set.
         /// </summary>
-        /// <param name="parameterName">Animator 参数名称。</param>
-        /// <param name="type">期望的 Animator 参数类型。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="parameterName">Animator Parameter name. </param>
+/// <param name="type">expected Animator Parameter type. </param>
+/// <returns>if Animator If there are parameters with the same name and the same type, return true; Otherwise return false。</returns>
         private bool HasAnimatorParameter(string parameterName, AnimatorControllerParameterType type)
         {
             AnimatorControllerParameter[] parameters = animator.parameters;
@@ -237,15 +311,16 @@ namespace EchoEscape
 
             return false;
         }
+
         /// <summary>
-        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
+/// from Resources Directory loads and sorts by name Ruby animation frames.
+/// enter resourcePath yes Resources Path without extension; returns sorted Sprite Array, an empty array is returned when the resource does not exist.
         /// </summary>
-        /// <param name="resourcePath">Resources 目录下的资源路径，不包含扩展名。</param>
-        /// <returns>返回一组 Sprite 动画帧；资源不存在时可能是空数组。</returns>
+/// <param name="resourcePath">Resources The resource path in the directory, excluding the file extension. </param>
+/// <returns>sorted Sprite Array of animation frames. </returns>
         private static Sprite[] LoadFrames(string resourcePath)
         {
             Sprite[] frames = Resources.LoadAll<Sprite>(resourcePath);
-            // 按名字排序，保证 Echo 动画帧顺序和玩家动画一致。
             Array.Sort(frames, (left, right) => string.Compare(left.name, right.name, StringComparison.Ordinal));
             return frames;
         }

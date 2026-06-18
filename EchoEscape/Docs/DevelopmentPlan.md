@@ -19,11 +19,11 @@ The final build is organised through Unity Build Settings in this order:
 3. `Level 2 - Relics of the Forest`
 4. `Level 3 - Escape from the Silent Forest`
 
-There is also a separate evidence scene, `Level 1 - Graybox Prototype`, which demonstrates the early graybox version of the first level. It is not intended to replace the polished Level 1 scene in the final build.
+The early Level 1 graybox version was used as development evidence while the level was being planned. After screenshots/evidence were captured, the temporary graybox scene was removed from the Unity project so the final project only keeps the playable polished scenes.
 
 ## Week 1 - Core Gameplay and Graybox Foundation
 
-- Set up the Unity project, GitHub repository, `.gitignore`, README, and early documentation.
+- Set up the Unity project, GitHub repository, `.gitignore`, and early documentation.
 - Built the first graybox version of the platforming layout using simple blocks and placeholder objects.
 - Implemented player movement, jumping, Rigidbody2D physics, Collider2D collision, camera follow, and basic level flow.
 - Started the Echo mechanic: the player records movement with `Q`, stores frames, and replays them as a separate Echo object with `E`.
@@ -59,7 +59,7 @@ There is also a separate evidence scene, `Level 1 - Graybox Prototype`, which de
 - Fixed Echo scale, collision, gravity-flip orientation, and button interaction issues.
 - Improved death flow, story intro skipping after death reloads, and Level 3 ending order.
 - Added Chinese script comments to support code explanation during presentation.
-- Updated credits, testing notes, README, and final report evidence.
+- Updated credits, testing notes, and final report evidence.
 
 ## Scope Decisions
 

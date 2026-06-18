@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：相机跟随脚本。它让主相机跟随玩家移动，保证玩家在横版关卡中一直处于可见范围。
-    /// 玩法逻辑：相机不直接瞬移到玩家身上，而是用 SmoothDamp 平滑靠近目标位置，这样移动和跳跃时画面不会太抖。
-    /// 协作关系：挂在 Main Camera 上，target 指向 Player；只改相机位置，不影响玩家速度、碰撞或输入。
+/// Script overview: Camera follows the script. It allows the main camera to follow the movement of the player, ensuring that the player is always visible in the horizontal version of the level.
+/// Gameplay logic: The camera does not teleport directly to the player, but uses SmoothDamp Smoothly approach the target position so the screen won't be too shaky when moving and jumping.
+/// Collaboration: hanging on Main Camera superior, target point to Player; Only changes the camera position and does not affect player speed, collision or input.
     /// </summary>
     public class CameraFollow : MonoBehaviour
     {
@@ -13,7 +13,7 @@ namespace EchoEscape
         public Vector3 offset = new Vector3(0f, 1.25f, -10f);
         public float followSpeed = 6f;
         /// <summary>
-        /// Unity 在 Update 之后调用。这里常用于相机或视觉同步，确保读到的是本帧最终状态。
+/// Unity exist Update Called afterwards. This is often used for camera or visual synchronization to ensure that the final state of this frame is read.
         /// </summary>
         private void LateUpdate()
         {

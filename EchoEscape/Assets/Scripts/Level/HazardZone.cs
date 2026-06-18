@@ -6,9 +6,9 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：普通危险区脚本，用于坑、河流、地图底部死亡边界等。
-    /// 玩法逻辑：玩家进入触发器后走统一死亡流程：播放死亡反馈、显示 You Died、丢失 pending loot，并重新加载当前关卡。它也提供 fallback，避免没有 GameManager 时完全没反应。
-    /// 协作关系：EchoEscapeGameManager 是主要死亡入口；GravityFlipVoidKillZone 复用它的公共死亡函数。
+/// Script overview: Common danger zone scripts, used for pits, rivers, death boundaries at the bottom of maps, etc.
+/// Gameplay logic: After the player enters the trigger, he will go through a unified death process: playback of death feedback and display You Died, lost pending loot, and reload the current level. It also provides fallback, to avoid not having GameManager There was no response at all.
+/// Collaborates with: EchoEscapeGameManager It is the main entrance to death; GravityFlipVoidKillZone Reuse its public death function.
     /// </summary>
     public class HazardZone : MonoBehaviour
     {
@@ -19,9 +19,9 @@ namespace EchoEscape
 
         private static bool fallbackDeathInProgress;
         /// <summary>
-        /// 玩家进入普通危险区时触发死亡流程。这个函数会过滤 Echo 和非玩家对象，避免机关或回放误杀玩家。
+/// The death process is triggered when the player enters the normal danger zone. This function will filter Echo and non-player objects to avoid accidental killing of players by mechanisms or replays.
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
         private void OnTriggerEnter2D(Collider2D other)
         {
             bool isPlayer = other != null &&
@@ -29,19 +29,19 @@ namespace EchoEscape
 
             if (!isPlayer)
             {
-                // 河流、坑底和底部死亡区只杀真正玩家；Echo 或其他触发器进入时不会重载关卡。
+// Only real players will be killed in rivers, pit bottoms and bottom death zones; Echo or other triggers will not reload the level when entered.
                 return;
             }
 
             KillPlayerUsingExistingDeathFlow(this, deathReason, name, debugLogs);
         }
         /// <summary>
-        /// 公共死亡入口。优先调用 EchoEscapeGameManager.KillPlayer；如果场景没有 GameManager，就用 fallback UI 和重载流程避免游戏卡死。
+/// Public death entrance. Priority call EchoEscapeGameManager. KillPlayer; If the scene does not have GameManager, just use fallback UI and reload process to avoid game freezes.
         /// </summary>
-        /// <param name="runner">runner 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="reason">死亡原因或事件原因，用于死亡 UI、状态提示和调试日志。</param>
-        /// <param name="sourceName">sourceName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="writeDebugLogs">writeDebugLogs 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="runner">runner Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="reason">cause of death or event, used for death UI, status prompts and debugging logs. </param>
+/// <param name="sourceName">sourceName Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="writeDebugLogs">writeDebugLogs Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public static void KillPlayerUsingExistingDeathFlow(MonoBehaviour runner, string reason, string sourceName, bool writeDebugLogs)
         {
             bool hasGameManager = EchoEscapeGameManager.Instance != null;
@@ -54,47 +54,47 @@ namespace EchoEscape
 
             if (hasGameManager)
             {
-                // 正常关卡都应该走 GameManager：它会处理死亡动画、UI、pending loot 丢失和重载当前关卡。
+// You should go through all normal levels GameManager: It will handle the death animation, UI、pending loot Lose and reload the current level.
                 EchoEscapeGameManager.Instance.KillPlayer(reason);
                 return;
             }
 
             if (fallbackDeathInProgress || runner == null)
             {
-                // fallback 只允许启动一次，避免多个危险区同时触发导致重复加载场景。
+// fallback It is only allowed to be started once to avoid multiple dangerous zones triggering at the same time resulting in repeated loading of scenes.
                 return;
             }
 
-            // 没有 GameManager 的测试场景也要能死亡并重载，方便单独测试危险区。
+// No GameManager The test scene should also be able to die and reload, so that the dangerous zone can be tested separately.
             fallbackDeathInProgress = true;
             runner.StartCoroutine(ShowDeathAndReloadCurrentScene());
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         /// <summary>
-        /// 重置 fallback 死亡状态。场景重载或测试时避免旧状态影响下一次死亡。
+/// reset fallback state of death. Prevent old states from affecting the next death when reloading or testing the scene.
         /// </summary>
         private static void ResetFallbackDeathState()
         {
             fallbackDeathInProgress = false;
         }
         /// <summary>
-        /// fallback 死亡协程。显示简单死亡 UI，等待一小段时间后重载当前场景。
+/// fallback Death coroutine. show simple death UI, wait for a short period of time and then reload the current scene.
         /// </summary>
-        /// <returns>返回 Unity 协程，调用方会用 StartCoroutine 让这个流程分帧执行。</returns>
+/// <returns>return Unity Coroutine, the caller will use StartCoroutine Let this process be executed in frames. </returns>
         private static IEnumerator ShowDeathAndReloadCurrentScene()
         {
-            // fallback 没有 LootFeedbackUI，所以临时创建一个最简单的 You Died 面板。
+// fallback No LootFeedbackUI, so it is easiest to temporarily create a You Died panel.
             CreateFallbackDeathUi();
             yield return new WaitForSecondsRealtime(1f);
             Time.timeScale = 1f;
             string sceneName = SceneManager.GetActiveScene().name;
-            // 死亡重载时跳过本关开场故事，玩家不会每死一次都重新看剧情。
+// The opening story of this level will be skipped when reloading after death, so players will not have to rewatch the story every time they die.
             LevelIntroSequence.SkipNextIntroForScene(sceneName);
             SceneManager.LoadScene(sceneName);
         }
         /// <summary>
-        /// 动态创建一个简单 You Died UI。只有在没有 GameManager 的 fallback 情况下才会用到。
+/// Dynamically create a simple You Died UI. only if there is no GameManager of fallback It will only be used under certain circumstances.
         /// </summary>
         private static void CreateFallbackDeathUi()
         {

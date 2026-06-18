@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dad73c1e2b5aa9c48a88ddccd612adc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: Level1_Tutorial
+  gameSceneName: Level 1 - The First Echo
 --- !u!4 &2136077483
 Transform:
   m_ObjectHideFlags: 0

@@ -147,7 +147,7 @@ The project uses Unity components and scenes:
 - External assets are credited and licence evidence is documented.
 - AI assistance is declared in `Docs/Credits.md` and final coursework documentation.
 - The project does not collect personal data.
-- Controls are simple and listed in the README and How To Play panel.
+- Controls are simple and listed in the How To Play panel and project documentation.
 - UI uses large pixel text and high-contrast panels.
 - Known limitation: the project is a vertical slice, not a full commercial game.
 - Known copyright note: the menu recording is my own violin performance, but *Half Moon Serenade* is not my own composition, so wider public or commercial use would need rights checking.
@@ -157,4 +157,4 @@ The project uses Unity components and scenes:
 - Week 1: repository setup, graybox layout, core movement, basic Echo recording/replay, and first pressure plate puzzle.
 - Week 2: tutorial UI, loot, enemies, Ruby visuals, Level 2 gameplay, and player feedback.
 - Week 3: Level 3 risk-reward route, Gravity Flip void death, Magic Barrier / button logic, and improved collectibles.
-- Week 4: backgrounds, music, UI polish, scene renaming, testing, script comments, documentation, README, credits, and final submission preparation.
+- Week 4: backgrounds, music, UI polish, scene renaming, testing, script comments, documentation, credits, and final submission preparation.

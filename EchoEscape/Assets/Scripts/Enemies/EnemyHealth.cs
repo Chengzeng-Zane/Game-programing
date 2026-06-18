@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：敌人生命组件。它处理玩家攻击命中后的扣血、死亡动画和禁用敌人碰撞。
-    /// 玩法逻辑：当前敌人一般只有 1 点血，玩家攻击命中后会调用 TakeDamage；血量归零后停止攻击、关掉 Collider，避免死亡中的敌人继续伤害玩家。
-    /// 协作关系：PlayerAttack 命中敌人后最终调用它；EnemyAnimationController 播放死亡；EnemyAttack 会被停止。
+/// Script overview: Enemy Health Component. It handles health deductions after player attacks hit, death animations, and disabling enemy collisions.
+/// Gameplay logic: The current enemies generally only have 1 Point blood, which will be called after the player hits the attack. TakeDamage; Stop attacking and turn off after the blood volume returns to zero. Collider, to prevent dead enemies from continuing to harm the player.
+/// Collaborates with: PlayerAttack It is ultimately invoked after hitting an enemy; EnemyAnimationController Play Death; EnemyAttack will be stopped.
     /// </summary>
     public class EnemyHealth : MonoBehaviour
     {
@@ -17,12 +17,12 @@ namespace EchoEscape
         public bool IsDefeated { get; private set; }
         public bool IsPlayingDeathAnimation { get; private set; }
         /// <summary>
-        /// 接收外部脚本传入的参数，把当前组件配置成这个场景或这个敌人需要的状态。
+/// Receive the parameters passed in by the external script and configure the current component to the state required by this scene or this enemy.
         /// </summary>
-        /// <param name="maxHealth">maxHealth 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="logs">logs 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="enemyAnimation">enemyAnimation 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="attack">attack 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="maxHealth">maxHealth Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="logs">logs Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="enemyAnimation">enemyAnimation Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="attack">attack Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         public void Configure(int maxHealth, bool logs, EnemyAnimationController enemyAnimation, EnemyAttack attack)
         {
             currentHealth = Mathf.Max(1, maxHealth);
@@ -31,31 +31,31 @@ namespace EchoEscape
             enemyAttack = attack;
         }
         /// <summary>
-        /// 接收伤害并扣除生命值。生命值归零后进入死亡或击败流程。
+/// Receive damage and deduct health points. After the health value reaches zero, the player enters the death or defeat process.
         /// </summary>
-        /// <param name="damage">本次受到的伤害值。</param>
+/// <param name="damage">The amount of damage received this time. </param>
         public void TakeDamage(int damage)
         {
             if (IsDefeated)
             {
-                // 已经死亡的敌人不再重复扣血，避免死亡动画/禁用 Collider 被执行多次。
+// Dead enemies will no longer have their blood deducted repeatedly to avoid death animations/Disable Collider is executed multiple times.
                 return;
             }
 
-            // 至少扣 1 点血，防止传入 0 或负数导致攻击没有效果。
+// At least deduct 1 Spot blood to prevent incoming 0 Or a negative number causes the attack to have no effect.
             currentHealth -= Mathf.Max(1, damage);
             if (currentHealth > 0)
             {
-                // 还有血就继续存活，暂时不播放死亡动画。
+// If there is still blood, continue to live, and the death animation will not be played for the time being.
                 return;
             }
 
             Defeat();
         }
         /// <summary>
-        /// 推进敌人死亡动画。如果正在播放死亡动画返回 true，让 SimpleEnemy 本帧停止其他行为。
+/// Advance enemy death animation. Returns if death animation is playing true, let EnemyController This frame stops other actions.
         /// </summary>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         public bool TickDeathAnimation()
         {
             if (!IsPlayingDeathAnimation)
@@ -63,24 +63,24 @@ namespace EchoEscape
                 return false;
             }
 
-            // 死亡动画期间敌人不再移动/攻击，只推进死亡帧。
+// Enemies no longer move during the death animation/Attacking, only advances the death frame.
             animationController.TickDeath();
             deathTimer -= Time.deltaTime;
             if (deathTimer <= 0f)
             {
-                // 动画播完后禁用整个敌人对象，避免尸体 Collider 或脚本继续参与游戏。
+// Disable the entire enemy object after the animation is finished to avoid corpses Collider Or the script continues to participate in the game.
                 gameObject.SetActive(false);
             }
 
             return true;
         }
         /// <summary>
-        /// 处理敌人被击败后的收尾，包括停止攻击、禁用碰撞和播放死亡动画。
+/// Handles the aftermath of an enemy being defeated, including stopping attacks, disabling collisions, and playing death animations.
         /// </summary>
         private void Defeat()
         {
             IsDefeated = true;
-            // 被玩家击败时立刻停止攻击，避免死亡瞬间攻击框还杀死玩家。
+// Stop attacking immediately when defeated by a player to avoid the instant death attack frame killing the player.
             enemyAttack.StopAttack();
 
             if (debugLogs)
@@ -91,18 +91,18 @@ namespace EchoEscape
             Collider2D[] colliders = GetComponentsInChildren<Collider2D>();
             for (int i = 0; i < colliders.Length; i++)
             {
-                // 禁用所有 Collider，死亡敌人不会再挡路或触发攻击检测。
+// Disable all Collider, dead enemies will no longer block the path or trigger attack detection.
                 colliders[i].enabled = false;
             }
 
             if (!animationController.HasDeathAnimation)
             {
-                // 没有死亡动画素材时直接隐藏敌人，保证击败逻辑仍然完成。
+// When there is no death animation material, the enemy is directly hidden to ensure that the defeat logic is still completed.
                 gameObject.SetActive(false);
                 return;
             }
 
-            // 有死亡动画时给它完整播放时间，再由 TickDeathAnimation 关闭对象。
+// When there is a death animation, give it full playback time, and then TickDeathAnimation Close the object.
             IsPlayingDeathAnimation = true;
             deathTimer = animationController.DeathDuration;
             animationController.PlayDeath();

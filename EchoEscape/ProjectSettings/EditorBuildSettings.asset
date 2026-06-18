@@ -9,12 +9,12 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: 0baf1a984bb5a8343832c04eb852b871
   - enabled: 1
-    path: Assets/Scenes/Level1_Tutorial.unity
+    path: Assets/Scenes/Level 1 - The First Echo.unity
     guid: a8b0f52754bf769478f8eb5b1da4fd13
   - enabled: 1
-    path: Assets/Scenes/Level2_LootTutorial.unity
+    path: Assets/Scenes/Level 2 - Relics of the Forest.unity
     guid: 72f1560c880f4071bdfe34c9fb9386ad
   - enabled: 1
-    path: Assets/Scenes/Level3_RiskReward.unity
+    path: Assets/Scenes/Level 3 - Escape from the Silent Forest.unity
     guid: 1f3d04d68afddb74e9465d745029c732
   m_configObjects: {}

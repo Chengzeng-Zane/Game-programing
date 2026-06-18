@@ -6,9 +6,9 @@ using UnityEngine.UI;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：关卡剧情介绍和结尾流程控制器。它负责每关开始时的故事介绍、第三关结束语，以及死亡重生后跳过已看过介绍。
-    /// 玩法逻辑：进入关卡时显示多页剧情并暂停游戏；玩家关闭后恢复时间；死亡重载时通过静态记录跳过同一关 intro；第三关通关时可以先等 loot 反馈显示完，再播放巫师结束语。
-    /// 协作关系：GoalZone 调用结尾流程；TutorialPopupManager/运行时 UI 负责显示；Time.timeScale 控制游戏暂停。
+/// Script overview: level plot introduction and ending process controller. It is responsible for the story introduction at the beginning of each level, the ending of the third level, and the skipping of the already viewed introduction after death and respawn.
+/// Gameplay logic: multi-page plots are displayed and the game is paused when entering a level; time is restored after the player closes the level; the same level is skipped through static recording when reloading after death intro; You can wait first when clearing the third level. loot After the feedback is displayed, the wizard's closing remarks are played.
+/// Collaborates with: GoalZone Call the end process; TutorialPopupManager/runtime UI Responsible for display; Time. timeScale Control the game pause.
     /// </summary>
     public class LevelIntroSequence : MonoBehaviour
     {
@@ -48,19 +48,19 @@ namespace EchoEscape
         private const string OldSpeakerName = "Echo Sage";
         private const string CurrentSpeakerName = "Echo Wizard";
         /// <summary>
-        /// Unity 在第一帧前调用。这里通常连接场景对象，启动初始 UI、教程或关卡流程。
+/// Unity Called before the first frame. Here the scene object is usually connected to start the initial UI, tutorial or level process.
         /// </summary>
         private void Start()
         {
             if (pages == null || pages.Length == 0)
             {
-                // 没配置故事页时不显示 intro，避免空面板挡住游戏。
+// Not displayed when story page is not configured intro, to prevent empty panels from blocking the game.
                 return;
             }
 
             if (ConsumeSkipIntroForCurrentScene())
             {
-                // 死亡重载当前关时会设置跳过标记；这样玩家不会每死一次都重新看剧情。
+// A skip mark will be set when reloading the current level after death; this way players will not have to re-watch the plot every time they die.
                 if (introRoot != null)
                 {
                     introRoot.SetActive(false);
@@ -74,9 +74,9 @@ namespace EchoEscape
             ShowIntro();
         }
         /// <summary>
-        /// 记录某个场景下一次加载时要跳过开场介绍。死亡重载前由 GameManager/HazardZone 调用。
+/// Record a scene to skip the intro the next time it loads. Before Death Reload GameManager/HazardZone call.
         /// </summary>
-        /// <param name="sceneName">目标场景名称，用于检查 Build Settings 或加载下一关。</param>
+/// <param name="sceneName">Target scene name for inspection Build Settings Or load the next level. </param>
         public static void SkipNextIntroForScene(string sceneName)
         {
             if (!string.IsNullOrWhiteSpace(sceneName))
@@ -85,9 +85,9 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 检查当前场景是否有“跳过 intro”标记；有就消费掉，保证只跳过下一次。
+/// Check if the current scene has "Skip intro" mark; consume it if you have it, and make sure you only skip the next time.
         /// </summary>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private static bool ConsumeSkipIntroForCurrentScene()
         {
             string sceneName = SceneManager.GetActiveScene().name;
@@ -96,12 +96,12 @@ namespace EchoEscape
                 return false;
             }
 
-            // 移除标记表示只跳过一次，玩家从主菜单重新进关仍会看到故事。
+// Removing the mark means skipping it only once, and players will still see the story when they re-enter the level from the main menu.
             scenesSkippingNextIntro.Remove(sceneName);
             return true;
         }
         /// <summary>
-        /// Unity 每帧调用。这里处理输入、计时器、UI 状态或非物理的实时刷新。
+/// Unity Called every frame. This handles input, timers, UI Real-time refresh of state or non-physics.
         /// </summary>
         private void Update()
         {
@@ -110,7 +110,7 @@ namespace EchoEscape
                 return;
             }
 
-            // C 键翻到下一页；超过最后一页时结束当前 intro/ending 流程。
+// C key to turn to the next page; end the current one when past the last page intro/ending process.
             pageIndex++;
             if (activePages == null || pageIndex >= activePages.Length)
             {
@@ -121,18 +121,18 @@ namespace EchoEscape
             ApplyPageText();
         }
         /// <summary>
-        /// 对象被禁用时调用。这里通常恢复时间缩放或清理 UI 状态，避免暂停残留。
+/// Called when the object is disabled. Here usually recovery time scales or cleans UI status to avoid pause residue.
         /// </summary>
         private void OnDisable()
         {
             RestoreGameplayTime();
         }
         /// <summary>
-        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
+/// Show correspondence UI or visual status, usually used for pop-up windows, loot Hints, death prompts or settlement feedback.
         /// </summary>
         private void ShowIntro()
         {
-            // activePages 让同一个 UI 系统既能显示开场故事，也能显示第三关结尾。
+// activePages let the same UI The system can display both the opening story and the end of the third level.
             activePages = pages;
             activeDialogueStartPageIndex = dialogueStartPageIndex;
             activeDialogueSpeakerName = dialogueSpeakerName;
@@ -151,28 +151,28 @@ namespace EchoEscape
 
             if (pauseGameplayDuringIntro && !pausedGameplay)
             {
-                // 开场故事期间暂停游戏，玩家不能在读剧情时被敌人或重力影响。
+// The game is paused during the opening story, and the player cannot be affected by enemies or gravity while reading the story.
                 previousTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
                 Time.timeScale = 0f;
                 pausedGameplay = true;
             }
         }
         /// <summary>
-        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
+/// Show correspondence UI or visual status, usually used for pop-up windows, loot Hints, death prompts or settlement feedback.
         /// </summary>
-        /// <param name="targetSceneName">targetSceneName 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="targetSceneName">targetSceneName Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         public bool ShowEndingSequence(string targetSceneName)
         {
             if (string.IsNullOrWhiteSpace(targetSceneName))
             {
-                // 没有目标场景时不播放结尾，避免结束后不知道要切到哪里。
+// The ending is not played when there is no target scene to avoid not knowing where to cut to after the end.
                 return false;
             }
 
             EnsureIntroUi();
 
-            // 结尾复用对话面板，只显示一页巫师结束语，并在结束后加载目标场景。
+// The dialogue panel is reused at the end, only one page of the wizard's closing words is displayed, and the target scene is loaded after the end.
             activePages = new[] { EndingBodyText };
             activeDialogueStartPageIndex = 0;
             activeDialogueSpeakerName = CurrentSpeakerName;
@@ -191,7 +191,7 @@ namespace EchoEscape
 
             if (pauseGameplayDuringIntro && !pausedGameplay)
             {
-                // 结尾播放时也暂停游戏，避免玩家继续移动触发其他对象。
+// The game is also paused when playing at the end to prevent the player from continuing to move and trigger other objects.
                 previousTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
                 Time.timeScale = 0f;
                 pausedGameplay = true;
@@ -200,7 +200,7 @@ namespace EchoEscape
             return true;
         }
         /// <summary>
-        /// 隐藏对应 UI 或视觉状态，通常在提示结束、关闭弹窗或清理流程时调用。
+/// Hide correspondence UI Or visual state, usually called when the prompt ends, the pop-up window is closed, or the process is cleaned up.
         /// </summary>
         private void HideIntro()
         {
@@ -213,11 +213,11 @@ namespace EchoEscape
             RestoreGameplayTime();
         }
         /// <summary>
-        /// 完成当前开场或结尾序列。它会隐藏 UI、恢复时间，并在结尾流程需要时加载目标场景。
+/// Complete the current opening or closing sequence. it will hide UI, recovery time, and load the target scene when needed at the end of the process.
         /// </summary>
         private void CompleteActiveSequence()
         {
-            // 先缓存是否需要切场景，因为 HideIntro 会清 UI 状态。
+// Cache first whether you need to switch scenes, because HideIntro Will clear UI state.
             bool shouldLoadScene = loadSceneOnComplete;
             string targetSceneName = sceneToLoadOnComplete;
 
@@ -228,12 +228,12 @@ namespace EchoEscape
 
             if (shouldLoadScene && !string.IsNullOrWhiteSpace(targetSceneName))
             {
-                // 结尾流程结束后才加载主菜单，避免剧情显示一半被切走。
+// The main menu is loaded only after the ending process is completed to prevent half of the plot from being cut away.
                 SceneManager.LoadScene(targetSceneName);
             }
         }
         /// <summary>
-        /// 恢复剧情开始前的 Time.timeScale。用于关闭 intro、禁用对象或防止暂停状态残留。
+/// Restore the situation before the plot started Time. timeScale. used to close intro, disable the object or prevent the paused state from remaining.
         /// </summary>
         private void RestoreGameplayTime()
         {
@@ -242,13 +242,13 @@ namespace EchoEscape
                 return;
             }
 
-            // 恢复暂停前的 timeScale；如果之前记录异常，就回到正常速度 1。
+// Resume before suspension timeScale; If abnormality was recorded before, return to normal speed 1。
             Time.timeScale = previousTimeScale > 0f ? previousTimeScale : 1f;
             previousTimeScale = 1f;
             pausedGameplay = false;
         }
         /// <summary>
-        /// 把计算好的状态应用到对象、UI、动画或渲染器上，让视觉和逻辑保持同步。
+/// Apply the calculated state to the object, UI, animation or renderer to keep visuals and logic in sync.
         /// </summary>
         private void ApplyPageText()
         {
@@ -258,7 +258,7 @@ namespace EchoEscape
             }
 
             bool isDialoguePage = pageIndex >= activeDialogueStartPageIndex;
-            // 前几页用全屏森林叙事，后几页切到巫师对话框。
+// The first few pages use a full-screen forest narrative, and the next few pages cut to the wizard's dialog box.
             if (forestIntroPanel != null)
             {
                 forestIntroPanel.SetActive(!isDialoguePage);
@@ -272,7 +272,7 @@ namespace EchoEscape
             string currentPage = NormalizeStoryText(activePages[Mathf.Clamp(pageIndex, 0, activePages.Length - 1)]);
             if (!isDialoguePage && storyText != null)
             {
-                // 普通故事页显示在全屏中央。
+// Normal story pages appear in the center of the full screen.
                 storyText.text = currentPage;
             }
 
@@ -283,7 +283,7 @@ namespace EchoEscape
 
             if (isDialoguePage && speakerNameText != null)
             {
-                // 对话页显示说话人，当前统一成 Echo Wizard。
+// The conversation page displays the speaker, currently unified into Echo Wizard。
                 speakerNameText.text = NormalizeStoryText(activeDialogueSpeakerName);
             }
 
@@ -298,17 +298,17 @@ namespace EchoEscape
             }
         }
         /// <summary>
-        /// 确保开场/结尾 UI 存在。场景没手动配置 UI 时，会运行时创建 Canvas、背景和文本。
+/// ensure opening/ending UI exist. The scene is not configured manually UI will be created at runtime Canvas, background and text.
         /// </summary>
         private void EnsureIntroUi()
         {
             if (introRoot != null && storyText != null && continueHintText != null)
             {
-                // 场景里已经有 UI 引用时复用，不重复创建 Canvas。
+// Already in the scene UI Reuse when referencing, do not create repeatedly Canvas。
                 return;
             }
 
-            // 没手动搭 UI 的场景会运行时生成完整 intro Canvas，保证每关都能显示故事。
+// No manual ride UI The scenario will be generated completely when running intro Canvas, ensuring that every level can display the story.
             GameObject canvasObject = new GameObject("LevelIntroCanvas");
             canvasObject.transform.SetParent(transform, false);
             introRoot = canvasObject;
@@ -328,9 +328,9 @@ namespace EchoEscape
             CreateDialoguePanel(canvasObject.transform);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
         private void CreateForestIntroPanel(Transform parent)
         {
             forestIntroPanel = new GameObject("ForestIntroPanel", typeof(RectTransform));
@@ -362,9 +362,9 @@ namespace EchoEscape
             hintRect.sizeDelta = new Vector2(360f, 42f);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
         private void CreateDialoguePanel(Transform parent)
         {
             dialoguePanel = new GameObject("EchoSageDialoguePanel", typeof(RectTransform));
@@ -416,12 +416,12 @@ namespace EchoEscape
             dialoguePanel.SetActive(false);
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="objectName">要创建或查找的 GameObject 名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <returns>返回创建或找到的 UI Image 组件。</returns>
+/// <param name="objectName">to create or find GameObject name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <returns>Returns a created or found UI Image components. </returns>
         private static Image CreateImage(string objectName, Transform parent, Color color)
         {
             GameObject imageObject = new GameObject(objectName, typeof(RectTransform));
@@ -431,18 +431,18 @@ namespace EchoEscape
             return image;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="objectName">要创建或查找的 GameObject 名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="sprite">要显示的 Sprite 图片。</param>
-        /// <param name="aspectMode">aspectMode 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <returns>返回创建或找到的 UI Image 组件。</returns>
+/// <param name="objectName">to create or find GameObject name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="sprite">to be displayed Sprite picture. </param>
+/// <param name="aspectMode">aspectMode Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <returns>Returns a created or found UI Image components. </returns>
         private Image CreateBackgroundImage(string objectName, Transform parent, Sprite sprite, AspectRatioFitter.AspectMode aspectMode)
         {
             if (sprite == null)
             {
-                // 没配图片时返回 null，让调用方用纯色背景继续工作。
+// Return when there is no picture null, letting the caller continue working with a solid color background.
                 return null;
             }
 
@@ -453,19 +453,19 @@ namespace EchoEscape
 
             AspectRatioFitter aspectRatioFitter = backgroundImage.gameObject.AddComponent<AspectRatioFitter>();
             aspectRatioFitter.aspectMode = aspectMode;
-            // 用图片原始宽高比适配屏幕，避免剧情背景被拉伸变形。
+// Use the original aspect ratio of the picture to fit the screen to prevent the plot background from being stretched and deformed.
             aspectRatioFitter.aspectRatio = sprite.rect.width / Mathf.Max(1f, sprite.rect.height);
             return backgroundImage;
         }
         /// <summary>
-        /// 运行时创建对象、UI 元素或视觉组件，并设置它在当前游戏界面或场景中的基础属性。
+/// Create objects at runtime, UI Element or visual component and set its basic properties in the current game interface or scene.
         /// </summary>
-        /// <param name="objectName">要创建或查找的 GameObject 名称。</param>
-        /// <param name="parent">新创建对象要挂到的父节点。</param>
-        /// <param name="fontSize">fontSize 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="alignment">alignment 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
-        /// <param name="color">颜色值，用于材质、文字、图片或 SpriteRenderer。</param>
-        /// <returns>返回创建或找到的 UI Text 组件。</returns>
+/// <param name="objectName">to create or find GameObject name. </param>
+/// <param name="parent">The parent node to which the newly created object will be hung. </param>
+/// <param name="fontSize">fontSize Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="alignment">alignment Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
+/// <param name="color">Color value, used for materials, text, images, or SpriteRenderer。</param>
+/// <returns>Returns a created or found UI Text components. </returns>
         private static Text CreateText(string objectName, Transform parent, int fontSize, TextAnchor alignment, Color color)
         {
             GameObject textObject = new GameObject(objectName, typeof(RectTransform));
@@ -474,7 +474,7 @@ namespace EchoEscape
             Font pixelFont = Resources.Load<Font>(PixelFontPath);
             if (pixelFont != null)
             {
-                // 使用像素字体让剧情 UI 和像素风关卡一致。
+// Use pixel fonts to bring drama UI Same as the pixel style level.
                 text.font = pixelFont;
             }
 
@@ -489,10 +489,10 @@ namespace EchoEscape
             return text;
         }
         /// <summary>
-        /// 整理输入文字格式，避免 UI 显示时出现多余空格或换行问题。
+/// Organize the input text format to avoid UI There are extra spaces or line breaks when displaying.
         /// </summary>
-        /// <param name="value">要设置的新参数值。</param>
-        /// <returns>返回整理后的文字，用于 UI 显示、日志或状态提示。</returns>
+/// <param name="value">The new parameter value to set. </param>
+/// <returns>Returns the sorted text for UI Display, log or status prompts. </returns>
         private static string NormalizeStoryText(string value)
         {
             return string.IsNullOrEmpty(value)
@@ -500,9 +500,9 @@ namespace EchoEscape
                 : value.Replace(OldSpeakerName, CurrentSpeakerName);
         }
         /// <summary>
-        /// 把 UI RectTransform 拉伸到父对象范围，用于背景或全屏面板。
+/// Bundle UI RectTransform Stretch to parent object extent, for use with backgrounds or full-screen panels.
         /// </summary>
-        /// <param name="rectTransform">rectTransform 参数由调用方传入，用来参与本函数的判断、计算或设置。</param>
+/// <param name="rectTransform">rectTransform Parameters are passed in by the caller and used to participate in the judgment, calculation or setting of this function. </param>
         private static void StretchToFill(RectTransform rectTransform)
         {
             rectTransform.anchorMin = Vector2.zero;

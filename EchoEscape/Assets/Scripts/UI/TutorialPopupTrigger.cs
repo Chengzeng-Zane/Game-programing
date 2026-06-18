@@ -3,9 +3,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：问号教学触发器。玩家进入问号范围后，它会打开对应教学弹窗。
-    /// 玩法逻辑：触发时先确认对象是真正玩家，再判断是否已经显示过；如果满足条件就把 tutorialTitle 和 tutorialMessage 交给 TutorialPopupManager。
-    /// 协作关系：和 TutorialPopupManager 配合；hideAfterUse 可以让问号提示使用后隐藏。
+/// Script overview: Question Mark Tutorial Trigger. After the player enters the question mark range, it will open the corresponding teaching pop-up window.
+/// Gameplay logic: When triggering, first confirm that the object is a real player, and then determine whether it has been displayed; if the conditions are met, tutorialTitle and tutorialMessage hand over TutorialPopupManager。
+/// Collaborates with: and TutorialPopupManager Cooperate; hideAfterUse You can hide the question mark prompt after use.
     /// </summary>
     public class TutorialPopupTrigger : MonoBehaviour
     {
@@ -27,28 +27,28 @@ namespace EchoEscape
 
         private bool hasShown = false;
         /// <summary>
-        /// 2D Trigger 刚进入时调用。这里根据进入对象决定是否触发教学、机关、宝箱、死亡或通关。
+/// 2D Trigger Called when first entering. Here, it is decided whether to trigger teaching, mechanism, treasure chest, death or clearance based on the entering object.
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (showOnlyOnce && hasShown)
             {
-                // 只显示一次的教程触发过后直接忽略，避免玩家来回走动反复弹窗。
+// Tutorials that are only displayed once are ignored immediately after being triggered, to avoid repeated pop-ups of the player's window as they move back and forth.
                 return;
             }
 
             if (IsPlayer(other))
             {
-                // 只有真正玩家进入问号范围才显示教程，Echo 或敌人不会触发弹窗。
+// Only when real players enter the question mark range will the tutorial be displayed. Echo Or the enemy will not trigger the pop-up window.
                 ShowTutorial();
             }
         }
         /// <summary>
-        /// 判断进入问号范围的 Collider 是否属于真正玩家。支持 Player 根对象或玩家子物体 Collider。
+/// Determine whether it has entered the question mark range Collider Whether it is a real player. support Player root object or player sub-object Collider。
         /// </summary>
-        /// <param name="other">Unity 传入的 2D Collider，表示进入触发器或被检测到的对象。函数会用它判断对象是不是玩家、Echo、敌人或机关。</param>
-        /// <returns>返回 true 表示条件成立或操作成功，返回 false 表示条件不满足或操作失败。</returns>
+/// <param name="other">Unity incoming 2D Collider, representing an entry trigger or a detected object. The function will use it to determine whether the object is a player or not. Echo, enemy or agency. </param>
+/// <returns>return true Indicates that the condition is established or the operation is successful and returns false Indicates that the condition is not met or the operation failed. </returns>
         private static bool IsPlayer(Collider2D other)
         {
             if (other == null)
@@ -58,28 +58,28 @@ namespace EchoEscape
 
             if (other.CompareTag("Player"))
             {
-                // 标准 Player Tag 是最快路径。
+// standard Player Tag is the fastest path.
                 return true;
             }
 
             Transform root = other.transform.root;
             if (root != null && root.CompareTag("Player"))
             {
-                // 有些触发器碰到的是玩家子对象，根对象带 Player Tag 也算玩家。
+// Some triggers encounter player sub-objects, with the root object Player Tag Also considered a player.
                 return true;
             }
 
-            // 最后用 PlayerController2D 兜底，避免 Tag 配置不完整时教程失效。
+// Use last PlayerController2D Stay safe, avoid Tag The tutorial will not work if the configuration is incomplete.
             return other.GetComponentInParent<PlayerController2D>() != null;
         }
         /// <summary>
-        /// 显示对应 UI 或视觉状态，通常用于弹窗、loot 提示、死亡提示或结算反馈。
+/// Show correspondence UI or visual status, usually used for pop-up windows, loot Hints, death prompts or settlement feedback.
         /// </summary>
         private void ShowTutorial()
         {
             if (popupManager == null)
             {
-                // 场景没手动拖引用时自动查找弹窗管理器。
+// The pop-up manager is automatically found when the scene does not manually drag the reference.
                 popupManager = FindObjectOfType<TutorialPopupManager>();
             }
 
@@ -94,7 +94,7 @@ namespace EchoEscape
 
             if (hideAfterUse)
             {
-                // 问号提示可以在显示后隐藏，避免玩家以为同一个提示还能重复交互。
+// The question mark prompt can be hidden after being displayed to prevent players from thinking that the same prompt can be interacted with repeatedly.
                 gameObject.SetActive(false);
             }
         }

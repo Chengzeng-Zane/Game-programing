@@ -4,9 +4,9 @@ using UnityEngine;
 namespace EchoEscape
 {
     /// <summary>
-    /// 脚本总览：项目的资源加载工具。它把 Resources 目录里的音效、音乐、角色帧、平台图块等素材集中在一个地方读取，避免其他脚本到处硬写路径。
-    /// 玩法逻辑：玩家、Echo、敌人动画都需要从素材表里切帧；关卡背景、平台视觉和音频也需要统一加载。这个脚本不控制玩法，只负责把资源变成可用的 AudioClip 或 Sprite。
-    /// 协作关系：PlayerAnimationController、EchoAnimationController、EnemyAnimationController、PrototypeVisualSkinner、PrototypeAudio、BackgroundMusic 都会调用它。
+/// Script overview: The project’s resource loading tool. it puts Resources The sound effects, music, character frames, platform tiles and other materials in the directory are all read in one place, preventing other scripts from hard-writing paths everywhere.
+/// Gameplay logic: players, Echo, enemy animations all need to be cut from the material table; the level background, platform visuals and audio also need to be loaded uniformly. This script does not control gameplay, it is only responsible for making resources available. AudioClip or Sprite。
+/// Collaborates with: PlayerAnimationController、EchoAnimationController、EnemyAnimationController、PrototypeVisualSkinner、PrototypeAudio、BackgroundMusic will call it.
     /// </summary>
     public static class PixelArtLibrary
     {
@@ -26,48 +26,48 @@ namespace EchoEscape
         public static Sprite HazardSlime => FromTopLeft("Sprites/slime_green", "slime-green", 0, 0, 24, 24);
         public static Sprite ExitGem => FromTopLeft("Sprites/fruit", "exit-gem", 0, 0, 16, 16);
         /// <summary>
-        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
+/// from Resources Or load the required resources from the incoming data and convert it into an object that can be used directly by the script.
         /// </summary>
-        /// <param name="fileName">资源文件名，不包含路径前缀。</param>
-        /// <returns>返回加载到的音频资源；资源不存在时可能返回 null。</returns>
+/// <param name="fileName">Resource file name, without path prefix. </param>
+/// <returns>Returns the loaded audio resource; may be returned if the resource does not exist null。</returns>
         public static AudioClip LoadSound(string fileName)
         {
             return Resources.Load<AudioClip>($"BrackeysPlatformer/Audio/Sounds/{fileName}");
         }
         /// <summary>
-        /// 从 Resources 或传入数据中加载需要的资源，并转换成脚本可直接使用的对象。
+/// from Resources Or load the required resources from the incoming data and convert it into an object that can be used directly by the script.
         /// </summary>
-        /// <param name="fileName">资源文件名，不包含路径前缀。</param>
-        /// <returns>返回加载到的音频资源；资源不存在时可能返回 null。</returns>
+/// <param name="fileName">Resource file name, without path prefix. </param>
+/// <returns>Returns the loaded audio resource; may be returned if the resource does not exist null。</returns>
         public static AudioClip LoadMusic(string fileName)
         {
             return Resources.Load<AudioClip>($"BrackeysPlatformer/Audio/Music/{fileName}");
         }
         /// <summary>
-        /// 从一张大图里连续切出多帧 Sprite，例如角色跑步帧。切出的结果会缓存，避免重复创建 Sprite。
+/// Cut multiple frames continuously from a large image Sprite, such as character running frame. The cut results will be cached to avoid repeated creation. Sprite。
         /// </summary>
-        /// <param name="texturePath">Resources 中纹理大图的路径。</param>
-        /// <param name="key">缓存 Sprite 时使用的唯一 key，避免重复切图。</param>
-        /// <param name="x">在纹理图上的横向像素坐标。</param>
-        /// <param name="y">在纹理图上的纵向像素坐标。</param>
-        /// <param name="count">需要连续读取的帧数量。</param>
-        /// <param name="width">切图或 UI 元素的宽度。</param>
-        /// <param name="height">切图或 UI 元素的高度。</param>
-        /// <param name="xStep">连续切帧时每一帧在横向移动的像素距离。</param>
-        /// <returns>返回一组 Sprite 动画帧；资源不存在时可能是空数组。</returns>
+/// <param name="texturePath">Resources The path of the medium texture image. </param>
+/// <param name="key">cache Sprite the only one used when key, to avoid repeated cutting. </param>
+/// <param name="x">Horizontal pixel coordinates on the texture map. </param>
+/// <param name="y">Vertical pixel coordinates on the texture map. </param>
+/// <param name="count">The number of frames that need to be read continuously. </param>
+/// <param name="width">cut picture or UI The width of the element. </param>
+/// <param name="height">cut picture or UI The height of the element. </param>
+/// <param name="xStep">The pixel distance that each frame moves horizontally when cutting continuously. </param>
+/// <returns>Return a set Sprite Animation frames; may be an empty array if the resource does not exist. </returns>
         private static Sprite[] FramesFromTopLeft(string texturePath, string key, int x, int y, int count, int width, int height, int xStep)
         {
             string cacheKey = texturePath + ":" + key + ":frames";
             if (FrameCache.TryGetValue(cacheKey, out Sprite[] frames))
             {
-                // 同一组动画帧已经切过时直接复用缓存。
+// When the same set of animation frames has been cut, the cache is directly reused.
                 return frames;
             }
 
             frames = new Sprite[count];
             for (int i = 0; i < count; i++)
             {
-                // 每一帧在 x 方向移动 xStep 个像素，适合横向排列的 spritesheet。
+// every frame in x direction movement xStep pixels, suitable for horizontal arrangement spritesheet。
                 frames[i] = FromTopLeft(texturePath, key + "-" + i, x + (i * xStep), y, width, height);
             }
 
@@ -75,21 +75,21 @@ namespace EchoEscape
             return frames;
         }
         /// <summary>
-        /// 从纹理左上角坐标切出一个 Sprite。Unity 的 Rect 坐标从左下角算，所以这里会转换 y 坐标。
+/// Cut one from the coordinates of the upper left corner of the texture Sprite。Unity of Rect The coordinates are calculated from the lower left corner, so there will be a conversion here y coordinate.
         /// </summary>
-        /// <param name="texturePath">Resources 中纹理大图的路径。</param>
-        /// <param name="key">缓存 Sprite 时使用的唯一 key，避免重复切图。</param>
-        /// <param name="x">在纹理图上的横向像素坐标。</param>
-        /// <param name="y">在纹理图上的纵向像素坐标。</param>
-        /// <param name="width">切图或 UI 元素的宽度。</param>
-        /// <param name="height">切图或 UI 元素的高度。</param>
-        /// <returns>返回加载或生成的 Sprite；资源不存在时可能返回 null。</returns>
+/// <param name="texturePath">Resources The path of the medium texture image. </param>
+/// <param name="key">cache Sprite the only one used when key, to avoid repeated cutting. </param>
+/// <param name="x">Horizontal pixel coordinates on the texture map. </param>
+/// <param name="y">Vertical pixel coordinates on the texture map. </param>
+/// <param name="width">cut picture or UI The width of the element. </param>
+/// <param name="height">cut picture or UI The height of the element. </param>
+/// <returns>Returns the loaded or generated Sprite; May be returned when the resource does not exist null。</returns>
         private static Sprite FromTopLeft(string texturePath, string key, int x, int y, int width, int height)
         {
             string cacheKey = texturePath + ":" + key;
             if (SpriteCache.TryGetValue(cacheKey, out Sprite sprite))
             {
-                // 单张 Sprite 已经创建过时直接复用，减少运行时内存和重复切图。
+// leaflet Sprite Directly reuse the created files to reduce runtime memory and repeated drawing cuts.
                 return sprite;
             }
 
@@ -103,7 +103,7 @@ namespace EchoEscape
             texture.filterMode = FilterMode.Point;
             texture.wrapMode = TextureWrapMode.Clamp;
 
-            // 传入的 y 是美术图常用的左上角坐标，Sprite.Create 需要左下角坐标。
+// incoming y It is the coordinate of the upper left corner commonly used in art drawings. Sprite. Create The coordinates of the lower left corner are required.
             Rect rect = new Rect(x, texture.height - y - height, width, height);
             sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), PixelsPerUnit, 0, SpriteMeshType.FullRect);
             sprite.name = key;

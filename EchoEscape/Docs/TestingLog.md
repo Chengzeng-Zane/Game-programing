@@ -4,7 +4,7 @@ This log records important testing and iteration evidence for Echo Escape. It fo
 
 | Date | Build / Area Tested | Result | Change Made |
 | --- | --- | --- | --- |
-| 2026-05-05 | Project setup | Unity project was connected to GitHub and opened correctly. | Added Unity `.gitignore`, README, and planning documents. |
+| 2026-05-05 | Project setup | Unity project was connected to GitHub and opened correctly. | Added Unity `.gitignore` and the first planning documents. |
 | 2026-05-05 | First graybox prototype | Basic platform route, player movement, collision, and simple placeholders worked as a starting point. | Kept a graybox evidence version and continued building the playable Level 1 flow. |
 | 2026-05-05 | Early Echo recording | Recording and replay worked as a visual idea, but needed to affect gameplay. | Connected Echo replay to pressure plates so the Echo could open doors. |
 | 2026-05-06 | Script compile check | `dotnet build Assembly-CSharp.csproj` and `dotnet build Assembly-CSharp-Editor.csproj` completed successfully. | Confirmed scripts compiled before deeper play testing. |
@@ -29,8 +29,8 @@ This log records important testing and iteration evidence for Echo Escape. It fo
 | 2026-06-13 | Restart key removal | Pressing `R` to restart could cause unwanted state changes. | Removed the manual `R` restart flow and kept death/reload controlled by the game manager. |
 | 2026-06-13 | Script compile check | `dotnet build .\Assembly-CSharp.csproj` passed. | 0 errors and 0 warnings. |
 | 2026-06-13 | Editor compile check | `dotnet build .\Assembly-CSharp-Editor.csproj` passed after sequential run. | 0 errors and 0 warnings. |
-| 2026-06-16 | Level 1 graybox evidence scene | Needed a real Unity scene instead of a fake screenshot for graybox evidence. | Added `Level 1 - Graybox Prototype.unity` and an editor builder to regenerate it. |
-| 2026-06-16 | Graybox builder compile check | Both runtime and editor C# projects built successfully after adding the builder. | 0 errors and 0 warnings. |
+| 2026-06-16 | Level 1 graybox evidence | Needed a real Unity graybox version instead of a fake screenshot for prototype evidence. | Created and captured graybox evidence, then removed the temporary graybox scene/builder from the final Unity project. |
+| 2026-06-16 | Graybox cleanup compile check | Removed the temporary graybox scene and editor builder after evidence capture. | Runtime and editor builds were checked after cleanup. |
 
 ## Testing Summary
 
@@ -49,4 +49,4 @@ The most important testing changes were the Echo pressure-plate fix, Gravity Fli
 - Only one Echo replay is supported at a time.
 - The enemy behaviour is simple and designed for coursework demonstration.
 - Some external licence evidence should be kept with screenshots/local files for final submission.
-- The graybox prototype scene is evidence only and is not the polished player-facing version of Level 1.
+- Graybox evidence is kept as screenshots/planning material and is not part of the final playable scene list.
